@@ -1,12 +1,10 @@
 import random
 
 import matplotlib.pyplot as plt
-from sklearn.model_selection import StratifiedShuffleSplit
-from torch.utils.data import Subset
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from dataset import HiraganaDataset
@@ -19,7 +17,6 @@ from model import HiraganaCNN
 BATCH_SIZE = 8
 EPOCHS = 60
 LEARNING_RATE = 0.001
-VAL_RATE = 0.2
 SEED = 42
 
 # ==========================
@@ -48,42 +45,19 @@ dataset = HiraganaDataset()
 
 num_classes = len(dataset.labels)
 
-labels = []
-
-for _, label in dataset.data:
-    labels.append(label)
-
-sss = StratifiedShuffleSplit(
-    n_splits=1,
-    test_size=VAL_RATE,
-    random_state=SEED
-)
-
-train_idx, val_idx = next(
-    sss.split(
-        range(len(labels)),
-        labels
-    )
-)
-
-train_dataset = dataset
-
 train_loader = DataLoader(
-    train_dataset,
-    batch_size=8,
+    dataset,
+    batch_size=BATCH_SIZE,
     shuffle=True
 )
 
-
-print("Train:", len(train_dataset))
-
+print("Train:", len(dataset))
 
 # ==========================
 # モデル
 # ==========================
 
 model = HiraganaCNN(num_classes=num_classes)
-
 model.to(device)
 
 criterion = nn.CrossEntropyLoss()
@@ -93,31 +67,18 @@ optimizer = torch.optim.Adam(
     lr=LEARNING_RATE
 )
 
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer,
-    mode="min",
-    factor=0.5,
-    patience=3
-)
-
-best_loss = float("inf")
-patience = 8
-counter = 0
+# ==========================
+# 学習履歴
+# ==========================
 
 train_losses = []
-val_losses = []
-
 train_accs = []
-val_accs = []
+
 # ==========================
 # 学習開始
 # ==========================
 
 for epoch in range(EPOCHS):
-
-    # ----------------------
-    # Train
-    # ----------------------
 
     model.train()
 
@@ -161,50 +122,29 @@ for epoch in range(EPOCHS):
     train_loss /= len(train_loader)
     train_acc = train_correct / train_total
 
-    # ----------------------
-    # Validation
-    # ----------------------
-
-    
     train_losses.append(train_loss)
-    
-
     train_accs.append(train_acc)
-    
 
     print()
 
     print(f"Train Loss : {train_loss:.4f}")
     print(f"Train Acc  : {train_acc:.4f}")
 
+# ==========================
+# モデル保存
+# ==========================
 
-    # ----------------------
-    # ベストモデル保存
-    # ----------------------
-
-    
-        
-    torch.save(
-                model.state_dict(),
-                "best_model.pth"
-            )
-
-    counter = 0
-
-    print("Best model saved!")
-    
-    # ----------------------
-    # EarlyStopping
-    # ----------------------
-
-    
+torch.save(
+    model.state_dict(),
+    "best_model.pth"
+)
 
 torch.save(
     model.state_dict(),
     "last_model.pth"
 )
 
-print()
+print("\nModel Saved!")
 
 # ==========================
 # Lossグラフ
@@ -212,13 +152,10 @@ print()
 
 plt.figure(figsize=(8,5))
 
-plt.plot(train_losses, label="Train Loss")
-plt.plot(val_losses, label="Validation Loss")
+plt.plot(train_losses)
 
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
-
-plt.legend()
 
 plt.grid(True)
 
@@ -232,13 +169,10 @@ plt.close()
 
 plt.figure(figsize=(8,5))
 
-plt.plot(train_accs, label="Train Accuracy")
-plt.plot(val_accs, label="Validation Accuracy")
+plt.plot(train_accs)
 
 plt.xlabel("Epoch")
 plt.ylabel("Accuracy")
-
-plt.legend()
 
 plt.grid(True)
 
@@ -246,4 +180,4 @@ plt.savefig("accuracy.png")
 
 plt.close()
 
-print("Training Finished!")
+print("\nTraining Finished!")

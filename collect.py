@@ -2,6 +2,7 @@ from pathlib import Path
 import sounddevice as sd
 import soundfile as sf
 import numpy as np
+import subprocess
 import time
 
 # ==========================
@@ -11,8 +12,6 @@ import time
 SAMPLE_RATE = 16000
 RECORD_SECONDS = 1.0
 REPEAT = 10
-# 無音判定（RMS）
-SILENCE_THRESHOLD = 0.005
 
 LABELS = [
     "a",
@@ -24,69 +23,68 @@ LABELS = [
 
 ROOT = Path("dataset")
 
-# ==========================
-# datasetフォルダ作成
+# 無音判定
+SILENCE_THRESHOLD = 0.02
+
 # ==========================
 
 ROOT.mkdir(exist_ok=True)
-
-for label in LABELS:
-    (ROOT / label).mkdir(exist_ok=True)
 
 print("=" * 40)
 print("一文字音声データ収集ツール")
 print("=" * 40)
 
-print(f"\n録音時間 : {RECORD_SECONDS}秒")
-print(f"録音回数 : {REPEAT}回")
+name = input("名前(ID)：").strip()
 
-input("\nEnterキーで開始")
+while name == "":
+    name = input("名前(ID)：").strip()
 
-# ==========================
-# 録音開始
+person_dir = ROOT / name
+person_dir.mkdir(exist_ok=True)
+
+for label in LABELS:
+    (person_dir / label).mkdir(exist_ok=True)
+
+print()
+print(f"録音時間：{RECORD_SECONDS}秒")
+print(f"各文字：{REPEAT}回")
+input("\nEnterで開始")
+
 # ==========================
 
 for label in LABELS:
 
     print("\n" + "=" * 40)
-    print(f"「{label}」を発音してください")
+    print(f"現在の文字：{label}")
     print("=" * 40)
 
-    folder = ROOT / label
+    folder = person_dir / label
 
-    # 現在の最大番号を取得
     files = sorted(folder.glob("*.wav"))
 
-    if len(files) == 0:
-        start = 1
+    numbers = []
+
+    for f in files:
+
+        try:
+            numbers.append(int(f.stem))
+        except:
+            pass
+
+    if len(numbers) == 0:
+        next_number = 1
     else:
-        numbers = []
+        next_number = max(numbers) + 1
 
-        for f in files:
+    saved = 0
 
-            try:
-                numbers.append(int(f.stem))
-            except:
-                pass
+    while saved < REPEAT:
 
-        if len(numbers) == 0:
-            start = 1
-        else:
-            start = max(numbers) + 1
+        print(f"\n残り {saved+1}/{REPEAT}")
 
-    # 録音
-    for i in range(REPEAT):
-
-        print(f"\n残り {i+1}/{REPEAT}")
-
-        print("3...")
-        time.sleep(1)
-
-        print("2...")
-        time.sleep(1)
-
-        print("1...")
-        time.sleep(1)
+        for c in [3,2,1]:
+            print(c)
+            time.sleep(1)
 
         print("録音中...")
 
@@ -99,18 +97,14 @@ for label in LABELS:
 
         sd.wait()
 
-        # 1次元配列に変換
-        audio = audio.flatten()
+        volume = np.max(np.abs(audio))
 
-        # RMS（実効音量）を計算
-        rms = np.sqrt(np.mean(audio ** 2))
+        if volume < SILENCE_THRESHOLD:
 
-        # 無音判定
-        if rms < SILENCE_THRESHOLD:
-            print(f"無音のため保存しませんでした (RMS={rms:.5f})")
+            print("無音でした。録り直します。")
             continue
 
-        filename = folder / f"{start+i:03d}.wav"
+        filename = folder / f"{next_number:03d}.wav"
 
         sf.write(
             filename,
@@ -118,9 +112,55 @@ for label in LABELS:
             SAMPLE_RATE
         )
 
-        print(f"保存: {filename} (RMS={rms:.5f})")
+        print("保存:", filename)
 
+        saved += 1
+        next_number += 1
 
-print("\n==============================")
-print("すべて終了しました！")
-print("==============================")
+# ==========================
+
+print("\n" + "=" * 40)
+print("録音終了")
+print("=" * 40)
+
+answer = input("\nGitHubへアップロードしますか？ [Y/n] ")
+
+if answer.lower() in ["", "y", "yes"]:
+
+    try:
+
+        print("\nGit Add...")
+        subprocess.run(["git", "add", "."], check=True)
+
+        print("Git Commit...")
+        subprocess.run(
+            [
+                "git",
+                "commit",
+                "-m",
+                f"Add voice data ({name})"
+            ],
+            check=True
+        )
+
+        print("Git Pull...")
+        subprocess.run(
+            ["git", "pull", "--rebase"],
+            check=True
+        )
+
+        print("Git Push...")
+        subprocess.run(
+            ["git", "push"],
+            check=True
+        )
+
+        print("\nアップロード完了！")
+
+    except subprocess.CalledProcessError:
+
+        print("\nGitHubへのアップロードに失敗しました。")
+
+else:
+
+    print("アップロードをスキップしました。")
