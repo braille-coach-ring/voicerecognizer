@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from sklearn.model_selection import StratifiedShuffleSplit
+from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
 
 from dataset import HiraganaDataset
@@ -15,8 +16,10 @@ from model import HiraganaCNN
 # ==========================
 
 BATCH_SIZE = 8
-EPOCHS = 60
+EPOCHS = 150
 LEARNING_RATE = 0.001
+VAL_RATE = 0.2
+TARGET_ACC = 0.95
 SEED = 42
 
 # ==========================
@@ -28,7 +31,7 @@ np.random.seed(SEED)
 torch.manual_seed(SEED)
 
 # ==========================
-# デバイス
+# Device
 # ==========================
 
 device = torch.device(
@@ -45,16 +48,38 @@ dataset = HiraganaDataset()
 
 num_classes = len(dataset.labels)
 
+labels = [label for _, label in dataset.data]
+
+sss = StratifiedShuffleSplit(
+    n_splits=1,
+    test_size=VAL_RATE,
+    random_state=SEED
+)
+
+train_idx, val_idx = next(
+    sss.split(range(len(labels)), labels)
+)
+
+train_dataset = Subset(dataset, train_idx)
+val_dataset = Subset(dataset, val_idx)
+
 train_loader = DataLoader(
-    dataset,
+    train_dataset,
     batch_size=BATCH_SIZE,
     shuffle=True
 )
 
-print("Train:", len(dataset))
+val_loader = DataLoader(
+    val_dataset,
+    batch_size=BATCH_SIZE,
+    shuffle=False
+)
+
+print("Train      :", len(train_dataset))
+print("Validation :", len(val_dataset))
 
 # ==========================
-# モデル
+# Model
 # ==========================
 
 model = HiraganaCNN(num_classes=num_classes)
@@ -72,13 +97,22 @@ optimizer = torch.optim.Adam(
 # ==========================
 
 train_losses = []
+val_losses = []
+
 train_accs = []
+val_accs = []
+
+best_acc = 0.0
 
 # ==========================
-# 学習開始
+# Training
 # ==========================
 
 for epoch in range(EPOCHS):
+
+    # ----------------------
+    # Train
+    # ----------------------
 
     model.train()
 
@@ -108,7 +142,6 @@ for epoch in range(EPOCHS):
         pred = output.argmax(dim=1)
 
         train_correct += (pred == label).sum().item()
-
         train_total += label.size(0)
 
         progress.set_description(
@@ -122,22 +155,83 @@ for epoch in range(EPOCHS):
     train_loss /= len(train_loader)
     train_acc = train_correct / train_total
 
+    # ----------------------
+    # Validation
+    # ----------------------
+
+    model.eval()
+
+    val_loss = 0
+    val_correct = 0
+    val_total = 0
+
+    with torch.no_grad():
+
+        for mel, label in val_loader:
+
+            mel = mel.to(device)
+            label = label.to(device)
+
+            output = model(mel)
+
+            loss = criterion(output, label)
+
+            val_loss += loss.item()
+
+            pred = output.argmax(dim=1)
+
+            val_correct += (pred == label).sum().item()
+            val_total += label.size(0)
+
+    val_loss /= len(val_loader)
+    val_acc = val_correct / val_total
+
+    # ----------------------
+    # 保存
+    # ----------------------
+
     train_losses.append(train_loss)
+    val_losses.append(val_loss)
+
     train_accs.append(train_acc)
+    val_accs.append(val_acc)
 
     print()
 
     print(f"Train Loss : {train_loss:.4f}")
     print(f"Train Acc  : {train_acc:.4f}")
 
-# ==========================
-# モデル保存
-# ==========================
+    print(f"Val Loss   : {val_loss:.4f}")
+    print(f"Val Acc    : {val_acc:.4f}")
 
-torch.save(
-    model.state_dict(),
-    "best_model.pth"
-)
+    # ----------------------
+    # ベストモデル保存
+    # ----------------------
+
+    if val_acc > best_acc:
+
+        best_acc = val_acc
+
+        torch.save(
+            model.state_dict(),
+            "best_model.pth"
+        )
+
+        print("Best model saved!")
+
+    # ----------------------
+    # 終了条件
+    # ----------------------
+
+    if val_acc >= TARGET_ACC:
+
+        print()
+        print(f"Validation Accuracy {TARGET_ACC*100:.0f}% 到達")
+        break
+
+# ==========================
+# 最終モデル保存
+# ==========================
 
 torch.save(
     model.state_dict(),
@@ -147,37 +241,39 @@ torch.save(
 print("\nModel Saved!")
 
 # ==========================
-# Lossグラフ
+# Loss
 # ==========================
 
 plt.figure(figsize=(8,5))
 
-plt.plot(train_losses)
+plt.plot(train_losses, label="Train")
+plt.plot(val_losses, label="Validation")
 
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
 
+plt.legend()
 plt.grid(True)
 
 plt.savefig("loss.png")
-
 plt.close()
 
 # ==========================
-# Accuracyグラフ
+# Accuracy
 # ==========================
 
 plt.figure(figsize=(8,5))
 
-plt.plot(train_accs)
+plt.plot(train_accs, label="Train")
+plt.plot(val_accs, label="Validation")
 
 plt.xlabel("Epoch")
 plt.ylabel("Accuracy")
 
+plt.legend()
 plt.grid(True)
 
 plt.savefig("accuracy.png")
-
 plt.close()
 
 print("\nTraining Finished!")

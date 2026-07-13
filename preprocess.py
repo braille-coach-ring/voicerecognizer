@@ -7,92 +7,99 @@ import numpy as np
 # 設定
 # ==========================
 
-INPUT_DIR = Path("merged_dataset")
+INPUT_DIRS = [
+    Path("dataset"),
+    Path("merged_dataset")
+]
+
 OUTPUT_DIR = Path("processed_dataset")
 
 SR = 16000
-TARGET_LENGTH = 1.0      # 秒
+TARGET_LENGTH = 1.0
 TOP_DB = 20
 
 # ==========================
 
-OUTPUT_DIR.mkdir(exist_ok=True)
+# 出力フォルダ作り直し
+if OUTPUT_DIR.exists():
+    import shutil
+    shutil.rmtree(OUTPUT_DIR)
+
+OUTPUT_DIR.mkdir()
 
 print("=" * 40)
 print("音声データ前処理")
 print("=" * 40)
 
-for label_dir in sorted(INPUT_DIR.iterdir()):
+for INPUT_DIR in INPUT_DIRS:
 
-    if not label_dir.is_dir():
+    if not INPUT_DIR.exists():
+        print(f"\n{INPUT_DIR} は存在しないのでスキップ")
         continue
 
-    out_dir = OUTPUT_DIR / label_dir.name
-    out_dir.mkdir(exist_ok=True)
+    print(f"\n===== {INPUT_DIR} =====")
 
-    wav_files = sorted(label_dir.glob("*.wav"))
+    for label_dir in sorted(INPUT_DIR.iterdir()):
 
-    print(f"\n{label_dir.name}")
+        if not label_dir.is_dir():
+            continue
 
-    for wav in wav_files:
+        out_dir = OUTPUT_DIR / label_dir.name
+        out_dir.mkdir(exist_ok=True)
+        
+        file_number = len(list(out_dir.glob("*.wav"))) + 1
 
-        print(f"  {wav.name}")
+        print(f"\n{label_dir.name}")
 
-        # ----------------------
-        # 読み込み
-        # ----------------------
+        for wav in sorted(label_dir.glob("*.wav")):
 
-        y, sr = librosa.load(
-            wav,
-            sr=SR,
-            mono=True
-        )
+            print(f"  {wav.name}")
 
-        # ----------------------
-        # 無音除去
-        # ----------------------
+            try:
+                y, sr = librosa.load(
+                    wav,
+                    sr=SR,
+                    mono=True
+                )
+            except Exception as e:
+                print("読み込み失敗:", wav)
+                print(e)
+                continue
 
-        y, _ = librosa.effects.trim(
-            y,
-            top_db=TOP_DB
-        )
-
-        # ----------------------
-        # 音量正規化
-        # ----------------------
-
-        if np.max(np.abs(y)) > 0:
-
-            y = y / np.max(np.abs(y))
-
-        # ----------------------
-        # 長さ統一
-        # ----------------------
-
-        target_samples = int(TARGET_LENGTH * SR)
-
-        if len(y) > target_samples:
-
-            y = y[:target_samples]
-
-        elif len(y) < target_samples:
-
-            y = np.pad(
+            # 無音除去
+            y, _ = librosa.effects.trim(
                 y,
-                (0, target_samples - len(y))
+                top_db=TOP_DB
             )
 
-        # ----------------------
-        # 保存
-        # ----------------------
+            # 音量正規化
+            if np.max(np.abs(y)) > 0:
+                y = y / np.max(np.abs(y))
 
-        out_file = out_dir / wav.name
+            # 長さ統一
+            target_samples = int(TARGET_LENGTH * SR)
 
-        sf.write(
-            out_file,
-            y,
-            SR
-        )
+            if len(y) > target_samples:
+                y = y[:target_samples]
+            else:
+                y = np.pad(
+                    y,
+                    (0, target_samples - len(y))
+                )
+
+            # -------------------------
+            # 同名ファイルがあれば番号を振る
+            # -------------------------
+
+            out_file = out_dir / f"{file_number:03d}.wav"
+
+            sf.write(
+                out_file,
+                y,
+                SR
+            )
+
+            file_number += 1
 
 print()
 print("=" * 40)
