@@ -1,4 +1,5 @@
 ﻿# voicelibrary
-仮想環境でライブラリインストールしてcollect.py実行してほしい
-pip install -r requirements.txt
-python collect.py
+パッケージ管理: uv
+
+uv syncで必要なライブラリがインストールされる
+uv run python "スクリプト名" で実行

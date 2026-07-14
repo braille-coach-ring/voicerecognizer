@@ -19,7 +19,7 @@ BATCH_SIZE = 8
 EPOCHS = 150
 LEARNING_RATE = 0.001
 VAL_RATE = 0.2
-TARGET_ACC = 0.95
+TARGET_ACC = 0.97
 SEED = 42
 
 # ==========================
