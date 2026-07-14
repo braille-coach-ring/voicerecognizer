@@ -52,7 +52,7 @@ for label_dir in sorted(INPUT_DIR.iterdir()):
         print(f"  {wav.name}")
 
         try:
-            y, sr = librosa.load(
+            y, _ = librosa.load(
                 wav,
                 sr=SR,
                 mono=True
