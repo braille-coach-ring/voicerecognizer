@@ -18,12 +18,7 @@ labels = dataset.labels
 
 model = HiraganaCNN(num_classes=len(labels))
 
-model.load_state_dict(
-    torch.load(
-        "best_model.pth",
-        map_location="cpu"
-    )
-)
+model.load_state_dict(torch.load("best_model.pth", map_location="cpu"))
 
 model.eval()
 
@@ -46,31 +41,16 @@ if not wav_path.exists():
 # 前処理
 # ==========================
 
-y, sr = librosa.load(
-    wav_path,
-    sr=16000
-)
+y, sr = librosa.load(wav_path, sr=16000)
 
-mel = librosa.feature.melspectrogram(
-    y=y,
-    sr=sr,
-    n_fft=400,
-    hop_length=160,
-    n_mels=64
-)
+mel = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=400, hop_length=160, n_mels=64)
 
-mel = librosa.power_to_db(
-    mel,
-    ref=np.max
-)
+mel = librosa.power_to_db(mel, ref=np.max)
 
 # 学習時と同じ正規化
 mel = (mel - mel.mean()) / (mel.std() + 1e-8)
 
-mel = torch.tensor(
-    mel,
-    dtype=torch.float32
-)
+mel = torch.tensor(mel, dtype=torch.float32)
 
 mel = mel.unsqueeze(0)
 mel = mel.unsqueeze(0)
@@ -80,7 +60,6 @@ mel = mel.unsqueeze(0)
 # ==========================
 
 with torch.no_grad():
-
     output = model(mel)
 
     prob = torch.softmax(output, dim=1)
@@ -97,7 +76,7 @@ print()
 print("確率")
 
 for i, p in enumerate(prob[0]):
-    print(f"{labels[i]} : {p.item()*100:.2f}%")
+    print(f"{labels[i]} : {p.item() * 100:.2f}%")
 
 print()
 print("=" * 30)

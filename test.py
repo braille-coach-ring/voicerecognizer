@@ -20,21 +20,15 @@ print("無音ファイルを検索中...\n")
 # ==========================
 
 for folder in ROOT.iterdir():
-
     if not folder.is_dir():
         continue
 
     for wav in folder.glob("*.wav"):
-
-        y, sr = librosa.load(
-            wav,
-            sr=16000
-        )
+        y, sr = librosa.load(wav, sr=16000)
 
         volume = np.max(np.abs(y))
 
         if volume < THRESHOLD:
-
             print(f"削除: {wav}  (音量={volume:.5f})")
 
             wav.unlink()

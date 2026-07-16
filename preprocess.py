@@ -20,6 +20,7 @@ TOP_DB = 20
 # 出力フォルダ作り直し
 if OUTPUT_DIR.exists():
     import shutil
+
     shutil.rmtree(OUTPUT_DIR)
 
 OUTPUT_DIR.mkdir()
@@ -36,37 +37,28 @@ if not INPUT_DIR.exists():
 print(f"\n===== {INPUT_DIR} =====")
 
 for label_dir in sorted(INPUT_DIR.iterdir()):
-
     if not label_dir.is_dir():
         continue
 
     out_dir = OUTPUT_DIR / label_dir.name
     out_dir.mkdir(exist_ok=True)
-        
+
     file_number = len(list(out_dir.glob("*.wav"))) + 1
 
     print(f"\n{label_dir.name}")
 
     for wav in sorted(label_dir.glob("*.wav")):
-
         print(f"  {wav.name}")
 
         try:
-            y, _ = librosa.load(
-                wav,
-                sr=SR,
-                mono=True
-            )
+            y, _ = librosa.load(wav, sr=SR, mono=True)
         except Exception as e:
             print("読み込み失敗:", wav)
             print(e)
             continue
 
         # 無音除去
-        y, _ = librosa.effects.trim(
-            y,
-            top_db=TOP_DB
-        )
+        y, _ = librosa.effects.trim(y, top_db=TOP_DB)
 
         # 音量正規化
         if np.max(np.abs(y)) > 0:
@@ -78,10 +70,7 @@ for label_dir in sorted(INPUT_DIR.iterdir()):
         if len(y) > target_samples:
             y = y[:target_samples]
         else:
-            y = np.pad(
-                y,
-                (0, target_samples - len(y))
-            )
+            y = np.pad(y, (0, target_samples - len(y)))
 
         # -------------------------
         # 同名ファイルがあれば番号を振る
@@ -89,11 +78,7 @@ for label_dir in sorted(INPUT_DIR.iterdir()):
 
         out_file = out_dir / f"{file_number:03d}.wav"
 
-        sf.write(
-            out_file,
-            y,
-            SR
-        )
+        sf.write(out_file, y, SR)
 
         file_number += 1
 

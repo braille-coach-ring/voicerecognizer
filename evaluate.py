@@ -11,24 +11,15 @@ from dataset import HiraganaDataset
 # モデル読み込み
 # ==========================
 
-device = torch.device(
-    "cuda" if torch.cuda.is_available() else "cpu"
-)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 dataset = HiraganaDataset()
 
 labels = dataset.labels
 
-model = HiraganaCNN(
-    num_classes=len(labels)
-)
+model = HiraganaCNN(num_classes=len(labels))
 
-model.load_state_dict(
-    torch.load(
-        "best_model.pth",
-        map_location=device
-    )
-)
+model.load_state_dict(torch.load("best_model.pth", map_location=device))
 
 model.to(device)
 model.eval()
@@ -46,44 +37,27 @@ class_total = {}
 class_correct = {}
 
 for label in labels:
-
     class_total[label] = 0
     class_correct[label] = 0
 
 print("=" * 50)
 
 with torch.no_grad():
-
     for label in labels:
-
         folder = root / label
 
         for wav in sorted(folder.glob("*.wav")):
-
-            y, sr = librosa.load(
-                wav,
-                sr=16000
-            )
+            y, sr = librosa.load(wav, sr=16000)
 
             mel = librosa.feature.melspectrogram(
-                y=y,
-                sr=sr,
-                n_fft=400,
-                hop_length=160,
-                n_mels=64
+                y=y, sr=sr, n_fft=400, hop_length=160, n_mels=64
             )
 
-            mel = librosa.power_to_db(
-                mel,
-                ref=np.max
-            )
+            mel = librosa.power_to_db(mel, ref=np.max)
 
             mel = (mel - mel.mean()) / (mel.std() + 1e-8)
 
-            mel = torch.tensor(
-                mel,
-                dtype=torch.float32
-            )
+            mel = torch.tensor(mel, dtype=torch.float32)
 
             mel = mel.unsqueeze(0).unsqueeze(0)
 
@@ -96,7 +70,7 @@ with torch.no_grad():
             pred = prob.argmax().item()
 
             pred_label = labels[pred]
-            
+
             ok = pred_label == label
 
             total += 1
@@ -116,7 +90,7 @@ with torch.no_grad():
             print()
 
             for i, c in enumerate(labels):
-                print(f"{c} : {prob[i].item()*100:.2f}%")
+                print(f"{c} : {prob[i].item() * 100:.2f}%")
 
             print()
             print(f"{mark} {'正解' if ok else '不正解'}")
@@ -129,18 +103,9 @@ with torch.no_grad():
             print("=" * 50)
 
 for label in labels:
+    acc = class_correct[label] / class_total[label] * 100
 
-    acc = (
-        class_correct[label]
-        / class_total[label]
-        * 100
-    )
-
-    print(
-        f"{label} : "
-        f"{class_correct[label]}/{class_total[label]}"
-        f" ({acc:.2f}%)"
-    )
+    print(f"{label} : {class_correct[label]}/{class_total[label]} ({acc:.2f}%)")
 
 print()
 
@@ -148,10 +113,6 @@ print("=" * 50)
 print("全体")
 print("=" * 50)
 
-print(
-    f"{correct}/{total}"
-)
+print(f"{correct}/{total}")
 
-print(
-    f"Accuracy : {correct/total*100:.2f}%"
-)
+print(f"Accuracy : {correct / total * 100:.2f}%")

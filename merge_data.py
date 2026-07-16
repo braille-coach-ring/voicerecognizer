@@ -8,13 +8,7 @@ import shutil
 SOURCE_ROOT = Path("dataset")
 OUTPUT_ROOT = Path("merged_dataset")
 
-LABELS = [
-    "a",
-    "i",
-    "u",
-    "e",
-    "o"
-]
+LABELS = ["a", "i", "u", "e", "o"]
 
 # ==========================
 
@@ -38,13 +32,11 @@ print("データセットを統合します")
 print("=" * 40)
 
 for label in LABELS:
-
     output_folder = OUTPUT_ROOT / label
 
     count = 1
 
     for person in sorted(SOURCE_ROOT.iterdir()):
-
         if not person.is_dir():
             continue
 
@@ -56,17 +48,11 @@ for label in LABELS:
         wav_files = sorted(input_folder.glob("*.wav"))
 
         for wav in wav_files:
-
             dst = output_folder / f"{count:03d}.wav"
 
-            shutil.copy2(
-                wav,
-                dst
-            )
+            shutil.copy2(wav, dst)
 
-            print(
-                f"{person.name}/{label}/{wav.name} -> {dst.name}"
-            )
+            print(f"{person.name}/{label}/{wav.name} -> {dst.name}")
 
             count += 1
 
@@ -79,7 +65,6 @@ print("=" * 40)
 print()
 
 for label in LABELS:
-
     n = len(list((OUTPUT_ROOT / label).glob("*.wav")))
 
     print(f"{label} : {n} files")

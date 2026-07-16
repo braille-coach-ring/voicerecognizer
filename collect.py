@@ -13,13 +13,7 @@ SAMPLE_RATE = 16000
 RECORD_SECONDS = 1.0
 REPEAT = 10
 
-LABELS = [
-    "a",
-    "i",
-    "u",
-    "e",
-    "o"
-]
+LABELS = ["a", "i", "u", "e", "o"]
 
 ROOT = Path("dataset")
 
@@ -53,7 +47,6 @@ input("\nEnterで開始")
 # ==========================
 
 for label in LABELS:
-
     print("\n" + "=" * 40)
     print(f"現在の文字：{label}")
     print("=" * 40)
@@ -65,7 +58,6 @@ for label in LABELS:
     numbers = []
 
     for f in files:
-
         try:
             numbers.append(int(f.stem))
         except:
@@ -79,10 +71,9 @@ for label in LABELS:
     saved = 0
 
     while saved < REPEAT:
+        print(f"\n残り {saved + 1}/{REPEAT}")
 
-        print(f"\n残り {saved+1}/{REPEAT}")
-
-        for c in [3,2,1]:
+        for c in [3, 2, 1]:
             print(c)
             time.sleep(1)
 
@@ -92,7 +83,7 @@ for label in LABELS:
             int(RECORD_SECONDS * SAMPLE_RATE),
             samplerate=SAMPLE_RATE,
             channels=1,
-            dtype=np.float32
+            dtype=np.float32,
         )
 
         sd.wait()
@@ -100,17 +91,12 @@ for label in LABELS:
         volume = np.max(np.abs(audio))
 
         if volume < SILENCE_THRESHOLD:
-
             print("無音でした。録り直します。")
             continue
 
         filename = folder / f"{next_number:03d}.wav"
 
-        sf.write(
-            filename,
-            audio,
-            SAMPLE_RATE
-        )
+        sf.write(filename, audio, SAMPLE_RATE)
 
         print("保存:", filename)
 
@@ -126,41 +112,23 @@ print("=" * 40)
 answer = input("\nGitHubへアップロードしますか？ [Y/n] ")
 
 if answer.lower() in ["", "y", "yes"]:
-
     try:
-
         print("\nGit Add...")
         subprocess.run(["git", "add", "."], check=True)
 
         print("Git Commit...")
-        subprocess.run(
-            [
-                "git",
-                "commit",
-                "-m",
-                f"Add voice data ({name})"
-            ],
-            check=True
-        )
+        subprocess.run(["git", "commit", "-m", f"Add voice data ({name})"], check=True)
 
         print("Git Pull...")
-        subprocess.run(
-            ["git", "pull", "--rebase"],
-            check=True
-        )
+        subprocess.run(["git", "pull", "--rebase"], check=True)
 
         print("Git Push...")
-        subprocess.run(
-            ["git", "push"],
-            check=True
-        )
+        subprocess.run(["git", "push"], check=True)
 
         print("\nアップロード完了！")
 
     except subprocess.CalledProcessError:
-
         print("\nGitHubへのアップロードに失敗しました。")
 
 else:
-
     print("アップロードをスキップしました。")
