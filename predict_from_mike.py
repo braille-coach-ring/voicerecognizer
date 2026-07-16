@@ -1,6 +1,7 @@
 import numpy as np
 import librosa
 import sounddevice as sd
+import soundfile as sf
 import torch
 from time import sleep
 
@@ -15,10 +16,11 @@ MODEL_PATH = "best_model.pth"
 SR = 16000
 RECORD_SECONDS = 1.0
 TARGET_LENGTH = 1.0
-TOP_DB = 20
+TOP_DB = 30
 N_MELS = 64
 
 LABELS = sorted(["a", "e", "i", "o", "u"])
+AUDIO_FILE = "predicted_audio.wav"  # 推論時の音声を保存（毎回上書き）
 
 # ==========================
 # Device
@@ -78,6 +80,12 @@ else:
     y = np.pad(y, (0, target_samples - len(y)))
 
 # ==========================
+# 前処理済み音声を保存
+# ==========================
+
+sf.write(AUDIO_FILE, y, SR)
+
+# ==========================
 # メルスペクトログラム
 # ==========================
 
@@ -122,3 +130,7 @@ print(f"\n予測: {LABELS[pred]}\n")
 
 for label, prob in zip(LABELS, probs):
     print(f"{label} : {prob.item() * 100:.2f}%")
+
+print("\n" + "=" * 30)
+print(f"📁 {AUDIO_FILE} に保存")
+print("=" * 30)

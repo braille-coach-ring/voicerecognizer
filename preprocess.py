@@ -13,7 +13,7 @@ OUTPUT_DIR = Path("processed_dataset")
 
 SR = 16000
 TARGET_LENGTH = 1.0
-TOP_DB = 20
+TOP_DB = 30
 
 # ==========================
 
