@@ -7,9 +7,9 @@ from time import sleep
 # 設定
 # ==========================
 
-SR = 16000              # サンプリングレート
-RECORD_SECONDS = 3.0    # 録音時間（3秒）
-CHUNK_SIZE = 1600       # フレームサイズ（0.1秒）
+SR = 16000  # サンプリングレート
+RECORD_SECONDS = 3.0  # 録音時間（3秒）
+CHUNK_SIZE = 1600  # フレームサイズ（0.1秒）
 AUDIO_FILE = "measured_audio.wav"  # 保存先ファイル（毎回上書き）
 
 # ==========================
@@ -34,12 +34,7 @@ print("発声してください（自然な会話レベルで）\n")
 # 録音
 # ==========================
 
-audio = sd.rec(
-    int(RECORD_SECONDS * SR),
-    samplerate=SR,
-    channels=1,
-    dtype="float32"
-)
+audio = sd.rec(int(RECORD_SECONDS * SR), samplerate=SR, channels=1, dtype="float32")
 
 sd.wait()
 
@@ -69,30 +64,27 @@ frame_peaks = []
 frame_dbs = []
 
 for i in range(0, len(y), CHUNK_SIZE):
-    chunk = y[i:i+CHUNK_SIZE]
-    
+    chunk = y[i : i + CHUNK_SIZE]
+
     if len(chunk) == 0:
         continue
-    
+
     # ピーク値（最大振幅）
     peak = np.max(np.abs(chunk))
-    
+
     # RMS（二乗平均平方根）
-    rms = np.sqrt(np.mean(chunk ** 2))
-    
+    rms = np.sqrt(np.mean(chunk**2))
+
     # デシベル値（最大値を基準）
     db = 20 * np.log10(rms + 1e-10)
-    
+
     frame_volumes.append(rms)
     frame_peaks.append(peak)
     frame_dbs.append(db)
-    
+
     time_sec = i / SR
-    
-    print(f"[{time_sec:5.2f}s] "
-          f"RMS: {rms:.4f}  "
-          f"Peak: {peak:.4f}  "
-          f"dB: {db:7.2f}")
+
+    print(f"[{time_sec:5.2f}s] RMS: {rms:.4f}  Peak: {peak:.4f}  dB: {db:7.2f}")
 
 # ==========================
 # 統計情報
@@ -144,43 +136,43 @@ print(f"\n（現在のpreprocess.pyでは TOP_DB = 20 に設定されていま�
 
 try:
     import matplotlib.pyplot as plt
-    
+
     fig, axes = plt.subplots(3, 1, figsize=(12, 8))
-    
+
     time_axis = np.arange(len(frame_volumes)) * (CHUNK_SIZE / SR)
-    
+
     # RMS値
-    axes[0].plot(time_axis, frame_volumes, marker='o', label='RMS')
-    axes[0].axhline(y=np.mean(frame_volumes), color='r', linestyle='--', label='平均')
-    axes[0].set_ylabel('RMS値')
-    axes[0].set_title('フレーム別RMS値（平均音量）')
+    axes[0].plot(time_axis, frame_volumes, marker="o", label="RMS")
+    axes[0].axhline(y=np.mean(frame_volumes), color="r", linestyle="--", label="平均")
+    axes[0].set_ylabel("RMS値")
+    axes[0].set_title("フレーム別RMS値（平均音量）")
     axes[0].legend()
     axes[0].grid(True)
-    
+
     # ピーク値
-    axes[1].plot(time_axis, frame_peaks, marker='s', color='orange', label='Peak')
-    axes[1].axhline(y=np.mean(frame_peaks), color='r', linestyle='--', label='平均')
-    axes[1].set_ylabel('ピーク値')
-    axes[1].set_title('フレーム別ピーク値（最大振幅）')
+    axes[1].plot(time_axis, frame_peaks, marker="s", color="orange", label="Peak")
+    axes[1].axhline(y=np.mean(frame_peaks), color="r", linestyle="--", label="平均")
+    axes[1].set_ylabel("ピーク値")
+    axes[1].set_title("フレーム別ピーク値（最大振幅）")
     axes[1].legend()
     axes[1].grid(True)
-    
+
     # デシベル値
-    axes[2].plot(time_axis, frame_dbs, marker='^', color='green', label='dB')
-    axes[2].axhline(y=np.mean(frame_dbs), color='r', linestyle='--', label='平均')
-    axes[2].set_xlabel('時間（秒）')
-    axes[2].set_ylabel('dB値')
-    axes[2].set_title('フレーム別デシベル値')
+    axes[2].plot(time_axis, frame_dbs, marker="^", color="green", label="dB")
+    axes[2].axhline(y=np.mean(frame_dbs), color="r", linestyle="--", label="平均")
+    axes[2].set_xlabel("時間（秒）")
+    axes[2].set_ylabel("dB値")
+    axes[2].set_title("フレーム別デシベル値")
     axes[2].legend()
     axes[2].grid(True)
-    
+
     plt.tight_layout()
-    plt.savefig('audio_level_measurement.png')
+    plt.savefig("audio_level_measurement.png")
     print("\n" + "=" * 60)
     print("グラフを 'audio_level_measurement.png' に保存しました")
     print("=" * 60)
     plt.close()
-    
+
 except ImportError:
     print("\n※ matplotlib がインストールされていないため、グラフは生成されません")
 
@@ -191,7 +183,8 @@ except ImportError:
 print("\n" + "=" * 60)
 print("結果の使い方")
 print("=" * 60)
-print("""
+print(
+    """
 【保存されたファイル】
   • measured_audio.wav
     └─ 実際に録音した音声ファイル
@@ -213,4 +206,5 @@ TOP_DB が小さいほど、より多くの無音部分を除去します
 TOP_DB が大きいほど、より少ない部分だけ除去します
 
 あなたのマイク・発声レベルに合わせて調整してください
-""".format(silence_threshold_db))
+""".format(silence_threshold_db)
+)
