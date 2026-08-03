@@ -167,7 +167,7 @@ try:
     axes[2].grid(True)
 
     plt.tight_layout()
-    plt.savefig("audio_level_measurement.png")
+    plt.savefig("Docs/charts/audio_level_measurement.png")
     print("\n" + "=" * 60)
     print("グラフを 'audio_level_measurement.png' に保存しました")
     print("=" * 60)
