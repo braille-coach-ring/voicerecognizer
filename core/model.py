@@ -1,8 +1,9 @@
+import torch
 import torch.nn as nn
 
 
 class HiraganaCNN(nn.Module):
-    def __init__(self, num_classes: int = 5):
+    def __init__(self, num_classes=5):
         super().__init__()
 
         self.features = nn.Sequential(
@@ -21,10 +22,10 @@ class HiraganaCNN(nn.Module):
         )
 
         self.classifier = nn.Sequential(
-            nn.Flatten(),
-            nn.Dropout(0.4),
-            nn.Linear(128, num_classes),
+            nn.Flatten(), nn.Dropout(0.4), nn.Linear(128, num_classes)
         )
 
     def forward(self, x):
-        return self.classifier(self.features(x))
+        x = self.features(x)
+        x = self.classifier(x)
+        return x
