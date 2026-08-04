@@ -4,6 +4,11 @@ from typing import Any
 import librosa
 import numpy as np
 
+from config import (
+    DEFAULT_AUDIO_CONFIG,
+    DEFAULT_PREPROCESS_CONFIG,
+    DEFAULT_RECOGNITION_CONFIG,
+)
 from preprocessing.threshold_calculator import (
     AbstractSilenceThresholdCalculator,
     FixedSilenceThresholdCalculator,
@@ -13,9 +18,9 @@ from preprocessing.threshold_calculator import (
 class AudioPreprocessor:
     def __init__(
         self,
-        sample_rate: int = 16000,
-        target_length_seconds: float = 1.0,
-        top_db: int = 30,
+        sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
+        target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
+        top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,
         threshold_calculator: AbstractSilenceThresholdCalculator | None = None,
     ):
         self.sample_rate = sample_rate

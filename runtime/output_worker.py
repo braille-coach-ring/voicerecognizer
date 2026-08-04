@@ -4,7 +4,7 @@ from queue import Empty, Queue
 from threading import Event
 import soundfile as sf
 
-from config import DEFAULT_RECOGNITION_CONFIG
+from config import DEFAULT_AUDIO_CONFIG, DEFAULT_RECOGNITION_CONFIG
 
 
 class OutputWorker:
@@ -34,7 +34,7 @@ class OutputWorker:
         audio_data,
         predicted_text: str,
         timestamp,
-        sample_rate: int = 16000,
+        sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
     ) -> None:
         self.save_dir.mkdir(parents=True, exist_ok=True)
         time_str = str(timestamp).replace(".", "_")

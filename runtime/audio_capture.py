@@ -13,6 +13,10 @@ class AudioCapture:
         self.sample_rate: int = cfg.sample_rate
         self.window_seconds: float = float(getattr(cfg, "window_seconds", 1.0))
         
+        self.channels: int = cfg.channels
+        self.blocksize_seconds: float = float(getattr(cfg, "callback_blocksize_seconds", 0.05))
+        self.warmup_sleep_ms: int = int(getattr(cfg, "warmup_sleep_ms", 500))
+        
         # 直近 N 秒分のサンプル数を保持するリングバッファ
         self._max_samples: int = int(self.window_seconds * self.sample_rate)
         self._buffer: deque[float] = deque(maxlen=self._max_samples)
@@ -42,10 +46,10 @@ class AudioCapture:
 
             self._stream = sd.InputStream(
                 samplerate=self.sample_rate,
-                channels=1,
+                channels=self.channels,
                 dtype="float32",
                 callback=self._audio_callback,
-                blocksize=int(self.sample_rate * 0.05),  # 50msごとにデータ受取
+                blocksize=int(self.sample_rate * self.blocksize_seconds),
             )
             self._stream.start()
 
@@ -62,7 +66,7 @@ class AudioCapture:
         if self._stream is None or not self._stream.active:
             self.start()
             # 初回だけ少し待機
-            sd.sleep(500)
+            sd.sleep(self.warmup_sleep_ms)
 
         with self._lock:
             arr = np.array(self._buffer, dtype=np.float32)

@@ -5,6 +5,11 @@ import librosa
 import numpy as np
 import torch
 
+from config import (
+    DEFAULT_AUDIO_CONFIG,
+    DEFAULT_PREPROCESS_CONFIG,
+    DEFAULT_RECOGNITION_CONFIG,
+)
 from core.interfaces import RecognitionStrategy
 from models.cnn.hiragana_cnn import HiraganaCNN
 from preprocessing.audio_preprocessor import AudioPreprocessor
@@ -16,10 +21,12 @@ class CNNRecognizer(RecognitionStrategy):
         self,
         model_path: str | Path,
         labels: tuple[str, ...] | list[str],
-        sample_rate: int = 16000,
-        target_length_seconds: float = 1.0,
-        top_db: int = 30,
-        n_mels: int = 64,
+        sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
+        target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
+        top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,
+        n_mels: int = DEFAULT_PREPROCESS_CONFIG.n_mels,
+        n_fft: int = DEFAULT_PREPROCESS_CONFIG.n_fft,
+        hop_length: int = DEFAULT_PREPROCESS_CONFIG.hop_length,
         device: torch.device | None = None,
         threshold_calculator: AbstractSilenceThresholdCalculator | None = None,
     ):
@@ -34,6 +41,8 @@ class CNNRecognizer(RecognitionStrategy):
         )
         self.sample_rate = sample_rate
         self.n_mels = n_mels
+        self.n_fft = n_fft
+        self.hop_length = hop_length
         self.model = self._load_model()
 
     def recognize(self, audio: Any) -> str:
@@ -57,8 +66,8 @@ class CNNRecognizer(RecognitionStrategy):
         mel = librosa.feature.melspectrogram(
             y=waveform,
             sr=self.sample_rate,
-            n_fft=400,
-            hop_length=160,
+            n_fft=self.n_fft,
+            hop_length=self.hop_length,
             n_mels=self.n_mels,
         )
         mel = librosa.power_to_db(mel, ref=np.max)

@@ -1,70 +1,36 @@
+import sys
 from pathlib import Path
-import shutil
 
-# ==========================
-# 設定
-# ==========================
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
-SOURCE_ROOT = Path("dataset")
-OUTPUT_ROOT = Path("merged_dataset")
+from config import DEFAULT_RECOGNITION_CONFIG
+from preprocessing.dataset_builder import DatasetBuilder
 
-LABELS = ["a", "i", "u", "e", "o"]
 
-# ==========================
+def main() -> None:
+    print("=" * 40)
+    print("データセットを統合します")
+    print("=" * 40)
 
-# 出力フォルダ作成
-OUTPUT_ROOT.mkdir(exist_ok=True)
+    source_root = DEFAULT_RECOGNITION_CONFIG.raw_dataset_dir
+    output_root = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir
 
-for label in LABELS:
-    folder = OUTPUT_ROOT / label
+    builder = DatasetBuilder()
+    builder.merge_by_label(source_root=source_root, output_root=output_root)
 
-    if folder.exists():
-        shutil.rmtree(folder)
+    print()
+    print("=" * 40)
+    print("統合完了")
+    print("=" * 40)
 
-    folder.mkdir(parents=True)
+    for label in builder.labels:
+        folder = output_root / label
+        n = len(list(folder.glob("*.wav"))) if folder.exists() else 0
+        print(f"{label} : {n} files")
 
-# ==========================
-# コピー開始
-# ==========================
 
-print("=" * 40)
-print("データセットを統合します")
-print("=" * 40)
+if __name__ == "__main__":
+    main()
 
-for label in LABELS:
-    output_folder = OUTPUT_ROOT / label
-
-    count = 1
-
-    for person in sorted(SOURCE_ROOT.iterdir()):
-        if not person.is_dir():
-            continue
-
-        input_folder = person / label
-
-        if not input_folder.exists():
-            continue
-
-        wav_files = sorted(input_folder.glob("*.wav"))
-
-        for wav in wav_files:
-            dst = output_folder / f"{count:03d}.wav"
-
-            shutil.copy2(wav, dst)
-
-            print(f"{person.name}/{label}/{wav.name} -> {dst.name}")
-
-            count += 1
-
-print()
-print("=" * 40)
-print("統合完了")
-print("=" * 40)
-
-# 件数表示
-print()
-
-for label in LABELS:
-    n = len(list((OUTPUT_ROOT / label).glob("*.wav")))
-
-    print(f"{label} : {n} files")

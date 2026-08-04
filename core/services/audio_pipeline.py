@@ -59,7 +59,7 @@ class AudioPipeline:
                 if result is not None:
                     print(f"認識成功: {result}")
                     return result
-                time.sleep(0.1)
+                time.sleep(DEFAULT_AUDIO_CONFIG.chunk_seconds)
             except KeyboardInterrupt:
                 print("\n音声待機を停止しました。")
                 return None

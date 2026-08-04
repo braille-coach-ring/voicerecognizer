@@ -1,9 +1,11 @@
 import torch
 import torch.nn as nn
 
+from config import DEFAULT_RECOGNITION_CONFIG
+
 
 class HiraganaCNN(nn.Module):
-    def __init__(self, num_classes=5):
+    def __init__(self, num_classes=len(DEFAULT_RECOGNITION_CONFIG.labels)):
         super().__init__()
 
         self.features = nn.Sequential(

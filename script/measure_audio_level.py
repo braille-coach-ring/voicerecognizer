@@ -3,13 +3,15 @@ import sounddevice as sd
 import soundfile as sf
 from time import sleep
 
+from config import DEFAULT_AUDIO_CONFIG
+
 # ==========================
-# 設定
+# 設定（config.py から参照）
 # ==========================
 
-SR = 16000  # サンプリングレート
+SR = DEFAULT_AUDIO_CONFIG.sample_rate  # サンプリングレート
 RECORD_SECONDS = 3.0  # 録音時間（3秒）
-CHUNK_SIZE = 1600  # フレームサイズ（0.1秒）
+CHUNK_SIZE = int(DEFAULT_AUDIO_CONFIG.sample_rate * DEFAULT_AUDIO_CONFIG.chunk_seconds)  # フレームサイズ
 AUDIO_FILE = "measured_audio.wav"  # 保存先ファイル（毎回上書き）
 
 # ==========================

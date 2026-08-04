@@ -2,14 +2,20 @@ from pathlib import Path
 import librosa
 import numpy as np
 
+from config import (
+    DEFAULT_AUDIO_CONFIG,
+    DEFAULT_PREPROCESS_CONFIG,
+    DEFAULT_RECOGNITION_CONFIG,
+)
+
 # ==========================
-# 設定
+# 設定（config.py から参照）
 # ==========================
 
-ROOT = Path("dataset")
+ROOT = DEFAULT_RECOGNITION_CONFIG.raw_dataset_dir
 
 # 最大音量がこれ未満なら無音と判定
-THRESHOLD = 0.02
+THRESHOLD = DEFAULT_PREPROCESS_CONFIG.vad_silence_threshold
 
 deleted = 0
 
@@ -24,7 +30,7 @@ for folder in ROOT.iterdir():
         continue
 
     for wav in folder.glob("*.wav"):
-        y, sr = librosa.load(wav, sr=16000)
+        y, sr = librosa.load(wav, sr=DEFAULT_AUDIO_CONFIG.sample_rate)
 
         volume = np.max(np.abs(y))
 

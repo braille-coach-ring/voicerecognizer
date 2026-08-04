@@ -1,7 +1,9 @@
 from pathlib import Path
 
+from config import DEFAULT_RECOGNITION_CONFIG
+
 # datasetフォルダの場所
-root = Path("dataset")
+root = DEFAULT_RECOGNITION_CONFIG.raw_dataset_dir
 
 # 各文字フォルダを処理
 for folder in root.iterdir():

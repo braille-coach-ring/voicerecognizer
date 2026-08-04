@@ -166,19 +166,19 @@ def train(args: argparse.Namespace) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Train the Hiragana CNN recognizer.")
-    parser.add_argument("--root-dir", type=Path, default=Path("processed_dataset"))
-    parser.add_argument("--sample-rate", type=int, default=16000)
-    parser.add_argument("--n-mels", type=int, default=64)
+    parser.add_argument("--root-dir", type=Path, default=DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir)
+    parser.add_argument("--sample-rate", type=int, default=DEFAULT_AUDIO_CONFIG.sample_rate)
+    parser.add_argument("--n-mels", type=int, default=DEFAULT_PREPROCESS_CONFIG.n_mels)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--epochs", type=int, default=150)
     parser.add_argument("--learning-rate", type=float, default=0.001)
     parser.add_argument("--val-rate", type=float, default=0.2)
     parser.add_argument("--target-acc", type=float, default=0.97)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--best-model-path", type=Path, default=Path("weights/best_model.pth"))
-    parser.add_argument("--last-model-path", type=Path, default=Path("weights/last_model.pth"))
-    parser.add_argument("--loss-plot-path", type=Path, default=Path("loss.png"))
-    parser.add_argument("--accuracy-plot-path", type=Path, default=Path("accuracy.png"))
+    parser.add_argument("--best-model-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.cnn_weight_path)
+    parser.add_argument("--last-model-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.last_model_path)
+    parser.add_argument("--loss-plot-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.loss_plot_path)
+    parser.add_argument("--accuracy-plot-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.accuracy_plot_path)
     return parser
 
 
