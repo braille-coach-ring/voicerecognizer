@@ -19,8 +19,12 @@ class TestDatasetBuilderIsolated(unittest.TestCase):
             # Create dummy raw data for speaker "speaker1" and label "a"
             speaker_dir = raw_root / "speaker1" / "a"
             speaker_dir.mkdir(parents=True, exist_ok=True)
-            dummy_audio = np.sin(np.linspace(0, 440 * 2 * np.pi, DEFAULT_AUDIO_CONFIG.sample_rate)).astype(np.float32)
-            sf.write(speaker_dir / "001.wav", dummy_audio, DEFAULT_AUDIO_CONFIG.sample_rate)
+            dummy_audio = np.sin(
+                np.linspace(0, 440 * 2 * np.pi, DEFAULT_AUDIO_CONFIG.sample_rate)
+            ).astype(np.float32)
+            sf.write(
+                speaker_dir / "001.wav", dummy_audio, DEFAULT_AUDIO_CONFIG.sample_rate
+            )
 
             builder = DatasetBuilder(labels=("a",))
 
@@ -29,13 +33,21 @@ class TestDatasetBuilderIsolated(unittest.TestCase):
             self.assertTrue((merged_root / "a" / "001.wav").exists())
 
             # Test preprocess_dataset without touching repo dataset
-            builder.preprocess_dataset(input_root=merged_root, output_root=processed_root)
+            builder.preprocess_dataset(
+                input_root=merged_root, output_root=processed_root
+            )
             self.assertTrue((processed_root / "a" / "001.wav").exists())
 
             # Verify saved audio format
             data, sr = sf.read(processed_root / "a" / "001.wav")
             self.assertEqual(sr, DEFAULT_AUDIO_CONFIG.sample_rate)
-            self.assertEqual(len(data), int(DEFAULT_AUDIO_CONFIG.sample_rate * builder.preprocessor.target_length_seconds))
+            self.assertEqual(
+                len(data),
+                int(
+                    DEFAULT_AUDIO_CONFIG.sample_rate
+                    * builder.preprocessor.target_length_seconds
+                ),
+            )
 
 
 if __name__ == "__main__":

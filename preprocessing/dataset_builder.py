@@ -70,7 +70,11 @@ class DatasetBuilder:
 
             for wav_path in sorted(label_dir.glob("*.wav")):
                 waveform = self.preprocessor.preprocess_waveform(wav_path)
-                sf.write(output_dir / f"{file_number:03d}.wav", waveform, self.preprocessor.sample_rate)
+                sf.write(
+                    output_dir / f"{file_number:03d}.wav",
+                    waveform,
+                    self.preprocessor.sample_rate,
+                )
                 file_number += 1
 
     def _recreate_label_dirs(self, output_root: Path) -> None:

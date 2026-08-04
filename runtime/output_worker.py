@@ -14,7 +14,11 @@ class OutputWorker:
         save_dir: Path | str | None = None,
     ):
         self.output = output or print
-        self.save_dir = Path(save_dir) if save_dir else DEFAULT_RECOGNITION_CONFIG.collected_dataset_dir
+        self.save_dir = (
+            Path(save_dir)
+            if save_dir
+            else DEFAULT_RECOGNITION_CONFIG.collected_dataset_dir
+        )
         self.save_dir.mkdir(parents=True, exist_ok=True)
 
     def emit(self, text: str) -> None:

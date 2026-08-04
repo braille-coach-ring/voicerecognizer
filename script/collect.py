@@ -5,7 +5,11 @@ import numpy as np
 import subprocess
 import time
 
-from config import DEFAULT_AUDIO_CONFIG, DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG
+from config import (
+    DEFAULT_AUDIO_CONFIG,
+    DEFAULT_PREPROCESS_CONFIG,
+    DEFAULT_RECOGNITION_CONFIG,
+)
 
 # ==========================
 # 設定（config.py から集約）

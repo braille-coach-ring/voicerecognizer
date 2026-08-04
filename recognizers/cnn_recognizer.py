@@ -32,7 +32,9 @@ class CNNRecognizer(RecognitionStrategy):
     ):
         self.model_path = Path(model_path)
         self.labels = tuple(labels)
-        self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = device or torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
         self.audio_preprocessor = AudioPreprocessor(
             sample_rate=sample_rate,
             target_length_seconds=target_length_seconds,
@@ -72,7 +74,12 @@ class CNNRecognizer(RecognitionStrategy):
         )
         mel = librosa.power_to_db(mel, ref=np.max)
         mel = (mel - mel.mean()) / (mel.std() + 1e-8)
-        return torch.tensor(mel, dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(self.device)
+        return (
+            torch.tensor(mel, dtype=torch.float32)
+            .unsqueeze(0)
+            .unsqueeze(0)
+            .to(self.device)
+        )
 
     def _predict(self, mel_tensor: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():

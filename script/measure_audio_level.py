@@ -11,7 +11,9 @@ from config import DEFAULT_AUDIO_CONFIG
 
 SR = DEFAULT_AUDIO_CONFIG.sample_rate  # サンプリングレート
 RECORD_SECONDS = 3.0  # 録音時間（3秒）
-CHUNK_SIZE = int(DEFAULT_AUDIO_CONFIG.sample_rate * DEFAULT_AUDIO_CONFIG.chunk_seconds)  # フレームサイズ
+CHUNK_SIZE = int(
+    DEFAULT_AUDIO_CONFIG.sample_rate * DEFAULT_AUDIO_CONFIG.chunk_seconds
+)  # フレームサイズ
 AUDIO_FILE = "measured_audio.wav"  # 保存先ファイル（毎回上書き）
 
 # ==========================

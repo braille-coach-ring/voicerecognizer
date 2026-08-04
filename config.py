@@ -52,4 +52,3 @@ class RecognitionConfig:
 DEFAULT_AUDIO_CONFIG = AudioConfig()
 DEFAULT_PREPROCESS_CONFIG = PreprocessConfig()
 DEFAULT_RECOGNITION_CONFIG = RecognitionConfig()
-

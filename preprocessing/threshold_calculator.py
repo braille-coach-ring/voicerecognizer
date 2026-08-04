@@ -54,8 +54,8 @@ class AdaptiveSilenceThresholdCalculator(AbstractSilenceThresholdCalculator):
         # ノイズ推定の更新（背景ノイズレベル以下と思われる範囲で移動平均）
         if current_db < self._estimated_noise_db + 15.0:
             self._estimated_noise_db = (
-                (1.0 - self._alpha) * self._estimated_noise_db + self._alpha * current_db
-            )
+                1.0 - self._alpha
+            ) * self._estimated_noise_db + self._alpha * current_db
 
         # 推定されたノイズレベルを元に最適 top_db を算出
         calculated_top_db = 30.0 + (self._estimated_noise_db + 50.0) * 0.5

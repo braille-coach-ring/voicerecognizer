@@ -28,9 +28,15 @@ class AudioPipeline:
             audio = self.audio_capture.capture_once()
             print("録音終了")
 
-            max_vol = float(np.max(np.abs(audio))) if audio is not None and audio.size else 0.0
+            max_vol = (
+                float(np.max(np.abs(audio)))
+                if audio is not None and audio.size
+                else 0.0
+            )
             is_sp = self.vad.is_speech(audio)
-            print(f"VAD判定中 (録音最大音量: {max_vol:.4f} / 判定閾値: {self.vad.silence_threshold}) -> 発話検知: {is_sp}")
+            print(
+                f"VAD判定中 (録音最大音量: {max_vol:.4f} / 判定閾値: {self.vad.silence_threshold}) -> 発話検知: {is_sp}"
+            )
 
             if not is_sp:
                 print("音声ではない")

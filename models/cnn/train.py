@@ -80,7 +80,9 @@ def validate(model, loader, criterion, device):
     return total_loss / len(loader), correct / total
 
 
-def save_plots(history: dict[str, list[float]], loss_path: Path, accuracy_path: Path) -> None:
+def save_plots(
+    history: dict[str, list[float]], loss_path: Path, accuracy_path: Path
+) -> None:
     plt.figure(figsize=(8, 5))
     plt.plot(history["train_loss"], label="Train")
     plt.plot(history["val_loss"], label="Validation")
@@ -166,8 +168,14 @@ def train(args: argparse.Namespace) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Train the Hiragana CNN recognizer.")
-    parser.add_argument("--root-dir", type=Path, default=DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir)
-    parser.add_argument("--sample-rate", type=int, default=DEFAULT_AUDIO_CONFIG.sample_rate)
+    parser.add_argument(
+        "--root-dir",
+        type=Path,
+        default=DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir,
+    )
+    parser.add_argument(
+        "--sample-rate", type=int, default=DEFAULT_AUDIO_CONFIG.sample_rate
+    )
     parser.add_argument("--n-mels", type=int, default=DEFAULT_PREPROCESS_CONFIG.n_mels)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--epochs", type=int, default=150)
@@ -175,10 +183,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--val-rate", type=float, default=0.2)
     parser.add_argument("--target-acc", type=float, default=0.97)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--best-model-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.cnn_weight_path)
-    parser.add_argument("--last-model-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.last_model_path)
-    parser.add_argument("--loss-plot-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.loss_plot_path)
-    parser.add_argument("--accuracy-plot-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.accuracy_plot_path)
+    parser.add_argument(
+        "--best-model-path",
+        type=Path,
+        default=DEFAULT_RECOGNITION_CONFIG.cnn_weight_path,
+    )
+    parser.add_argument(
+        "--last-model-path",
+        type=Path,
+        default=DEFAULT_RECOGNITION_CONFIG.last_model_path,
+    )
+    parser.add_argument(
+        "--loss-plot-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.loss_plot_path
+    )
+    parser.add_argument(
+        "--accuracy-plot-path",
+        type=Path,
+        default=DEFAULT_RECOGNITION_CONFIG.accuracy_plot_path,
+    )
     return parser
 
 

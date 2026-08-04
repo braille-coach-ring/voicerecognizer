@@ -29,9 +29,17 @@ def export_torchscript(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Export the CNN model to TorchScript.")
-    parser.add_argument("--model-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.cnn_weight_path)
-    parser.add_argument("--output-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.torchscript_model_path)
-    parser.add_argument("--num-classes", type=int, default=len(DEFAULT_RECOGNITION_CONFIG.labels))
+    parser.add_argument(
+        "--model-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.cnn_weight_path
+    )
+    parser.add_argument(
+        "--output-path",
+        type=Path,
+        default=DEFAULT_RECOGNITION_CONFIG.torchscript_model_path,
+    )
+    parser.add_argument(
+        "--num-classes", type=int, default=len(DEFAULT_RECOGNITION_CONFIG.labels)
+    )
     parser.add_argument("--n-mels", type=int, default=DEFAULT_PREPROCESS_CONFIG.n_mels)
     parser.add_argument("--time-steps", type=int, default=101)
     return parser

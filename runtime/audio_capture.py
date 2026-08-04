@@ -12,11 +12,13 @@ class AudioCapture:
         cfg = config or DEFAULT_AUDIO_CONFIG
         self.sample_rate: int = cfg.sample_rate
         self.window_seconds: float = float(getattr(cfg, "window_seconds", 1.0))
-        
+
         self.channels: int = cfg.channels
-        self.blocksize_seconds: float = float(getattr(cfg, "callback_blocksize_seconds", 0.05))
+        self.blocksize_seconds: float = float(
+            getattr(cfg, "callback_blocksize_seconds", 0.05)
+        )
         self.warmup_sleep_ms: int = int(getattr(cfg, "warmup_sleep_ms", 500))
-        
+
         # 直近 N 秒分のサンプル数を保持するリングバッファ
         self._max_samples: int = int(self.window_seconds * self.sample_rate)
         self._buffer: deque[float] = deque(maxlen=self._max_samples)
@@ -26,7 +28,9 @@ class AudioCapture:
         # インスタンス生成時にマイクストリームを開始
         self.start()
 
-    def _audio_callback(self, indata: np.ndarray, frames: int, time_info: dict, status: sd.CallbackFlags) -> None:
+    def _audio_callback(
+        self, indata: np.ndarray, frames: int, time_info: dict, status: sd.CallbackFlags
+    ) -> None:
         """サウンドカードから非同期に音声フレームが届いたときに自動実行されるコールバック"""
         if status:
             pass  # オーバーフロー等の警告ログ処理（必要に応じて）

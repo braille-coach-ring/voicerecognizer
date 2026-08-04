@@ -34,4 +34,6 @@ class RecognizerFactory:
             return WhisperRecognizer()
 
         available = ", ".join(RecognizerFactory.available_strategies())
-        raise ValueError(f"Unknown recognizer type: {recognizer_type}. Available: {available}")
+        raise ValueError(
+            f"Unknown recognizer type: {recognizer_type}. Available: {available}"
+        )

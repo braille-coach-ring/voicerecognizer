@@ -27,7 +27,8 @@ class AudioPreprocessor:
         self.target_length_seconds = target_length_seconds
         self.top_db = top_db
         self.threshold_calculator = (
-            threshold_calculator or FixedSilenceThresholdCalculator(top_db=float(top_db))
+            threshold_calculator
+            or FixedSilenceThresholdCalculator(top_db=float(top_db))
         )
 
     def load(self, audio: str | Path | np.ndarray) -> np.ndarray:
