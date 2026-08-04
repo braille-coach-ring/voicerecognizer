@@ -21,8 +21,9 @@ class PreprocessConfig:
     n_fft: int = 400
     hop_length: int = 160
     top_db: float = 30.0
-    vad_silence_threshold: float = 0.005
+    vad_silence_threshold: float = 0.02
     vad_min_speech_chunks: int = 2
+    vad_min_active_ratio: float = 0.02
     dynamic_threshold_enabled: bool = False
     min_top_db: float = 15.0
     max_top_db: float = 40.0
