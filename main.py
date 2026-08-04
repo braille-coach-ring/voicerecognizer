@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from config import DEFAULT_CONFIG
+from config import DEFAULT_RECOGNITION_CONFIG
 from core.factory.recognizer_factory import RecognizerFactory
 from core.services.audio_pipeline import AudioPipeline
 from core.services.voice_recognizer import VoiceRecognizer
@@ -17,7 +17,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--model",
-        default=DEFAULT_CONFIG.model_type,
+        default=DEFAULT_RECOGNITION_CONFIG.model_type,
         choices=RecognizerFactory.available_strategies(),
         help="Recognition strategy to use.",
     )
@@ -31,7 +31,7 @@ def main() -> None:
     pipeline = AudioPipeline(recognizer)
 
     if args.audio is None:
-        pipeline.run()
+        pipeline.run_until_speech()
         return
 
     pipeline.run(args.audio)

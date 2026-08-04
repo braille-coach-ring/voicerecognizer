@@ -1,6 +1,11 @@
 import argparse
 from pathlib import Path
 
+from config import (
+    DEFAULT_AUDIO_CONFIG,
+    DEFAULT_PREPROCESS_CONFIG,
+    DEFAULT_RECOGNITION_CONFIG,
+)
 from dataset.hiragana_dataset import HiraganaDataset
 from recognizers.cnn_recognizer import CNNRecognizer
 
@@ -42,11 +47,21 @@ def evaluate(args: argparse.Namespace) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Evaluate the Hiragana CNN recognizer.")
-    parser.add_argument("--root-dir", type=Path, default=Path("processed_dataset"))
-    parser.add_argument("--model-path", type=Path, default=Path("weights/best_model.pth"))
-    parser.add_argument("--sample-rate", type=int, default=16000)
-    parser.add_argument("--n-mels", type=int, default=64)
+    parser = argparse.ArgumentParser(
+        description="Evaluate the Hiragana CNN recognizer."
+    )
+    parser.add_argument(
+        "--root-dir",
+        type=Path,
+        default=DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir,
+    )
+    parser.add_argument(
+        "--model-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.cnn_weight_path
+    )
+    parser.add_argument(
+        "--sample-rate", type=int, default=DEFAULT_AUDIO_CONFIG.sample_rate
+    )
+    parser.add_argument("--n-mels", type=int, default=DEFAULT_PREPROCESS_CONFIG.n_mels)
     return parser
 
 

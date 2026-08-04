@@ -3,6 +3,10 @@ from pathlib import Path
 
 import torch
 
+from config import (
+    DEFAULT_PREPROCESS_CONFIG,
+    DEFAULT_RECOGNITION_CONFIG,
+)
 from models.cnn.hiragana_cnn import HiraganaCNN
 
 
@@ -25,10 +29,18 @@ def export_torchscript(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Export the CNN model to TorchScript.")
-    parser.add_argument("--model-path", type=Path, default=Path("weights/best_model.pth"))
-    parser.add_argument("--output-path", type=Path, default=Path("weights/hiragana_cnn.pt"))
-    parser.add_argument("--num-classes", type=int, default=5)
-    parser.add_argument("--n-mels", type=int, default=64)
+    parser.add_argument(
+        "--model-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.cnn_weight_path
+    )
+    parser.add_argument(
+        "--output-path",
+        type=Path,
+        default=DEFAULT_RECOGNITION_CONFIG.torchscript_model_path,
+    )
+    parser.add_argument(
+        "--num-classes", type=int, default=len(DEFAULT_RECOGNITION_CONFIG.labels)
+    )
+    parser.add_argument("--n-mels", type=int, default=DEFAULT_PREPROCESS_CONFIG.n_mels)
     parser.add_argument("--time-steps", type=int, default=101)
     return parser
 

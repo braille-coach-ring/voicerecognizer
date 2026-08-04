@@ -3,16 +3,21 @@ import shutil
 
 import soundfile as sf
 
+from config import (
+    DEFAULT_AUDIO_CONFIG,
+    DEFAULT_PREPROCESS_CONFIG,
+    DEFAULT_RECOGNITION_CONFIG,
+)
 from preprocessing.audio_preprocessor import AudioPreprocessor
 
 
 class DatasetBuilder:
     def __init__(
         self,
-        labels: tuple[str, ...] = ("a", "i", "u", "e", "o"),
-        sample_rate: int = 16000,
-        target_length_seconds: float = 1.0,
-        top_db: int = 30,
+        labels: tuple[str, ...] = DEFAULT_RECOGNITION_CONFIG.labels,
+        sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
+        target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
+        top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,
     ):
         self.labels = labels
         self.preprocessor = AudioPreprocessor(
@@ -23,8 +28,8 @@ class DatasetBuilder:
 
     def merge_by_label(
         self,
-        source_root: str | Path = "dataset",
-        output_root: str | Path = "merged_dataset",
+        source_root: str | Path = DEFAULT_RECOGNITION_CONFIG.raw_dataset_dir,
+        output_root: str | Path = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir,
     ) -> None:
         source_root = Path(source_root)
         output_root = Path(output_root)
@@ -46,8 +51,8 @@ class DatasetBuilder:
 
     def preprocess_dataset(
         self,
-        input_root: str | Path = "merged_dataset",
-        output_root: str | Path = "processed_dataset",
+        input_root: str | Path = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir,
+        output_root: str | Path = DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir,
     ) -> None:
         input_root = Path(input_root)
         output_root = Path(output_root)
@@ -65,7 +70,11 @@ class DatasetBuilder:
 
             for wav_path in sorted(label_dir.glob("*.wav")):
                 waveform = self.preprocessor.preprocess_waveform(wav_path)
-                sf.write(output_dir / f"{file_number:03d}.wav", waveform, self.preprocessor.sample_rate)
+                sf.write(
+                    output_dir / f"{file_number:03d}.wav",
+                    waveform,
+                    self.preprocessor.sample_rate,
+                )
                 file_number += 1
 
     def _recreate_label_dirs(self, output_root: Path) -> None:
