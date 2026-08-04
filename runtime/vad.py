@@ -21,6 +21,7 @@ class VoiceActivityDetector:
             else cfg.vad_silence_threshold
         )
         self.min_speech_chunks = max(1, int(cfg.vad_min_speech_chunks))
+        self.min_active_ratio = min(1.0, max(0.0, float(cfg.vad_min_active_ratio)))
         self._speech_streak = 0
 
     def is_speech(self, audio: np.ndarray) -> bool:
@@ -32,8 +33,18 @@ class VoiceActivityDetector:
             logger.warning("入力された音声データが空です")
             self._speech_streak = 0
             return False
-        if np.max(np.abs(audio)) < self.silence_threshold:
+        abs_audio = np.abs(audio)
+        if float(np.max(abs_audio)) < self.silence_threshold:
             logger.info("入力された音声データの最大値が無音閾値未満です")
+            self._speech_streak = 0
+            return False
+        active_ratio = float(np.mean(abs_audio >= self.silence_threshold))
+        if active_ratio < self.min_active_ratio:
+            logger.info(
+                "閾値超えサンプル率が不足しています (%.4f < %.4f)",
+                active_ratio,
+                self.min_active_ratio,
+            )
             self._speech_streak = 0
             return False
         self._speech_streak += 1
