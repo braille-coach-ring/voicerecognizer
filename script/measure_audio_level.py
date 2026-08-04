@@ -5,6 +5,10 @@ import numpy as np
 import sounddevice as sd
 import soundfile as sf
 
+from pathlib import Path
+import sys
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
 from config import DEFAULT_AUDIO_CONFIG
 
 logger = logging.getLogger(__name__)
@@ -60,143 +64,133 @@ def main() -> None:
     sf.write(AUDIO_FILE, y, SR)
     logger.info("📁 録音ファイルを保存: %s", AUDIO_FILE)
 
-# ==========================
-# フレームごとの音量計算
-# ==========================
+    # ==========================
+    # フレームごとの音量計算
+    # ==========================
 
-print("=" * 60)
-print("フレーム別の音量レベル")
-print("=" * 60)
+    print("=" * 60)
+    print("フレーム別の音量レベル")
+    print("=" * 60)
 
-frame_volumes = []
-frame_peaks = []
-frame_dbs = []
+    frame_volumes = []
+    frame_peaks = []
+    frame_dbs = []
 
-for i in range(0, len(y), CHUNK_SIZE):
-    chunk = y[i : i + CHUNK_SIZE]
+    for i in range(0, len(y), CHUNK_SIZE):
+        chunk = y[i : i + CHUNK_SIZE]
 
-    if len(chunk) == 0:
-        continue
+        if len(chunk) == 0:
+            continue
 
-    # ピーク値（最大振幅）
-    peak = np.max(np.abs(chunk))
+        # ピーク値（最大振幅）
+        peak = np.max(np.abs(chunk))
 
-    # RMS（二乗平均平方根）
-    rms = np.sqrt(np.mean(chunk**2))
+        # RMS（二乗平均平方根）
+        rms = np.sqrt(np.mean(chunk**2))
 
-    # デシベル値（最大値を基準）
-    db = 20 * np.log10(rms + 1e-10)
+        # デシベル値（最大値を基準）
+        db = 20 * np.log10(rms + 1e-10)
 
-    frame_volumes.append(rms)
-    frame_peaks.append(peak)
-    frame_dbs.append(db)
+        frame_volumes.append(rms)
+        frame_peaks.append(peak)
+        frame_dbs.append(db)
 
-    time_sec = i / SR
+        time_sec = i / SR
 
-    print(f"[{time_sec:5.2f}s] RMS: {rms:.4f}  Peak: {peak:.4f}  dB: {db:7.2f}")
+        print(f"[{time_sec:5.2f}s] RMS: {rms:.4f}  Peak: {peak:.4f}  dB: {db:7.2f}")
 
-# ==========================
-# 統計情報
-# ==========================
+    # ==========================
+    # 統計情報
+    # ==========================
 
-print("\n" + "=" * 60)
-print("統計情報（全体）")
-print("=" * 60)
+    print("\n" + "=" * 60)
+    print("統計情報（全体）")
+    print("=" * 60)
 
-print(f"\n【RMS値（平均音量）】")
-print(f"  平均: {np.mean(frame_volumes):.4f}")
-print(f"  最大: {np.max(frame_volumes):.4f}")
-print(f"  最小: {np.min(frame_volumes):.4f}")
-print(f"  標準偏差: {np.std(frame_volumes):.4f}")
+    print(f"\n【RMS値（平均音量）】")
+    print(f"  平均: {np.mean(frame_volumes):.4f}")
+    print(f"  最大: {np.max(frame_volumes):.4f}")
+    print(f"  最小: {np.min(frame_volumes):.4f}")
+    print(f"  標準偏差: {np.std(frame_volumes):.4f}")
 
-print(f"\n【ピーク値（最大振幅）】")
-print(f"  平均: {np.mean(frame_peaks):.4f}")
-print(f"  最大: {np.max(frame_peaks):.4f}")
-print(f"  最小: {np.min(frame_peaks):.4f}")
+    print(f"\n【ピーク値（最大振幅）】")
+    print(f"  平均: {np.mean(frame_peaks):.4f}")
+    print(f"  最大: {np.max(frame_peaks):.4f}")
+    print(f"  最小: {np.min(frame_peaks):.4f}")
 
-print(f"\n【デシベル値】")
-print(f"  平均: {np.mean(frame_dbs):.2f} dB")
-print(f"  最大: {np.max(frame_dbs):.2f} dB")
-print(f"  最小: {np.min(frame_dbs):.2f} dB")
+    print(f"\n【デシベル値】")
+    print(f"  平均: {np.mean(frame_dbs):.2f} dB")
+    print(f"  最大: {np.max(frame_dbs):.2f} dB")
+    print(f"  最小: {np.min(frame_dbs):.2f} dB")
 
-# ==========================
-# 無音判定の推奨値
-# ==========================
+    # ==========================
+    # 無音判定の推奨値
+    # ==========================
 
-print("\n" + "=" * 60)
-print("推奨されるしきい値（TOP_DB設定値）")
-print("=" * 60)
+    print("\n" + "=" * 60)
+    print("推奨されるしきい値（TOP_DB設定値）")
+    print("=" * 60)
 
-# 最小RMSの1.5倍を目安
-silence_threshold_rms = np.min(frame_volumes) * 1.5
-# デシベル値に変換
-silence_threshold_db = 20 * np.log10(silence_threshold_rms + 1e-10)
+    # 最小RMSの1.5倍を目安
+    silence_threshold_rms = np.min(frame_volumes) * 1.5
+    # デシベル値に変換
+    silence_threshold_db = 20 * np.log10(silence_threshold_rms + 1e-10)
 
-print(f"\n無音と判定する基準:")
-print(f"  現在の最小RMS値: {np.min(frame_volumes):.4f}")
-print(f"  推奨RMS値: {silence_threshold_rms:.4f}")
-print(f"  推奨TOP_DB値: {silence_threshold_db:.2f} dB")
+    print(f"\n無音と判定する基準:")
+    print(f"  現在の最小RMS値: {np.min(frame_volumes):.4f}")
+    print(f"  推奨RMS値: {silence_threshold_rms:.4f}")
+    print(f"  推奨TOP_DB値: {silence_threshold_db:.2f} dB")
 
-print(f"\n（現在のpreprocess.pyでは TOP_DB = 20 に設定されています）")
+    # ==========================
+    # グラフ描画
+    # ==========================
 
-# ==========================
-# グラフ描画
-# ==========================
+    try:
+        import matplotlib.pyplot as plt
 
-try:
-    import matplotlib.pyplot as plt
+        fig, axes = plt.subplots(3, 1, figsize=(12, 8))
 
-    fig, axes = plt.subplots(3, 1, figsize=(12, 8))
+        time_axis = np.arange(len(frame_volumes)) * (CHUNK_SIZE / SR)
 
-    time_axis = np.arange(len(frame_volumes)) * (CHUNK_SIZE / SR)
+        axes[0].plot(time_axis, frame_volumes, marker="o", label="RMS")
+        axes[0].axhline(y=np.mean(frame_volumes), color="r", linestyle="--", label="平均")
+        axes[0].set_ylabel("RMS値")
+        axes[0].set_title("フレーム別RMS値（平均音量）")
+        axes[0].legend()
+        axes[0].grid(True)
 
-    # RMS値
-    axes[0].plot(time_axis, frame_volumes, marker="o", label="RMS")
-    axes[0].axhline(y=np.mean(frame_volumes), color="r", linestyle="--", label="平均")
-    axes[0].set_ylabel("RMS値")
-    axes[0].set_title("フレーム別RMS値（平均音量）")
-    axes[0].legend()
-    axes[0].grid(True)
+        axes[1].plot(time_axis, frame_peaks, marker="s", color="orange", label="Peak")
+        axes[1].axhline(y=np.mean(frame_peaks), color="r", linestyle="--", label="平均")
+        axes[1].set_ylabel("ピーク値")
+        axes[1].set_title("フレーム別ピーク値（最大振幅）")
+        axes[1].legend()
+        axes[1].grid(True)
 
-    # ピーク値
-    axes[1].plot(time_axis, frame_peaks, marker="s", color="orange", label="Peak")
-    axes[1].axhline(y=np.mean(frame_peaks), color="r", linestyle="--", label="平均")
-    axes[1].set_ylabel("ピーク値")
-    axes[1].set_title("フレーム別ピーク値（最大振幅）")
-    axes[1].legend()
-    axes[1].grid(True)
+        axes[2].plot(time_axis, frame_dbs, marker="^", color="green", label="dB")
+        axes[2].axhline(y=np.mean(frame_dbs), color="r", linestyle="--", label="平均")
+        axes[2].set_xlabel("時間（秒）")
+        axes[2].set_ylabel("dB値")
+        axes[2].set_title("フレーム別デシベル値")
+        axes[2].legend()
+        axes[2].grid(True)
 
-    # デシベル値
-    axes[2].plot(time_axis, frame_dbs, marker="^", color="green", label="dB")
-    axes[2].axhline(y=np.mean(frame_dbs), color="r", linestyle="--", label="平均")
-    axes[2].set_xlabel("時間（秒）")
-    axes[2].set_ylabel("dB値")
-    axes[2].set_title("フレーム別デシベル値")
-    axes[2].legend()
-    axes[2].grid(True)
+        plt.tight_layout()
+        plt.savefig("Docs/charts/audio_level_measurement.png")
+        logger.info("グラフを 'Docs/charts/audio_level_measurement.png' に保存しました")
+        plt.close()
 
-    plt.tight_layout()
-    plt.savefig("Docs/charts/audio_level_measurement.png")
-    logger.info("グラフを 'Docs/charts/audio_level_measurement.png' に保存しました")
-    plt.close()
+    except ImportError:
+        logger.warning("matplotlib がインストールされていないため、グラフ生成をスキップしました")
 
-except ImportError:
-    logger.warning("matplotlib がインストールされていないため、グラフ生成をスキップしました")
+    # ==========================
+    # 使用例
+    # ==========================
 
-
-if __name__ == "__main__":
-    main()
-
-
-# ==========================
-# 使用例
-# ==========================
-
-print("\n" + "=" * 60)
-print("結果の使い方")
-print("=" * 60)
-print(
-    """
+    print("\n" + "=" * 60)
+    print("結果の使い方")
+    print("=" * 60)
+    print(
+        """
 【保存されたファイル】
   • measured_audio.wav
     └─ 実際に録音した音声ファイル
@@ -219,4 +213,8 @@ TOP_DB が大きいほど、より少ない部分だけ除去します
 
 あなたのマイク・発声レベルに合わせて調整してください
 """.format(silence_threshold_db)
-)
+    )
+
+
+if __name__ == "__main__":
+    main()
