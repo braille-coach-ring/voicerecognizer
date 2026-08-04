@@ -22,7 +22,9 @@ class VoiceActivityDetector:
         )
         self.min_speech_chunks = max(1, int(cfg.vad_min_speech_chunks))
         self.min_active_ratio = min(1.0, max(0.0, float(cfg.vad_min_active_ratio)))
+        self.startup_ignore_chunks = max(0, int(cfg.vad_startup_ignore_chunks))
         self._speech_streak = 0
+        self._processed_chunks = 0
 
     def is_speech(self, audio: np.ndarray) -> bool:
         if audio is None:
@@ -31,6 +33,15 @@ class VoiceActivityDetector:
             return False
         if audio.size == 0:
             logger.warning("入力された音声データが空です")
+            self._speech_streak = 0
+            return False
+        self._processed_chunks += 1
+        if self._processed_chunks <= self.startup_ignore_chunks:
+            logger.info(
+                "VADウォームアップ中のため判定をスキップします (%d/%d)",
+                self._processed_chunks,
+                self.startup_ignore_chunks,
+            )
             self._speech_streak = 0
             return False
         abs_audio = np.abs(audio)

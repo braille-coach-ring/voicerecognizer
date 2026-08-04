@@ -24,6 +24,7 @@ class PreprocessConfig:
     vad_silence_threshold: float = 0.02
     vad_min_speech_chunks: int = 2
     vad_min_active_ratio: float = 0.02
+    vad_startup_ignore_chunks: int = 3
     dynamic_threshold_enabled: bool = False
     min_top_db: float = 15.0
     max_top_db: float = 40.0
