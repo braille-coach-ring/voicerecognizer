@@ -1,4 +1,5 @@
 import argparse
+import logging
 from pathlib import Path
 
 import torch
@@ -9,6 +10,8 @@ from config import (
 )
 from models.cnn.hiragana_cnn import HiraganaCNN
 
+logger = logging.getLogger(__name__)
+
 
 def export_torchscript(
     model_path: Path,
@@ -17,6 +20,7 @@ def export_torchscript(
     n_mels: int,
     time_steps: int,
 ) -> None:
+    logger.info("TorchScript モデルへの書き出しを開始します: %s", model_path)
     model = HiraganaCNN(num_classes=num_classes)
     model.load_state_dict(torch.load(model_path, map_location="cpu"))
     model.eval()
@@ -25,6 +29,7 @@ def export_torchscript(
     traced = torch.jit.trace(model, example)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     traced.save(output_path)
+    logger.info("TorchScript モデルを保存しました: %s", output_path)
 
 
 def build_parser() -> argparse.ArgumentParser:

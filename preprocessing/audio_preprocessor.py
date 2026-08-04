@@ -3,6 +3,8 @@ from typing import Any
 
 import librosa
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 from config import (
     DEFAULT_AUDIO_CONFIG,
@@ -30,12 +32,15 @@ class AudioPreprocessor:
             threshold_calculator
             or FixedSilenceThresholdCalculator(top_db=float(top_db))
         )
+        logger.info("AudioPreprocessorの初期化完了")
 
     def load(self, audio: str | Path | np.ndarray) -> np.ndarray:
         if isinstance(audio, np.ndarray):
+            logger.info("AudioPreprocessor is instance")
             return audio.astype(np.float32).reshape(-1)
 
         waveform, _ = librosa.load(Path(audio), sr=self.sample_rate, mono=True)
+        logger.info("AudioPreprocessor is loaded from file")
         return waveform.astype(np.float32)
 
     def preprocess_waveform(self, audio: Any) -> np.ndarray:
@@ -44,16 +49,19 @@ class AudioPreprocessor:
         current_top_db = self.threshold_calculator.get_silence_threshold()
         waveform, _ = librosa.effects.trim(waveform, top_db=current_top_db)
         waveform = self._normalize_volume(waveform)
+        logger.info("AudioPreprocessor is normalized volume")
         return self._fit_length(waveform)
 
     def _normalize_volume(self, waveform: np.ndarray) -> np.ndarray:
         peak = np.max(np.abs(waveform)) if waveform.size else 0
         if peak > 0:
+            logger.info("AudioPreprocessor is normalized volume")
             return waveform / peak
         return waveform
 
     def _fit_length(self, waveform: np.ndarray) -> np.ndarray:
         target_samples = int(self.target_length_seconds * self.sample_rate)
+        logger.info("AudioPreprocessor._fit_length: %s", target_samples)
         if len(waveform) > target_samples:
             return waveform[:target_samples]
         return np.pad(waveform, (0, target_samples - len(waveform)))

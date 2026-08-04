@@ -1,9 +1,13 @@
+import logging
+from time import sleep
+
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
-from time import sleep
 
 from config import DEFAULT_AUDIO_CONFIG
+
+logger = logging.getLogger(__name__)
 
 # ==========================
 # 設定（config.py から参照）
@@ -16,44 +20,45 @@ CHUNK_SIZE = int(
 )  # フレームサイズ
 AUDIO_FILE = "measured_audio.wav"  # 保存先ファイル（毎回上書き）
 
-# ==========================
-# カウントダウン
-# ==========================
 
-print("マイク音量レベルを測定します")
-print("3秒間の音声を記録します\n")
+def main() -> None:
+    # ==========================
+    # カウントダウン
+    # ==========================
 
-print("3秒後に計測開始...")
-sleep(1)
-print("3")
-sleep(1)
-print("2")
-sleep(1)
-print("1")
-sleep(1)
+    print("マイク音量レベルを測定します")
+    print("3秒間の音声を記録します\n")
 
-print("発声してください（自然な会話レベルで）\n")
+    print("3秒後に計測開始...")
+    sleep(1)
+    print("3")
+    sleep(1)
+    print("2")
+    sleep(1)
+    print("1")
+    sleep(1)
 
-# ==========================
-# 録音
-# ==========================
+    print("発声してください（自然な会話レベルで）\n")
 
-audio = sd.rec(int(RECORD_SECONDS * SR), samplerate=SR, channels=1, dtype="float32")
+    # ==========================
+    # 録音
+    # ==========================
 
-sd.wait()
+    audio = sd.rec(int(RECORD_SECONDS * SR), samplerate=SR, channels=1, dtype="float32")
 
-print("計測完了\n")
+    sd.wait()
 
-# (16000*3, 1) → (16000*3,)
-y = audio.flatten()
+    logger.info("マイク計測完了")
 
-# ==========================
-# 録音ファイルを保存
-# ==========================
+    # (16000*3, 1) → (16000*3,)
+    y = audio.flatten()
 
-sf.write(AUDIO_FILE, y, SR)
-print(f"📁 録音ファイルを保存: {AUDIO_FILE}")
-print(f"   （毎回実行時に上書きされます）\n")
+    # ==========================
+    # 録音ファイルを保存
+    # ==========================
+
+    sf.write(AUDIO_FILE, y, SR)
+    logger.info("📁 録音ファイルを保存: %s", AUDIO_FILE)
 
 # ==========================
 # フレームごとの音量計算
@@ -172,13 +177,16 @@ try:
 
     plt.tight_layout()
     plt.savefig("Docs/charts/audio_level_measurement.png")
-    print("\n" + "=" * 60)
-    print("グラフを 'audio_level_measurement.png' に保存しました")
-    print("=" * 60)
+    logger.info("グラフを 'Docs/charts/audio_level_measurement.png' に保存しました")
     plt.close()
 
 except ImportError:
-    print("\n※ matplotlib がインストールされていないため、グラフは生成されません")
+    logger.warning("matplotlib がインストールされていないため、グラフ生成をスキップしました")
+
+
+if __name__ == "__main__":
+    main()
+
 
 # ==========================
 # 使用例

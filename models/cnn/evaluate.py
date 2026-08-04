@@ -1,4 +1,5 @@
 import argparse
+import logging
 from pathlib import Path
 
 from config import (
@@ -8,6 +9,8 @@ from config import (
 )
 from dataset.hiragana_dataset import HiraganaDataset
 from recognizers.cnn_recognizer import CNNRecognizer
+
+logger = logging.getLogger(__name__)
 
 
 def evaluate(args: argparse.Namespace) -> None:
@@ -37,13 +40,16 @@ def evaluate(args: argparse.Namespace) -> None:
             if predicted_label == label:
                 correct += 1
                 class_correct[label] += 1
-            print(f"{label}/{wav_path.name}: predicted={predicted_label}")
+            logger.debug("%s/%s: predicted=%s", label, wav_path.name, predicted_label)
 
-    print()
+    logger.info("--- 評価結果（クラス別） ---")
     for label in dataset.labels:
-        acc = class_correct[label] / class_total[label] * 100
-        print(f"{label}: {class_correct[label]}/{class_total[label]} ({acc:.2f}%)")
-    print(f"Total: {correct}/{total} ({correct / total * 100:.2f}%)")
+        if class_total[label] > 0:
+            acc = class_correct[label] / class_total[label] * 100
+            logger.info("%s: %d/%d (%.2f%%)", label, class_correct[label], class_total[label], acc)
+
+    overall_acc = (correct / total * 100) if total > 0 else 0.0
+    logger.info("総合精度 Total: %d/%d (%.2f%%)", correct, total, overall_acc)
 
 
 def build_parser() -> argparse.ArgumentParser:

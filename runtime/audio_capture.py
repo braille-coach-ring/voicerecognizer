@@ -4,6 +4,9 @@ import numpy as np
 import sounddevice as sd
 from config import AudioConfig, DEFAULT_AUDIO_CONFIG
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class AudioCapture:
     """マイクデバイスを常時開きっぱなしにし、最新の音声波形をリアルタイムにバッファリングするクラス"""
@@ -56,6 +59,7 @@ class AudioCapture:
                 blocksize=int(self.sample_rate * self.blocksize_seconds),
             )
             self._stream.start()
+            logger.info("マイクストリームを開始しました")
 
     def stop(self) -> None:
         """マイクストリームを安全に停止・クローズする"""
@@ -63,6 +67,7 @@ class AudioCapture:
             self._stream.stop()
             self._stream.close()
             self._stream = None
+            logger.info("マイクストリームを停止しました")
 
     def capture_once(self, duration: float | None = None) -> np.ndarray:
         """常時録音されているバッファから、直近の音声波形（最新データ）を即座に取得する"""

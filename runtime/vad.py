@@ -4,6 +4,9 @@ import numpy as np
 
 from config import DEFAULT_PREPROCESS_CONFIG, PreprocessConfig
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class VoiceActivityDetector:
     def __init__(
@@ -19,11 +22,16 @@ class VoiceActivityDetector:
         )
 
     def is_speech(self, audio: np.ndarray) -> bool:
-        return bool(
-            audio is not None
-            and audio.size
-            and np.max(np.abs(audio)) >= self.silence_threshold
-        )
+        if audio is None:
+            logger.warning("入力された音声データがNoneです")
+            return False
+        if audio.size == 0:
+            logger.warning("入力された音声データが空です")
+            return False
+        if np.max(np.abs(audio)) < self.silence_threshold:
+            logger.info("入力された音声データの最大値が無音閾値未満です")
+            return False
+        return True
 
     def run(self, input_queue: Queue, output_queue: Queue, stop_event: Event) -> None:
         while not stop_event.is_set():

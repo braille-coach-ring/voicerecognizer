@@ -1,5 +1,7 @@
 from pathlib import Path
 import shutil
+import logging
+logger = logging.getLogger(__name__)
 
 import soundfile as sf
 
@@ -25,6 +27,7 @@ class DatasetBuilder:
             target_length_seconds=target_length_seconds,
             top_db=top_db,
         )
+        logger.info("DatasetBuilderの初期化完了")
 
     def merge_by_label(
         self,
@@ -42,12 +45,14 @@ class DatasetBuilder:
             for person in sorted(source_root.iterdir()):
                 input_folder = person / label
                 if not input_folder.is_dir():
+                    logger.warning(f"'{input_folder}' はディレクトリではありません")
                     continue
 
                 for wav_path in sorted(input_folder.glob("*.wav")):
                     destination = output_folder / f"{count:03d}.wav"
                     shutil.copy2(wav_path, destination)
                     count += 1
+            logger.info(f"{label}の音声データを{output_folder}にコピーしました")
 
     def preprocess_dataset(
         self,
@@ -62,6 +67,7 @@ class DatasetBuilder:
 
         for label_dir in sorted(input_root.iterdir()):
             if not label_dir.is_dir():
+                logger.warning(f"'{label_dir}' はディレクトリではありません")
                 continue
 
             output_dir = output_root / label_dir.name
@@ -76,6 +82,7 @@ class DatasetBuilder:
                     self.preprocessor.sample_rate,
                 )
                 file_number += 1
+            logger.info(f"{label_dir.name}の音声データを{output_dir}にコピーしました")
 
     def _recreate_label_dirs(self, output_root: Path) -> None:
         output_root.mkdir(exist_ok=True)

@@ -5,6 +5,9 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
+import logging
+logger = logging.getLogger(__name__)
+
 from config import (
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
@@ -31,6 +34,7 @@ class HiraganaDataset(Dataset):
         self.labels = sorted(path.name for path in self.root.iterdir() if path.is_dir())
         self.label_to_idx = {label: idx for idx, label in enumerate(self.labels)}
         self.data = self._collect_files()
+        logger.info(f"HiraganaDatasetのロード完了: 全 %d件 (クラス数 %d)", len(self.data), len(self.labels))
 
     def __len__(self) -> int:
         return len(self.data)

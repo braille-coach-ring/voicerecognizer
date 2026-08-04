@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 from config import DEFAULT_PREPROCESS_CONFIG, PreprocessConfig
 
@@ -23,6 +25,7 @@ class FixedSilenceThresholdCalculator(AbstractSilenceThresholdCalculator):
 
     def __init__(self, top_db: float = 30.0):
         self._top_db = float(top_db)
+        logger.info(f"固定値モード: top_db = {self._top_db}")
 
     def update(self, audio_chunk: np.ndarray) -> None:
         # 固定値モードのため更新は不要
@@ -42,6 +45,7 @@ class AdaptiveSilenceThresholdCalculator(AbstractSilenceThresholdCalculator):
         self._alpha: float = cfg.noise_update_rate
         self._min_top_db: float = float(cfg.min_top_db)
         self._max_top_db: float = float(cfg.max_top_db)
+        logger.info(f"適応値モード: ノイズ床の初期値: {self._estimated_noise_db} dB, ノイズアップデートレート: {self.alpha} , デシベル下限値上限値: {self._min_top_db}-{self._max_top_db}")
 
     def update(self, audio_chunk: np.ndarray) -> None:
         if audio_chunk is None or audio_chunk.size == 0:
@@ -64,6 +68,8 @@ class AdaptiveSilenceThresholdCalculator(AbstractSilenceThresholdCalculator):
         self._current_top_db = float(
             np.clip(calculated_top_db, self._min_top_db, self._max_top_db)
         )
+
+        logger.info(f"現在のノイズ床: {self._estimated_noise_db} dB, 現在の適応閾値 (top_db): {self._current_top_db:.2f} dB")
 
     def get_silence_threshold(self) -> float:
         return self._current_top_db
