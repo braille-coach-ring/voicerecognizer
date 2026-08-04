@@ -6,6 +6,9 @@ import soundfile as sf
 
 from config import DEFAULT_AUDIO_CONFIG, DEFAULT_RECOGNITION_CONFIG
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class OutputWorker:
     def __init__(
@@ -40,15 +43,33 @@ class OutputWorker:
         timestamp,
         sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
     ) -> None:
-        self.save_dir.mkdir(parents=True, exist_ok=True)
+        if self.save_dir is None:
+            logger.warning("保存先ディレクトリが指定されていません。保存をスキップします。")
+            return
+
+        try:
+            self.save_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            logger.error("保存先ディレクトリの作成に失敗しました: %s", self.save_dir, exc_info=True)
+            return
+
         time_str = str(timestamp).replace(".", "_")
 
         # 1. 認識テキストログの保存
         log_file = self.save_dir / "predicted_text.txt"
-        with open(log_file, "a", encoding="utf-8") as f:
-            f.write(f"{time_str},{predicted_text}\n")
+        try:
+            with open(log_file, "a", encoding="utf-8") as f:
+                f.write(f"{time_str},{predicted_text}\n")
+            logger.info("テキストログを保存しました: %s", log_file.name)
+        except Exception:
+            logger.error("テキストログファイルの書き込みに失敗しました: %s", log_file, exc_info=True)
 
         # 2. 音声波形（.wav）の保存
         if audio_data is not None and len(audio_data) > 0:
             wav_file = self.save_dir / f"{time_str}_{predicted_text}.wav"
-            sf.write(wav_file, audio_data, sample_rate)
+            try:
+                sf.write(wav_file, audio_data, sample_rate)
+                logger.info("音声波形ファイルを保存しました: %s", wav_file.name)
+            except Exception:
+                logger.error("音声波形ファイル(.wav)の保存に失敗しました: %s", wav_file, exc_info=True)
+

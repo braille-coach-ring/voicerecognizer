@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Literal
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -27,10 +28,13 @@ class PreprocessConfig:
     noise_update_rate: float = 0.005
 
 
+RecognizerType = Literal["cnn", "wav2vec2", "whisper"]
+
+
 @dataclass(frozen=True)
 class RecognitionConfig:
-    model_type: str = "cnn"
     sample_rate: int = 16000
+    model_type: RecognizerType = "cnn"
     target_length_seconds: float = 1.0
     top_db: float = 30.0
     n_mels: int = 64
@@ -47,6 +51,7 @@ class RecognitionConfig:
     processed_dataset_dir: Path = PROJECT_ROOT / "processed_dataset"
     loss_plot_path: Path = PROJECT_ROOT / "loss.png"
     accuracy_plot_path: Path = PROJECT_ROOT / "accuracy.png"
+    log_path: Path = PROJECT_ROOT / "log"
 
 
 DEFAULT_AUDIO_CONFIG = AudioConfig()
