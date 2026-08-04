@@ -29,7 +29,7 @@ class VoiceActivityDetector:
             logger.warning("入力された音声データが空です")
             return False
         if np.max(np.abs(audio)) < self.silence_threshold:
-            logger.warning("入力された音声データの最大値が無音閾値未満です")
+            logger.info("入力された音声データの最大値が無音閾値未満です")
             return False
         return True
 

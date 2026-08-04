@@ -2,6 +2,7 @@ import argparse
 import random
 from pathlib import Path
 
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -12,6 +13,8 @@ from tqdm import tqdm
 
 from dataset.hiragana_dataset import HiraganaDataset
 from models.cnn.hiragana_cnn import HiraganaCNN
+
+logger = logging.getLogger(__name__)
 
 
 def fix_seed(seed: int) -> None:
@@ -116,9 +119,8 @@ def train(args: argparse.Namespace) -> None:
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
-    print("Device:", device)
-    print("Train      :", len(train_dataset))
-    print("Validation :", len(val_dataset))
+    logger.info("Device: %s", device)
+    logger.info("Train: %d, Validation: %d", len(train_dataset), len(val_dataset))
 
     model = HiraganaCNN(num_classes=len(dataset.labels)).to(device)
     criterion = nn.CrossEntropyLoss()
@@ -146,24 +148,28 @@ def train(args: argparse.Namespace) -> None:
         history["train_acc"].append(train_acc)
         history["val_acc"].append(val_acc)
 
-        print()
-        print(f"Train Loss : {train_loss:.4f}")
-        print(f"Train Acc  : {train_acc:.4f}")
-        print(f"Val Loss   : {val_loss:.4f}")
-        print(f"Val Acc    : {val_acc:.4f}")
+        logger.info(
+            "Epoch %d/%d - Train Loss: %.4f, Train Acc: %.4f | Val Loss: %.4f, Val Acc: %.4f",
+            epoch + 1,
+            args.epochs,
+            train_loss,
+            train_acc,
+            val_loss,
+            val_acc,
+        )
 
         if val_acc > best_acc:
             best_acc = val_acc
             torch.save(model.state_dict(), args.best_model_path)
-            print("Best model saved.")
+            logger.info("Best model saved: %s (Val Acc: %.4f)", args.best_model_path, best_acc)
 
         if val_acc >= args.target_acc:
-            print(f"Target validation accuracy reached: {args.target_acc:.2%}")
+            logger.info("Target validation accuracy reached: %.2f%%", args.target_acc * 100)
             break
 
     torch.save(model.state_dict(), args.last_model_path)
     save_plots(history, args.loss_plot_path, args.accuracy_plot_path)
-    print("Training finished.")
+    logger.info("Training finished. Last model saved to %s", args.last_model_path)
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -4,6 +4,8 @@ from typing import Any
 import librosa
 import numpy as np
 import torch
+import logging
+logger = logging.getLogger(__name__)
 
 from config import (
     DEFAULT_AUDIO_CONFIG,
@@ -46,17 +48,22 @@ class CNNRecognizer(RecognitionStrategy):
         self.n_fft = n_fft
         self.hop_length = hop_length
         self.model = self._load_model()
+        logger.info("CNNレコグナイザーの初期化完了")
 
     def recognize(self, audio: Any) -> str:
         waveform = self._preprocess(audio)
         mel_tensor = self._create_mel(waveform)
         probabilities = self._predict(mel_tensor)
+        logger.info(f"推論結果: {probabilities}")
         return self._postprocess(probabilities)
 
     def _load_model(self) -> HiraganaCNN:
-        model = HiraganaCNN(num_classes=len(self.labels))
-        state_dict = torch.load(self.model_path, map_location=self.device)
-        model.load_state_dict(state_dict)
+        try:
+            model = HiraganaCNN(num_classes=len(self.labels))
+            state_dict = torch.load(self.model_path, map_location=self.device)
+            model.load_state_dict(state_dict)
+        except Exception as e:
+            logger.error(e)
         model.to(self.device)
         model.eval()
         return model

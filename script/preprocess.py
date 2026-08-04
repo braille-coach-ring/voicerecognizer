@@ -8,26 +8,22 @@ if str(PROJECT_ROOT) not in sys.path:
 from config import DEFAULT_RECOGNITION_CONFIG
 from preprocessing.dataset_builder import DatasetBuilder
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def main() -> None:
-    print("=" * 40)
-    print("音声データ前処理")
-    print("=" * 40)
-
     input_dir = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir
     output_dir = DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir
 
     if not input_dir.exists():
-        print(f"\n{input_dir} は存在しないのでスキップ")
+        logger.warning(f"\n{input_dir} は存在しないのでスキップ")
         return
 
     builder = DatasetBuilder()
     builder.preprocess_dataset(input_root=input_dir, output_root=output_dir)
 
-    print()
-    print("=" * 40)
-    print("前処理完了")
-    print("=" * 40)
+    logger.info("前処理完了")
 
 
 if __name__ == "__main__":
