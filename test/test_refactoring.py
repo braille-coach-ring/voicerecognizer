@@ -57,7 +57,7 @@ class MockResultPresenter(ResultPresenter):
         print(f"✓ 結果表示: {predicted_label}")
 
 
-def test_default_config():
+def test_DEFAULT_RECOGNITION_CONFIG():
     """テスト: DefaultConfig"""
     print("\n" + "=" * 60)
     print("テスト1: DefaultConfig")
@@ -217,7 +217,7 @@ def run_all_tests():
     print("=" * 60)
 
     tests = [
-        test_default_config,
+        test_DEFAULT_RECOGNITION_CONFIG,
         test_audio_preprocessor,
         test_mel_spectrogram_converter,
         test_model_loader,

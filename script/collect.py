@@ -5,20 +5,22 @@ import numpy as np
 import subprocess
 import time
 
+from config import DEFAULT_AUDIO_CONFIG, DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG
+
 # ==========================
-# 設定
+# 設定（config.py から集約）
 # ==========================
 
-SAMPLE_RATE = 16000
-RECORD_SECONDS = 1.0
+SAMPLE_RATE = DEFAULT_AUDIO_CONFIG.sample_rate
+RECORD_SECONDS = DEFAULT_AUDIO_CONFIG.window_seconds
 REPEAT = 10
 
-LABELS = ["a", "i", "u", "e", "o"]
+LABELS = list(DEFAULT_RECOGNITION_CONFIG.labels)
 
 ROOT = Path("dataset")
 
 # 無音判定
-SILENCE_THRESHOLD = 0.02
+SILENCE_THRESHOLD = DEFAULT_PREPROCESS_CONFIG.vad_silence_threshold
 
 # ==========================
 

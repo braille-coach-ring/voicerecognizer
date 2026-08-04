@@ -1,4 +1,4 @@
-from config import DEFAULT_CONFIG, RecognitionConfig
+from config import DEFAULT_RECOGNITION_CONFIG, RecognitionConfig
 from core.interfaces import RecognitionStrategy
 from recognizers.cnn_recognizer import CNNRecognizer
 from recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
@@ -13,7 +13,7 @@ class RecognizerFactory:
     @staticmethod
     def create(
         recognizer_type: str,
-        config: RecognitionConfig = DEFAULT_CONFIG,
+        config: RecognitionConfig = DEFAULT_RECOGNITION_CONFIG,
     ) -> RecognitionStrategy:
         normalized_type = recognizer_type.lower()
 

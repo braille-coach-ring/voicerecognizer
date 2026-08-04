@@ -2,6 +2,7 @@ from pathlib import Path
 import librosa
 import soundfile as sf
 import numpy as np
+from config import DEFAULT_AUDIO_CONFIG
 
 # ==========================
 # 設定
@@ -11,9 +12,9 @@ INPUT_DIR = Path("merged_dataset")
 
 OUTPUT_DIR = Path("processed_dataset")
 
-SR = 16000
-TARGET_LENGTH = 1.0
-TOP_DB = 30
+SR = DEFAULT_AUDIO_CONFIG.sample_rate
+CHUNK_SECONDS = DEFAULT_AUDIO_CONFIG.chunk_seconds
+TOP_DB = DEFAULT_AUDIO_CONFIG.top_db
 
 # ==========================
 
@@ -65,7 +66,7 @@ for label_dir in sorted(INPUT_DIR.iterdir()):
             y = y / np.max(np.abs(y))
 
         # 長さ統一
-        target_samples = int(TARGET_LENGTH * SR)
+        target_samples = int(CHUNK_SECONDS * SR)
 
         if len(y) > target_samples:
             y = y[:target_samples]

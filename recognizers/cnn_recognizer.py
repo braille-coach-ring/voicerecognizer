@@ -8,6 +8,7 @@ import torch
 from core.interfaces import RecognitionStrategy
 from models.cnn.hiragana_cnn import HiraganaCNN
 from preprocessing.audio_preprocessor import AudioPreprocessor
+from preprocessing.threshold_calculator import AbstractSilenceThresholdCalculator
 
 
 class CNNRecognizer(RecognitionStrategy):
@@ -20,6 +21,7 @@ class CNNRecognizer(RecognitionStrategy):
         top_db: int = 30,
         n_mels: int = 64,
         device: torch.device | None = None,
+        threshold_calculator: AbstractSilenceThresholdCalculator | None = None,
     ):
         self.model_path = Path(model_path)
         self.labels = tuple(labels)
@@ -28,6 +30,7 @@ class CNNRecognizer(RecognitionStrategy):
             sample_rate=sample_rate,
             target_length_seconds=target_length_seconds,
             top_db=top_db,
+            threshold_calculator=threshold_calculator,
         )
         self.sample_rate = sample_rate
         self.n_mels = n_mels
