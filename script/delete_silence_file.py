@@ -1,7 +1,11 @@
 import logging
+import sys
 from pathlib import Path
+
 import librosa
 import numpy as np
+
+sys.path.append(str(Path(__file__).parent.parent))
 
 from config import (
     DEFAULT_AUDIO_CONFIG,
@@ -50,4 +54,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

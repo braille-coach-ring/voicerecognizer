@@ -2,10 +2,11 @@ import argparse
 import logging
 from pathlib import Path
 
-from config import DEFAULT_RECOGNITION_CONFIG
+from config import DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG
 from core.factory.recognizer_factory import RecognizerFactory
 from core.services.audio_pipeline import AudioPipeline
 from core.services.voice_recognizer import VoiceRecognizer
+from runtime.vad import VoiceActivityDetector
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,6 +34,18 @@ def build_parser() -> argparse.ArgumentParser:
         choices=RecognizerFactory.available_strategies(),
         help="Recognition strategy to use.",
     )
+    parser.add_argument(
+        "--silence-threshold",
+        type=float,
+        default=DEFAULT_PREPROCESS_CONFIG.vad_silence_threshold,
+        help="Peak volume threshold for VAD (default: %(default)s).",
+    )
+    parser.add_argument(
+        "--rms-threshold",
+        type=float,
+        default=DEFAULT_PREPROCESS_CONFIG.vad_rms_threshold,
+        help="RMS volume threshold for VAD (default: %(default)s).",
+    )
     return parser
 
 
@@ -41,10 +54,15 @@ def main() -> None:
 
     logger.info("Voice Recognizer を起動しました。")
     logger.info("使用モデル: %s", args.model)
+    logger.info("VAD設定: Peak閾値=%.4f / RMS閾値=%.4f", args.silence_threshold, args.rms_threshold)
 
     strategy = RecognizerFactory.create(args.model)
     recognizer = VoiceRecognizer(strategy)
-    pipeline = AudioPipeline(recognizer)
+    vad = VoiceActivityDetector(
+        silence_threshold=args.silence_threshold,
+        rms_threshold=args.rms_threshold,
+    )
+    pipeline = AudioPipeline(recognizer, vad=vad)
     logger.info("パイプラインの構築が完了しました。")
 
     if args.audio is None:

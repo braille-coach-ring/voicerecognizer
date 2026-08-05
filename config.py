@@ -20,11 +20,12 @@ class PreprocessConfig:
     n_mels: int = 64
     n_fft: int = 400
     hop_length: int = 160
-    top_db: float = 68.7
-    vad_silence_threshold: float = 0.005
+    top_db: float = 74.9
+    vad_silence_threshold: float = 0.03
+    vad_rms_threshold: float = 0.008
     dynamic_threshold_enabled: bool = False
-    min_top_db: float = 60.7
-    max_top_db: float = 70.7
+    min_top_db: float = 74.9
+    max_top_db: float = 80.0
     noise_update_rate: float = 0.005
 
 

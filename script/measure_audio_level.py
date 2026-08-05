@@ -1,10 +1,14 @@
 import logging
 from pathlib import Path
+import sys
 from time import sleep
 
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
+
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 from config import DEFAULT_AUDIO_CONFIG, DEFAULT_PREPROCESS_CONFIG
 
