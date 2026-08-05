@@ -11,6 +11,11 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
 
+from config import (
+    DEFAULT_AUDIO_CONFIG,
+    DEFAULT_PREPROCESS_CONFIG,
+    DEFAULT_RECOGNITION_CONFIG,
+)
 from dataset.hiragana_dataset import HiraganaDataset
 from models.cnn.hiragana_cnn import HiraganaCNN
 
@@ -173,11 +178,16 @@ def train(args: argparse.Namespace) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    default_root = (
+        DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir
+        if DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir.exists()
+        else DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir
+    )
     parser = argparse.ArgumentParser(description="Train the Hiragana CNN recognizer.")
     parser.add_argument(
         "--root-dir",
         type=Path,
-        default=DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir,
+        default=default_root,
     )
     parser.add_argument(
         "--sample-rate", type=int, default=DEFAULT_AUDIO_CONFIG.sample_rate
