@@ -222,4 +222,9 @@ REFACTORING_GUIDE.md
 measured_audio.wav
 log
 
+# Datasets generated locally
+merged_dataset/
+processed_dataset/
+
+
 
