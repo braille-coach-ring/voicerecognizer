@@ -1,3 +1,7 @@
+"""
+認識結果の出力通知および音声データ・認識ログ (metadata.csv) の保存を管理するモジュール。
+"""
+
 from collections.abc import Callable
 from pathlib import Path
 from queue import Empty, Queue
@@ -12,6 +16,14 @@ logger = logging.getLogger(__name__)
 
 
 class OutputWorker:
+    """
+    認識結果の表示および録音波形・メタデータ (metadata.csv) の非同期保存を担当するクラス。
+
+    Attributes:
+        output (Callable[[str], None]): 認識結果を出力するハンドラ関数 (デフォルト: print)
+        save_dir (Path): 音声およびメタデータを保存するPC固有の匿名ディレクトリ
+    """
+
     def __init__(
         self,
         output: Callable[[str], None] | None = None,

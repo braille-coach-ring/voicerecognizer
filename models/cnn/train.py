@@ -1,8 +1,18 @@
+"""
+Hiragana CNN Model Training Script
+
+【設計理由: 学習パイプラインの構成】
+・`processed_dataset/` (または `merged_dataset/index.csv`) から前処理済みの音声・メルスペクトログラムをロード。
+・Stratified 80/20 分割によりクラス割合を均等に保持しながら Train / Validation データセットを作成。
+・CrossEntropyLoss および Adam オプティマイザで CNN モデルを自動学習し、最高精度の重み (best_model.pth)
+  および最新の重み (last_model.pth)、Loss/Accuracy グラフを出力保存します。
+"""
+
 import argparse
+import logging
 import random
 from pathlib import Path
 
-import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -19,6 +29,7 @@ from config import (
 from dataset.hiragana_dataset import HiraganaDataset
 from models.cnn.hiragana_cnn import HiraganaCNN
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 

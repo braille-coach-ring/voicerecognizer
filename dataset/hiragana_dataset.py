@@ -17,6 +17,12 @@ from preprocessing.audio_preprocessor import AudioPreprocessor
 
 
 class HiraganaDataset(Dataset):
+    """
+    PyTorch 用のデータセットクラス。
+    インデックスファイル (index.csv) またはディレクトリ構造から音声データとラベルを読み込み、
+    メルスペクトログラムを抽出して出力します。
+    """
+
     def __init__(
         self,
         root_dir: str | Path = DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir,
