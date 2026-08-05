@@ -45,7 +45,7 @@ class AdaptiveSilenceThresholdCalculator(AbstractSilenceThresholdCalculator):
         self._alpha: float = cfg.noise_update_rate
         self._min_top_db: float = float(cfg.min_top_db)
         self._max_top_db: float = float(cfg.max_top_db)
-        logger.info(f"適応値モード: ノイズ床の初期値: {self._estimated_noise_db} dB, ノイズアップデートレート: {self.alpha} , デシベル下限値上限値: {self._min_top_db}-{self._max_top_db}")
+        logger.info(f"適応値モード: ノイズ床の初期値: {self._estimated_noise_db} dB, ノイズアップデートレート: {self._alpha} , デシベル下限値上限値: {self._min_top_db}-{self._max_top_db}")
 
     def update(self, audio_chunk: np.ndarray) -> None:
         if audio_chunk is None or audio_chunk.size == 0:

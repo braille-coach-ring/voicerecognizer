@@ -37,9 +37,14 @@ class AudioPipeline:
                 if audio is not None and audio.size
                 else 0.0
             )
+            rms_vol = (
+                float(np.sqrt(np.mean(audio**2)))
+                if audio is not None and audio.size
+                else 0.0
+            )
             is_sp = self.vad.is_speech(audio)
             logger.info(
-                f"VAD判定中 (録音最大音量: {max_vol:.4f} / 判定閾値: {self.vad.silence_threshold}) -> 発話検知: {is_sp}"
+                f"VAD判定中 (録音最大音量: {max_vol:.4f}/閾値: {self.vad.silence_threshold:.4f}, RMS音量: {rms_vol:.4f}/閾値: {getattr(self.vad, 'rms_threshold', 0.0):.4f}) -> 発話検知: {is_sp}"
             )
 
             if not is_sp:
