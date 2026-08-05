@@ -12,6 +12,7 @@ sys.path.insert(0, str(project_root))
 
 from config import DEFAULT_AUDIO_CONFIG, DEFAULT_PREPROCESS_CONFIG
 
+
 logger = logging.getLogger(__name__)
 
 # ==========================
@@ -153,6 +154,27 @@ def main() -> None:
 
     except ImportError:
         logger.warning("matplotlib がインストールされていないため、グラフ生成をスキップしました")
+
+    print("\n" + "=" * 60)
+        axes[2].plot(time_axis, frame_dbs, marker="^", color="green", label="dB")
+        axes[2].axhline(y=np.mean(frame_dbs), color="r", linestyle="--", label="平均")
+        axes[2].set_xlabel("時間（秒）")
+        axes[2].set_ylabel("dB値")
+        axes[2].set_title("フレーム別デシベル値")
+        axes[2].legend()
+        axes[2].grid(True)
+
+        plt.tight_layout()
+        plt.savefig("Docs/charts/audio_level_measurement.png")
+        logger.info("グラフを 'Docs/charts/audio_level_measurement.png' に保存しました")
+        plt.close()
+
+    except ImportError:
+        logger.warning("matplotlib がインストールされていないため、グラフ生成をスキップしました")
+
+    # ==========================
+    # 使用例
+    # ==========================
 
     print("\n" + "=" * 60)
     print("結果の使い方")
