@@ -23,6 +23,8 @@ class PreprocessConfig:
     top_db: float = 74.9
     vad_silence_threshold: float = 0.03
     vad_rms_threshold: float = 0.008
+    vad_min_speech_chunks: int = 2
+    vad_min_active_ratio: float = 0.02
     dynamic_threshold_enabled: bool = False
     min_top_db: float = 74.9
     max_top_db: float = 80.0

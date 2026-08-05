@@ -1,12 +1,13 @@
 import unittest
 import numpy as np
+
 from config import PreprocessConfig
 from runtime.vad import VoiceActivityDetector
 
 
 class TestVoiceActivityDetector(unittest.TestCase):
     def setUp(self):
-        self.config = PreprocessConfig()  # Uses defaults (vad_silence_threshold=0.03, vad_rms_threshold=0.008)
+        self.config = PreprocessConfig(vad_min_speech_chunks=1)
         self.vad = VoiceActivityDetector(config=self.config)
 
     def test_none_or_empty_audio(self):
@@ -38,6 +39,55 @@ class TestVoiceActivityDetector(unittest.TestCase):
         t = np.linspace(0, 1, 16000, endpoint=False)
         speech = (0.1 * np.sin(2 * np.pi * 440 * t)).astype(np.float32)
         self.assertTrue(self.vad.is_speech(speech))
+
+    def test_requires_consecutive_chunks_before_speech(self):
+        cfg = PreprocessConfig(vad_silence_threshold=0.005, vad_min_speech_chunks=2, vad_rms_threshold=0.001)
+        vad = VoiceActivityDetector(config=cfg)
+
+        speech_like = np.full(1600, 0.006, dtype=np.float32)
+
+        self.assertFalse(vad.is_speech(speech_like))
+        self.assertTrue(vad.is_speech(speech_like))
+
+    def test_streak_resets_on_silence(self):
+        cfg = PreprocessConfig(vad_silence_threshold=0.005, vad_min_speech_chunks=2, vad_rms_threshold=0.001)
+        vad = VoiceActivityDetector(config=cfg)
+
+        speech_like = np.full(1600, 0.006, dtype=np.float32)
+        silence = np.zeros(1600, dtype=np.float32)
+
+        self.assertFalse(vad.is_speech(speech_like))
+        self.assertFalse(vad.is_speech(silence))
+        self.assertFalse(vad.is_speech(speech_like))
+        self.assertTrue(vad.is_speech(speech_like))
+
+    def test_ignores_single_peak_noise(self):
+        cfg = PreprocessConfig(
+            vad_silence_threshold=0.005,
+            vad_min_speech_chunks=1,
+            vad_min_active_ratio=0.02,
+            vad_rms_threshold=0.001,
+        )
+        vad = VoiceActivityDetector(config=cfg)
+
+        impulse_like = np.zeros(1600, dtype=np.float32)
+        impulse_like[800] = 0.2
+
+        self.assertFalse(vad.is_speech(impulse_like))
+
+    def test_accepts_when_active_ratio_is_enough(self):
+        cfg = PreprocessConfig(
+            vad_silence_threshold=0.005,
+            vad_min_speech_chunks=1,
+            vad_min_active_ratio=0.02,
+            vad_rms_threshold=0.001,
+        )
+        vad = VoiceActivityDetector(config=cfg)
+
+        speech_like = np.zeros(1600, dtype=np.float32)
+        speech_like[:100] = 0.01
+
+        self.assertTrue(vad.is_speech(speech_like))
 
 
 if __name__ == "__main__":

@@ -156,6 +156,7 @@ uv run python main.py --model cnn
 - サンプリングレート: `16000`
 - 録音長: `1.0` 秒
 - VADしきい値: `0.02`
+- VAD最小アクティブ比率（閾値超えサンプル比）: `0.02`
 - モデル重み: `weights/best_model.pth`
 
 ## 認識方式を切り替える

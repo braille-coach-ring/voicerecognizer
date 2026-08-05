@@ -102,6 +102,8 @@ def main() -> None:
     silence_threshold_db = float(20 * np.log10(silence_threshold_rms))
     peak_rms = max(float(np.max(frame_volumes)), 1e-6)
     recommended_top_db = float(20 * np.log10(peak_rms / silence_threshold_rms))
+    noise_floor_peak = float(np.percentile(frame_peaks, 20))
+    recommended_vad_silence_threshold = max(noise_floor_peak * 1.5, 1e-4)
     recommended_min_top_db = max(5.0, recommended_top_db - 8.0)
     recommended_max_top_db = min(80.0, recommended_top_db + 8.0)
 
@@ -109,12 +111,16 @@ def main() -> None:
     print(f"  ノイズ床RMS値（下位20%点）: {noise_floor_rms:.4f}")
     print(f"  推奨RMS値: {silence_threshold_rms:.4f}")
     print(f"  参考dB値（絶対レベル）: {silence_threshold_db:.2f} dB")
+    print(f"  ノイズ床Peak値（下位20%点）: {noise_floor_peak:.4f}")
+    print(f"  推奨vad_silence_threshold（VAD用）: {recommended_vad_silence_threshold:.4f}")
     print(f"  推奨TOP_DB値（trim用）: {recommended_top_db:.2f}")
     print(f"  推奨min_top_db（動的モード下限）: {recommended_min_top_db:.2f}")
     print(f"  推奨max_top_db（動的モード上限）: {recommended_max_top_db:.2f}")
     print(
         f"\n（現在のconfig.pyでは min_top_db = {DEFAULT_PREPROCESS_CONFIG.min_top_db}, "
-        f"max_top_db = {DEFAULT_PREPROCESS_CONFIG.max_top_db} に設定されています）"
+        f"max_top_db = {DEFAULT_PREPROCESS_CONFIG.max_top_db}, "
+        f"vad_silence_threshold = {DEFAULT_PREPROCESS_CONFIG.vad_silence_threshold} "
+        f"に設定されています）"
     )
 
     try:
@@ -183,12 +189,18 @@ preprocess.py の以下の行を修正してください：
   TOP_DB = {:.1f}  # 推奨値（正の値）
   MIN_TOP_DB = {:.1f}  # 推奨下限（動的モード）
   MAX_TOP_DB = {:.1f}  # 推奨上限（動的モード）
+  VAD_SILENCE_THRESHOLD = {:.4f}  # 推奨値（マイク誤検知対策）
 
 TOP_DB が小さいほど、より多くの無音部分を除去します
 TOP_DB が大きいほど、より少ない部分だけ除去します
 
 あなたのマイク・発声レベルに合わせて調整してください
-""".format(recommended_top_db, recommended_min_top_db, recommended_max_top_db)
+""".format(
+            recommended_top_db,
+            recommended_min_top_db,
+            recommended_max_top_db,
+            recommended_vad_silence_threshold,
+        )
     )
 
 
