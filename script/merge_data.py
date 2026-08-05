@@ -11,23 +11,29 @@ from preprocessing.dataset_builder import DatasetBuilder
 
 def main() -> None:
     print("=" * 40)
-    print("データセットを統合します")
+    print("データセットを統合（インデックス作成）します")
     print("=" * 40)
 
-    source_root = DEFAULT_RECOGNITION_CONFIG.raw_dataset_dir
-    output_root = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir
-
     builder = DatasetBuilder()
-    builder.merge_by_label(source_root=source_root, output_root=output_root)
+    index_file = builder.build_index()
 
     print()
     print("=" * 40)
-    print("統合完了")
+    print("統合インデックス作成完了:", index_file)
     print("=" * 40)
 
+    label_counts: dict[str, int] = {}
+    if index_file.exists():
+        with open(index_file, "r", encoding="utf-8") as f:
+            header = f.readline()
+            for line in f:
+                parts = [p.strip() for p in line.strip().split(",")]
+                if len(parts) >= 2 and parts[1]:
+                    lbl = parts[1]
+                    label_counts[lbl] = label_counts.get(lbl, 0) + 1
+
     for label in builder.labels:
-        folder = output_root / label
-        n = len(list(folder.glob("*.wav"))) if folder.exists() else 0
+        n = label_counts.get(label, 0)
         print(f"{label} : {n} files")
 
 
