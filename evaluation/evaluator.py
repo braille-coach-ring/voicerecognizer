@@ -181,6 +181,36 @@ class Evaluator:
         self.result = self._compute_metrics()
         return self.result
 
+    def update_index_with_predictions(self) -> None:
+        if self.model is None:
+            logger.warning("繝｢繝・Ν縺後Ο繝ｼ繝峨＆繧後※縺・∪縺帙ｓ")
+            raise ValueError("繝｢繝・Ν縺後Ο繝ｼ繝峨＆繧後※縺・∪縺帙ｓ")
+
+        rows: list[dict[str, str]] = []
+        with open(self.index_file, "r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            fieldnames = list(reader.fieldnames or [])
+            if "predicted_text" not in fieldnames:
+                fieldnames.append("predicted_text")
+
+            for row in reader:
+                rel_path = row.get("filepath", "")
+                audio_path = self._resolve_audio_path(rel_path)
+
+                if not audio_path.exists():
+                    logger.warning(
+                        f"髻ｳ螢ｰ繝輔ぃ繧､繝ｫ縺悟ｭ伜惠縺励∪縺帙ｓ: {audio_path}"
+                    )
+                    row["predicted_text"] = ""
+                else:
+                    row["predicted_text"] = self.model.recognize(str(audio_path))
+                rows.append(row)
+
+        with open(self.index_file, "w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+
     def update_from_dataset(self) -> EvaluationResult:
         """データセット(index.csv)内の predicted_text を用いて再推論を行わずに即座に評価・集計する"""
         if not self.index_file.exists():
@@ -317,11 +347,11 @@ def compute_evaluation_result(
     confidences: list[float] | None = None,
 ) -> EvaluationResult:
     """スタンドアロンで y_true と y_pred から EvaluationResult を直接計算するユーティリティ関数"""
-    evaluator = Evaluator(model=None, labels=labels)
+    evaluator = object.__new__(Evaluator)
+    evaluator.labels = labels
     evaluator.y_true = list(y_true)
     evaluator.y_pred = list(y_pred)
-    if filepaths:
-        evaluator.filepaths = list(filepaths)
-    if confidences:
-        evaluator.confidences = list(confidences)
+    evaluator.filepaths = list(filepaths) if filepaths else []
+    evaluator.confidences = list(confidences) if confidences else []
+    evaluator.result = None
     return evaluator._compute_metrics()

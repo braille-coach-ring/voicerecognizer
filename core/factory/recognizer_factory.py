@@ -31,7 +31,13 @@ class RecognizerFactory:
             )
 
         if recognizer_type == "wav2vec2":
-            return Wav2Vec2Recognizer()
+            return Wav2Vec2Recognizer(
+                model_path=config.wav2vec2_best_model_dir,
+                labels=config.labels,
+                sample_rate=config.sample_rate,
+                target_length_seconds=config.target_length_seconds,
+                top_db=config.top_db,
+            )
 
         if recognizer_type == "whisper":
             return WhisperRecognizer()
