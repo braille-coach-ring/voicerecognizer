@@ -5,6 +5,7 @@ from pathlib import Path
 import sounddevice as sd
 
 from config import DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG
+from config_labels import HIRAGANA_TO_ROMAJI, ROMAJI_TO_HIRAGANA
 from core.factory.recognizer_factory import RecognizerFactory
 from core.services.audio_pipeline import AudioPipeline
 from core.services.voice_recognizer import VoiceRecognizer
@@ -55,26 +56,22 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
     """
     連続対話・人間丸付け（採点）セッション。
     マイクの音声を聞き取り待機 ➔ 予測テキスト表示 ➔ 録音音声の再生 ➔ 正解ラベル選択・保存 ➔ 繰り返し。
+    50音・濁音・半濁音・拗音・その他の全105日本語ひらがなラベルに対応。
     """
-    LABEL_CHOICES = {
+    SHORTCUT_CHOICES = {
         "1": "a",
         "2": "i",
         "3": "u",
         "4": "e",
         "5": "o",
         "6": "other",
-        "a": "a",
-        "i": "i",
-        "u": "u",
-        "e": "e",
-        "o": "o",
-        "other": "other",
     }
 
     print("\n" + "=" * 65)
     print(" 🎤 リアルタイム音声認識 ＆ 連続人間丸付け（採点・アノテーション）モード")
     print("=" * 65)
     print("※ 発声を検知すると自動で予測結果を表示し、録音音声を再生します。")
+    print("※ 全105ひらがなラベル（50音・濁音・半濁音・拗音・その他）の直打ちに対応。")
     print("※ 画面の指示に従って正解を選択してください（Ctrl+C で終了）。\n")
 
     session_count = 0
@@ -90,9 +87,15 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
                 break
 
             audio_data, predicted_text = res
+            hiragana_pred = ROMAJI_TO_HIRAGANA.get(predicted_text, predicted_text)
+            disp_pred = (
+                f"{predicted_text} ({hiragana_pred})"
+                if hiragana_pred != predicted_text
+                else predicted_text
+            )
 
             print("\n" + "─" * 45)
-            print(f"🤖 予測結果: 【 {predicted_text} 】")
+            print(f"🤖 予測結果: 【 {disp_pred} 】")
             print("─" * 45)
 
             # 音声の再生
@@ -106,12 +109,14 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
             while True:
                 prompt = (
                     f"正解ラベルを選択してください:\n"
-                    f"  [Enter] : 予測通り「{predicted_text}」として確定\n"
-                    f"  [1/a] あ  [2/i] い  [3/u] う  [4/e] え  [5/o] お  [6] other (その他/雑音)\n"
+                    f"  [Enter] : 予測通り「{disp_pred}」として確定\n"
+                    f"  [文字入力] : ひらがな（例: 「か」「きゃ」）またはローマ字（例: 「ka」「kya」）\n"
+                    f"  [1-5]   : あ/い/う/え/お  [6] other (その他/雑音)\n"
                     f"  [r] 音声を再再生  [q] 終了\n"
                     f"選択 > "
                 )
-                user_input = input(prompt).strip().lower()
+                raw_input = input(prompt).strip()
+                user_input = raw_input.lower()
 
                 if user_input == "q":
                     print("セッションを終了します。お疲れ様でした！")
@@ -126,11 +131,28 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
                 elif user_input == "":
                     ground_truth = predicted_text
                     break
-                elif user_input in LABEL_CHOICES:
-                    ground_truth = LABEL_CHOICES[user_input]
+                elif user_input in SHORTCUT_CHOICES:
+                    ground_truth = SHORTCUT_CHOICES[user_input]
+                    break
+                elif raw_input in HIRAGANA_TO_ROMAJI:
+                    ground_truth = HIRAGANA_TO_ROMAJI[raw_input]
+                    break
+                elif user_input in HIRAGANA_TO_ROMAJI:
+                    ground_truth = HIRAGANA_TO_ROMAJI[user_input]
+                    break
+                elif user_input in ROMAJI_TO_HIRAGANA:
+                    h_char = ROMAJI_TO_HIRAGANA[user_input]
+                    ground_truth = HIRAGANA_TO_ROMAJI.get(h_char, user_input)
                     break
                 else:
-                    print("⚠️ 無効な入力です。番号(1-6)または文字を入力してください。")
+                    print("⚠️ 無効な入力です。ひらがな（例: 「か」「きゃ」）またはローマ字（例: 「ka」「kya」）を入力してください。")
+
+            gt_hiragana = ROMAJI_TO_HIRAGANA.get(ground_truth, ground_truth)
+            disp_gt = (
+                f"{ground_truth} ({gt_hiragana})"
+                if gt_hiragana != ground_truth
+                else ground_truth
+            )
 
             # データ保存 (metadata.csv と .wav)
             pipeline.output_worker.save(
@@ -140,7 +162,7 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
                 timestamp=datetime.datetime.now().timestamp(),
                 sample_rate=pipeline.audio_capture.sample_rate,
             )
-            print(f"✅ 保存完了: 予測=「{predicted_text}」, 正解=「{ground_truth}」 (データセットに蓄積されました)")
+            print(f"✅ 保存完了: 予測=「{disp_pred}」, 正解=「{disp_gt}」 (データセットに蓄積されました)")
 
     except KeyboardInterrupt:
         print("\n\nユーザー操作によりセッションを停止しました。お疲れ様でした！")
