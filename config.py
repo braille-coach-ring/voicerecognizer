@@ -2,7 +2,19 @@ from dataclasses import dataclass, field
 from typing import Literal
 from pathlib import Path
 
+from config_labels import (
+    ALL_HIRAGANA_LABELS,
+    SEION_LABELS,
+    DAKUON_LABELS,
+    HANDAKUON_LABELS,
+    YOON_LABELS,
+    OTHER_LABELS,
+    HIRAGANA_TO_ROMAJI,
+    ROMAJI_TO_HIRAGANA,
+)
+
 PROJECT_ROOT = Path(__file__).resolve().parent
+
 
 
 @dataclass(frozen=True)
@@ -43,7 +55,7 @@ class RecognitionConfig:
     n_mels: int = 64
     n_fft: int = 400
     hop_length: int = 160
-    labels: tuple[str, ...] = field(default_factory=lambda: ("a", "e", "i", "o", "u", "other"))
+    labels: tuple[str, ...] = field(default_factory=lambda: ALL_HIRAGANA_LABELS)
     cnn_weight_path: Path = PROJECT_ROOT / "weights" / "best_model.pth"
     last_model_path: Path = PROJECT_ROOT / "weights" / "last_model.pth"
     torchscript_model_path: Path = PROJECT_ROOT / "weights" / "hiragana_cnn.pt"
