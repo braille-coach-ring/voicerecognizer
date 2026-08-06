@@ -76,3 +76,24 @@ class AudioPipeline:
             except KeyboardInterrupt:
                 logger.info("\n音声待機を停止しました。")
                 return None
+
+    def capture_until_speech(self) -> tuple[np.ndarray, str] | None:
+        """
+        発話が検出されるまでマイク入力をループ監視し、
+        前処理済みの綺麗な録音波形 (np.ndarray) と推論予測テキスト (str) のペアを返します。
+        """
+        logger.info("音声を待機中... マイクに向かってお話しください（Ctrl+Cで終了）")
+        while True:
+            try:
+                audio = self.audio_capture.capture_once()
+                if audio is not None and audio.size > 0:
+                    if self.vad.is_speech(audio):
+                        predicted_text = self.recognizer.recognize(audio)
+                        strategy = getattr(self.recognizer, "strategy", getattr(self.recognizer, "_strategy", None))
+                        if strategy and hasattr(strategy, "audio_preprocessor"):
+                            preprocessed_audio = strategy.audio_preprocessor.preprocess_waveform(audio)
+                        return preprocessed_audio, predicted_text
+                time.sleep(DEFAULT_AUDIO_CONFIG.chunk_seconds)
+            except KeyboardInterrupt:
+                logger.info("\n音声待機を停止しました。")
+                return None

@@ -1,6 +1,8 @@
 import argparse
+import datetime
 import logging
 from pathlib import Path
+import sounddevice as sd
 
 from config import DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG
 from core.factory.recognizer_factory import RecognizerFactory
@@ -26,7 +28,7 @@ def build_parser() -> argparse.ArgumentParser:
         "audio",
         nargs="?",
         type=Path,
-        help="Path to a wav file. If omitted, no recognition is executed.",
+        help="Path to a wav file. If omitted, continuous interactive recognition mode is started.",
     )
     parser.add_argument(
         "--model",
@@ -49,6 +51,101 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
+    """
+    連続対話・人間丸付け（採点）セッション。
+    マイクの音声を聞き取り待機 ➔ 予測テキスト表示 ➔ 録音音声の再生 ➔ 正解ラベル選択・保存 ➔ 繰り返し。
+    """
+    LABEL_CHOICES = {
+        "1": "a",
+        "2": "i",
+        "3": "u",
+        "4": "e",
+        "5": "o",
+        "6": "other",
+        "a": "a",
+        "i": "i",
+        "u": "u",
+        "e": "e",
+        "o": "o",
+        "other": "other",
+    }
+
+    print("\n" + "=" * 65)
+    print(" 🎤 リアルタイム音声認識 ＆ 連続人間丸付け（採点・アノテーション）モード")
+    print("=" * 65)
+    print("※ 発声を検知すると自動で予測結果を表示し、録音音声を再生します。")
+    print("※ 画面の指示に従って正解を選択してください（Ctrl+C で終了）。\n")
+
+    session_count = 0
+    try:
+        while True:
+            session_count += 1
+            print(f"\n--- [ セッション #{session_count} ] ---")
+            print("👂 音声待機中... マイクに向かって声を出してください。")
+
+            res = pipeline.capture_until_speech()
+            if res is None:
+                print("\nセッションを終了しました。")
+                break
+
+            audio_data, predicted_text = res
+
+            print("\n" + "─" * 45)
+            print(f"🤖 予測結果: 【 {predicted_text} 】")
+            print("─" * 45)
+
+            # 音声の再生
+            try:
+                sd.play(audio_data, pipeline.audio_capture.sample_rate)
+                sd.wait()
+            except Exception as e:
+                logger.warning("録音音声の再生に失敗しました: %s", e)
+
+            # 人間による丸付け（採点）ターン
+            while True:
+                prompt = (
+                    f"正解ラベルを選択してください:\n"
+                    f"  [Enter] : 予測通り「{predicted_text}」として確定\n"
+                    f"  [1/a] あ  [2/i] い  [3/u] う  [4/e] え  [5/o] お  [6] other (その他/雑音)\n"
+                    f"  [r] 音声を再再生  [q] 終了\n"
+                    f"選択 > "
+                )
+                user_input = input(prompt).strip().lower()
+
+                if user_input == "q":
+                    print("セッションを終了します。お疲れ様でした！")
+                    return
+                elif user_input == "r":
+                    try:
+                        sd.play(audio_data, pipeline.audio_capture.sample_rate)
+                        sd.wait()
+                    except Exception as e:
+                        logger.warning("録音音声の再生に失敗しました: %s", e)
+                    continue
+                elif user_input == "":
+                    ground_truth = predicted_text
+                    break
+                elif user_input in LABEL_CHOICES:
+                    ground_truth = LABEL_CHOICES[user_input]
+                    break
+                else:
+                    print("⚠️ 無効な入力です。番号(1-6)または文字を入力してください。")
+
+            # データ保存 (metadata.csv と .wav)
+            pipeline.output_worker.save(
+                audio_data=audio_data,
+                predicted_text=predicted_text,
+                ground_truth=ground_truth,
+                timestamp=datetime.datetime.now().timestamp(),
+                sample_rate=pipeline.audio_capture.sample_rate,
+            )
+            print(f"✅ 保存完了: 予測=「{predicted_text}」, 正解=「{ground_truth}」 (データセットに蓄積されました)")
+
+    except KeyboardInterrupt:
+        print("\n\nユーザー操作によりセッションを停止しました。お疲れ様でした！")
+
+
 def main() -> None:
     args = build_parser().parse_args()
 
@@ -66,9 +163,7 @@ def main() -> None:
     logger.info("パイプラインの構築が完了しました。")
 
     if args.audio is None:
-        logger.info("音声入力待ちモードに入ります...")
-        result = pipeline.run_until_speech()
-        logger.info("マイク認識結果: %s", result)
+        run_interactive_grading_session(pipeline)
         return
 
     logger.info("音声ファイルを入力します...")

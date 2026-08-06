@@ -51,6 +51,12 @@ def main():
         default=PROJECT_ROOT / "evaluation_results" / "evaluation_result.json",
         help="Output path for evaluation JSON report",
     )
+    parser.add_argument(
+        "--output-html",
+        type=Path,
+        default=PROJECT_ROOT / "evaluation_results" / "evaluation_report.html",
+        help="Output path for human-friendly HTML dashboard report",
+    )
 
     args = parser.parse_args()
 
@@ -78,6 +84,9 @@ def main():
 
     if args.output_json:
         evaluator.export_json(args.output_json)
+
+    if args.output_html:
+        evaluator.export_html(args.output_html, title=f"モデル評価レポート ({args.model_type.upper()})")
 
 
 if __name__ == "__main__":

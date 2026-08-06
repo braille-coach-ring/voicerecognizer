@@ -22,9 +22,10 @@ class AudioCapture:
         )
         self.warmup_sleep_ms: int = int(getattr(cfg, "warmup_sleep_ms", 500))
 
-        # 直近 N 秒分のサンプル数を保持するリングバッファ
+        # 直近 N 秒分のサンプル数を保持する NumPy 高速リングバッファ
         self._max_samples: int = int(self.window_seconds * self.sample_rate)
-        self._buffer: deque[float] = deque(maxlen=self._max_samples)
+        self._buffer: np.ndarray = np.zeros(self._max_samples, dtype=np.float32)
+        self._write_pos: int = 0
         self._lock: Lock = Lock()
         self._stream: sd.InputStream | None = None
 
@@ -36,20 +37,27 @@ class AudioCapture:
     ) -> None:
         """サウンドカードから非同期に音声フレームが届いたときに自動実行されるコールバック"""
         if status:
-            pass  # オーバーフロー等の警告ログ処理（必要に応じて）
+            pass  # オーバーフロー等の警告ログ処理
 
-        # 1次元のfloat32配列に変換してリングバッファに追記
-        samples = indata[:, 0].tolist()
+        samples = indata[:, 0].astype(np.float32)
+        n = len(samples)
         with self._lock:
-            self._buffer.extend(samples)
+            if self._write_pos + n <= self._max_samples:
+                self._buffer[self._write_pos : self._write_pos + n] = samples
+                self._write_pos += n
+            else:
+                first = self._max_samples - self._write_pos
+                self._buffer[self._write_pos :] = samples[:first]
+                self._buffer[: n - first] = samples[first:]
+                self._write_pos = n - first
 
     def start(self) -> None:
         """マイクストリームを開き、バックグラウンドで連続録音を開始する"""
         if self._stream is None or not self._stream.active:
             # バッファの初期化（ゼロ埋め）
             with self._lock:
-                self._buffer.clear()
-                self._buffer.extend([0.0] * self._max_samples)
+                self._buffer.fill(0.0)
+                self._write_pos = 0
 
             self._stream = sd.InputStream(
                 samplerate=self.sample_rate,
@@ -71,23 +79,20 @@ class AudioCapture:
 
     def capture_once(self, duration: float | None = None) -> np.ndarray:
         """常時録音されているバッファから、直近の音声波形（最新データ）を即座に取得する"""
-        # まだ一度もストリームが開始されていなければ開始
         if self._stream is None or not self._stream.active:
             self.start()
-            # 初回だけ少し待機
             sd.sleep(self.warmup_sleep_ms)
 
         with self._lock:
-            arr = np.array(self._buffer, dtype=np.float32)
+            arr = np.concatenate((self._buffer[self._write_pos :], self._buffer[: self._write_pos]))
 
         req_samples = int((duration or self.window_seconds) * self.sample_rate)
         if len(arr) < req_samples:
-            # 不足分はパディング
             arr = np.pad(arr, (req_samples - len(arr), 0))
         else:
             arr = arr[-req_samples:]
 
-        return arr
+        return arr.copy()
 
     def __del__(self):
         self.stop()

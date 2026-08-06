@@ -33,7 +33,13 @@ class CNNRecognizer(RecognitionStrategy):
         threshold_calculator: AbstractSilenceThresholdCalculator | None = None,
     ):
         self.model_path = Path(model_path)
-        self.labels = tuple(labels)
+        labels_json_path = self.model_path.parent / "labels.json"
+        if labels_json_path.exists():
+            import json
+            with open(labels_json_path, "r", encoding="utf-8") as f:
+                self.labels = tuple(json.load(f))
+        else:
+            self.labels = tuple(labels)
         self.device = device or torch.device(
             "cuda" if torch.cuda.is_available() else "cpu"
         )

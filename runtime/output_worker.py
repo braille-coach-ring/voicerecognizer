@@ -54,6 +54,7 @@ class OutputWorker:
         audio_data,
         predicted_text: str,
         timestamp,
+        ground_truth: str = "",
         sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
     ) -> None:
         if self.save_dir is None:
@@ -69,11 +70,11 @@ class OutputWorker:
         time_str = str(timestamp).replace(".", "_")
         file_name = f"{time_str}.wav"
 
-        # 1. 認識テキストログの保存
+        # 1. 認識テキストログの保存 (4カラム: timestamp, filename, predicted_text, ground_truth)
         log_file = self.save_dir / "metadata.csv"
         try:
             with open(log_file, "a", encoding="utf-8") as f:
-                f.write(f"{time_str},{file_name},{predicted_text},\n")
+                f.write(f"{time_str},{file_name},{predicted_text},{ground_truth}\n")
             logger.info("テキストログを保存しました: %s", log_file.name)
         except Exception:
             logger.error("テキストログファイルの書き込みに失敗しました: %s", log_file, exc_info=True)

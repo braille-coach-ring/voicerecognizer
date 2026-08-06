@@ -30,6 +30,7 @@ class HiraganaDataset(Dataset):
         n_mels: int = DEFAULT_PREPROCESS_CONFIG.n_mels,
         n_fft: int = DEFAULT_PREPROCESS_CONFIG.n_fft,
         hop_length: int = DEFAULT_PREPROCESS_CONFIG.hop_length,
+        cache_in_memory: bool = True,
     ):
         self.root = Path(root_dir)
         self.sample_rate = sample_rate
@@ -59,12 +60,25 @@ class HiraganaDataset(Dataset):
 
         self.label_to_idx = {label: idx for idx, label in enumerate(self.labels)}
         self.data = self._collect_files()
+
+        self.cached_mels: list[tuple[torch.Tensor, torch.Tensor]] | None = None
+        if cache_in_memory and self.data:
+            logger.info("オンメモリキャッシュ作成中: %d件のメルスペクトログラムを計算中...", len(self.data))
+            self.cached_mels = []
+            for wav_path, label in self.data:
+                waveform = self.preprocessor.preprocess_waveform(wav_path)
+                mel = self._create_mel(waveform)
+                self.cached_mels.append((mel, torch.tensor(label, dtype=torch.long)))
+
         logger.info(f"HiraganaDatasetのロード完了: 全 %d件 (クラス数 %d)", len(self.data), len(self.labels))
 
     def __len__(self) -> int:
         return len(self.data)
 
     def __getitem__(self, idx: int):
+        if self.cached_mels is not None:
+            return self.cached_mels[idx]
+
         wav_path, label = self.data[idx]
         waveform = self.preprocessor.preprocess_waveform(wav_path)
         mel = self._create_mel(waveform)
