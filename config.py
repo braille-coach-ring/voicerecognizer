@@ -43,7 +43,7 @@ class RecognitionConfig:
     n_mels: int = 64
     n_fft: int = 400
     hop_length: int = 160
-    labels: tuple[str, ...] = field(default_factory=lambda: ("a", "e", "i", "o", "u"))
+    labels: tuple[str, ...] = field(default_factory=lambda: ("a", "e", "i", "o", "u", "other"))
     cnn_weight_path: Path = PROJECT_ROOT / "weights" / "best_model.pth"
     last_model_path: Path = PROJECT_ROOT / "weights" / "last_model.pth"
     torchscript_model_path: Path = PROJECT_ROOT / "weights" / "hiragana_cnn.pt"

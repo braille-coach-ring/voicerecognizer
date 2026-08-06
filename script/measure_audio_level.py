@@ -12,6 +12,7 @@ sys.path.insert(0, str(project_root))
 
 from config import DEFAULT_AUDIO_CONFIG, DEFAULT_PREPROCESS_CONFIG
 
+
 logger = logging.getLogger(__name__)
 
 # ==========================
@@ -159,6 +160,11 @@ def main() -> None:
 
     except ImportError:
         logger.warning("matplotlib がインストールされていないため、グラフ生成をスキップしました")
+
+
+    # ==========================
+    # 使用例
+    # ==========================
 
     print("\n" + "=" * 60)
     print("結果の使い方")

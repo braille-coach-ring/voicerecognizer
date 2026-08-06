@@ -17,6 +17,12 @@ from preprocessing.audio_preprocessor import AudioPreprocessor
 
 
 class HiraganaDataset(Dataset):
+    """
+    PyTorch 用のデータセットクラス。
+    インデックスファイル (index.csv) またはディレクトリ構造から音声データとラベルを読み込み、
+    メルスペクトログラムを抽出して出力します。
+    """
+
     def __init__(
         self,
         root_dir: str | Path = DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir,
@@ -31,7 +37,26 @@ class HiraganaDataset(Dataset):
         self.n_fft = n_fft
         self.hop_length = hop_length
         self.preprocessor = AudioPreprocessor(sample_rate=sample_rate)
-        self.labels = sorted(path.name for path in self.root.iterdir() if path.is_dir())
+        if (self.root / "index.csv").exists():
+            self.index_file = self.root / "index.csv"
+        elif self.root.is_file():
+            self.index_file = self.root
+        else:
+            self.index_file = None
+
+        if self.index_file:
+            # index.csv からラベル一覧を自動取得
+            labels_set = set()
+            with open(self.index_file, "r", encoding="utf-8") as f:
+                f.readline()
+                for line in f:
+                    parts = [p.strip() for p in line.strip().split(",")]
+                    if len(parts) >= 2 and parts[1]:
+                        labels_set.add(parts[1])
+            self.labels = sorted(labels_set)
+        else:
+            self.labels = sorted(path.name for path in self.root.iterdir() if path.is_dir())
+
         self.label_to_idx = {label: idx for idx, label in enumerate(self.labels)}
         self.data = self._collect_files()
         logger.info(f"HiraganaDatasetのロード完了: 全 %d件 (クラス数 %d)", len(self.data), len(self.labels))
@@ -47,10 +72,27 @@ class HiraganaDataset(Dataset):
 
     def _collect_files(self) -> list[tuple[Path, int]]:
         data = []
+        if self.index_file and self.index_file.exists():
+            from config import PROJECT_ROOT
+            with open(self.index_file, "r", encoding="utf-8") as f:
+                f.readline()
+                for line in f:
+                    parts = [p.strip() for p in line.strip().split(",")]
+                    if len(parts) < 2 or not parts[0]:
+                        continue
+                    wav_path = Path(parts[0])
+                    if not wav_path.is_absolute():
+                        wav_path = PROJECT_ROOT / wav_path
+                    label = parts[1]
+                    if wav_path.exists() and label in self.label_to_idx:
+                        data.append((wav_path, self.label_to_idx[label]))
+            return data
+
         for label in self.labels:
             folder = self.root / label
-            for wav_path in folder.glob("*.wav"):
-                data.append((wav_path, self.label_to_idx[label]))
+            if folder.is_dir():
+                for wav_path in folder.glob("*.wav"):
+                    data.append((wav_path, self.label_to_idx[label]))
         return data
 
     def _create_mel(self, waveform: np.ndarray) -> torch.Tensor:

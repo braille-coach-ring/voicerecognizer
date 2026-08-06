@@ -28,11 +28,11 @@ class TestDatasetBuilderIsolated(unittest.TestCase):
 
             builder = DatasetBuilder(labels=("a",))
 
-            # Test merge_by_label without touching repo dataset
+            # Test merge_by_label generating index.csv without copying wav files
             builder.merge_by_label(source_root=raw_root, output_root=merged_root)
-            self.assertTrue((merged_root / "a" / "001.wav").exists())
+            self.assertTrue((merged_root / "index.csv").exists())
 
-            # Test preprocess_dataset without touching repo dataset
+            # Test preprocess_dataset reading directly from index.csv
             builder.preprocess_dataset(
                 input_root=merged_root, output_root=processed_root
             )
@@ -48,6 +48,56 @@ class TestDatasetBuilderIsolated(unittest.TestCase):
                     * builder.preprocessor.target_length_seconds
                 ),
             )
+
+    def test_merge_collected_dataset_skips_unlabeled(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            collected_dir = tmp_path / "collected"
+            merged_root = tmp_path / "merged_dataset"
+            collected_dir.mkdir(parents=True, exist_ok=True)
+
+            dummy_audio = np.zeros(16000, dtype=np.float32)
+            sf.write(collected_dir / "100_1.wav", dummy_audio, 16000)
+            sf.write(collected_dir / "100_2.wav", dummy_audio, 16000)
+
+            # 100_1: ground_truth未記入 ("") -> スキップされるべき
+            # 100_2: ground_truth記入 ("a") -> インデックス化されるべき
+            metadata_file = collected_dir / "metadata.csv"
+            with open(metadata_file, "w", encoding="utf-8") as f:
+                f.write("100_1,100_1.wav,a,\n")
+                f.write("100_2,100_2.wav,a,a\n")
+
+            builder = DatasetBuilder(labels=("a",))
+            builder.merge_collected_dataset(collected_dir=collected_dir, output_root=merged_root)
+
+            index_path = merged_root / "index.csv"
+            self.assertTrue(index_path.exists())
+
+            content = index_path.read_text(encoding="utf-8")
+            self.assertIn("100_2.wav", content)
+            self.assertNotIn("100_1.wav", content)
+
+    def test_merge_collected_dataset_with_subdirectories(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            collected_dir = tmp_path / "collected"
+            merged_root = tmp_path / "merged_dataset"
+            pc_dir = collected_dir / "pc_12345678"
+            pc_dir.mkdir(parents=True, exist_ok=True)
+
+            dummy_audio = np.zeros(16000, dtype=np.float32)
+            sf.write(pc_dir / "200_1.wav", dummy_audio, 16000)
+
+            metadata_file = pc_dir / "metadata.csv"
+            with open(metadata_file, "w", encoding="utf-8") as f:
+                f.write("200_1,200_1.wav,a,a\n")
+
+            builder = DatasetBuilder(labels=("a",))
+            builder.merge_collected_dataset(collected_dir=collected_dir, output_root=merged_root)
+
+            index_path = merged_root / "index.csv"
+            self.assertTrue(index_path.exists())
+            self.assertIn("200_1.wav", index_path.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
