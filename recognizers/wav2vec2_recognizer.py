@@ -24,6 +24,18 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
     ):
         self.model_path = Path(model_path)
         self.labels = tuple(labels)
+        labels_json = self.model_path / "labels.json"
+        if labels_json.exists():
+            try:
+                import json
+                with open(labels_json, "r", encoding="utf-8") as f:
+                    loaded_labels = json.load(f)
+                    if isinstance(loaded_labels, list) and len(loaded_labels) > 0:
+                        self.labels = tuple(loaded_labels)
+                        logger.info("Loaded labels from labels.json: %s", self.labels)
+            except Exception as e:
+                logger.warning("Failed to load labels.json: %s", e)
+
         self.sample_rate = sample_rate
         self.device = device or torch.device(
             "cuda" if torch.cuda.is_available() else "cpu"
