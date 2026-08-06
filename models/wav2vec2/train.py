@@ -305,10 +305,15 @@ def train(args: argparse.Namespace) -> None:
     model_source = args.pretrained_model_name
     if args.resume and has_weights:
         model_source = str(args.best_model_path)
-        logger.info("既存のチェックポイントから継続学習を行います: %s", model_source)
+        logger.info("既存のチェックポイント (%s) を再利用 (reuse) して継続学習を行います。", model_source)
+    elif not args.resume:
+        logger.info(
+            "=== [--from-scratch / --no-resume が指定されたため、既存チェックポイントを読み込まずベースモデル (%s) から新規ファインチューニングを開始します] ===",
+            model_source,
+        )
     elif args.resume:
         logger.info(
-            "継続学習の指定を受けましたが、有効なチェックポイント (%s) が無いため %s から開始します。",
+            "過去のチェックポイント (%s) が存在しないため、ベースモデル (%s) から新規学習を開始します。",
             args.best_model_path,
             model_source,
         )
@@ -568,7 +573,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--resume",
         action="store_true",
-        help="Resume fine-tuning from existing best model checkpoint if available",
+        default=True,
+        help="Reuse existing trained model checkpoint by default if available (default: True)",
+    )
+    parser.add_argument(
+        "--no-resume",
+        "--from-scratch",
+        action="store_false",
+        dest="resume",
+        help="Train from base pretrained model without reusing existing checkpoint",
     )
     parser.add_argument(
         "--skip-prep",

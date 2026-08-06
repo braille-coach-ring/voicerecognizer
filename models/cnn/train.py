@@ -149,22 +149,35 @@ def train(args: argparse.Namespace) -> None:
     history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": [], "val_macro_f1": []}
     best_macro_f1 = 0.0
 
-    if args.best_model_path.exists():
+    if args.resume and args.best_model_path.exists():
         try:
-            eval_model = HiraganaCNN(num_classes=len(dataset.labels)).to(device)
-            eval_model.load_state_dict(torch.load(args.best_model_path, map_location=device, weights_only=True))
-            _, val_acc, val_true, val_pred = validate(
-                eval_model, val_loader, criterion, device, labels=dataset.labels
-            )
-            init_result = compute_evaluation_result(val_true, val_pred, labels=dataset.labels)
-            best_macro_f1 = init_result.overall.macro_f1
-            logger.info("保存済みベストモデル (%s) の評価スコア - Val Acc: %.4f, Val Macro-F1: %.4f", args.best_model_path, val_acc, best_macro_f1)
+            state_dict = torch.load(args.best_model_path, map_location=device, weights_only=True)
+            model_dict = model.state_dict()
+            matched_dict = {
+                k: v for k, v in state_dict.items()
+                if k in model_dict and model_dict[k].shape == v.shape
+            }
+            model_dict.update(matched_dict)
+            model.load_state_dict(model_dict)
 
-            if args.resume:
-                model.load_state_dict(torch.load(args.best_model_path, map_location=device, weights_only=True))
-                logger.info("既存モデルの重みをロードして継続学習を開始します。")
+            # Evaluate loaded model score if full weights matched
+            if len(matched_dict) == len(state_dict):
+                eval_model = HiraganaCNN(num_classes=len(dataset.labels)).to(device)
+                eval_model.load_state_dict(state_dict)
+                _, val_acc, val_true, val_pred = validate(
+                    eval_model, val_loader, criterion, device, labels=dataset.labels
+                )
+                init_result = compute_evaluation_result(val_true, val_pred, labels=dataset.labels)
+                best_macro_f1 = init_result.overall.macro_f1
+                logger.info("既存モデル重み (%s) を再利用 (reuse) して継続学習します - Val Acc: %.4f, Val Macro-F1: %.4f", args.best_model_path, val_acc, best_macro_f1)
+            else:
+                logger.info("既存モデル (%s) の特徴抽出層重みを再利用 (reuse) し、分類ヘッドを更新して継続学習を開始します。", args.best_model_path)
         except Exception as e:
-            logger.warning("既存モデル %s の評価/ロードに失敗しました (%s)。", args.best_model_path, e)
+            logger.warning("既存モデル %s の再利用に失敗したため新規学習を行います (%s)。", args.best_model_path, e)
+    elif not args.resume:
+        logger.info("=== [--from-scratch / --no-resume が指定されたため、既存重みを破棄して 0 から新規学習を開始します] ===")
+    else:
+        logger.info("過去のチェックポイント (%s) が存在しないため、0 から新規学習を開始します。", args.best_model_path)
 
     args.best_model_path.parent.mkdir(parents=True, exist_ok=True)
     args.last_model_path.parent.mkdir(parents=True, exist_ok=True)
@@ -267,7 +280,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--resume",
         action="store_true",
-        help="Resume training from existing best_model.pth if available",
+        default=True,
+        help="Reuse existing trained model weights by default if available (default: True)",
+    )
+    parser.add_argument(
+        "--no-resume",
+        "--from-scratch",
+        action="store_false",
+        dest="resume",
+        help="Train from scratch without reusing existing model weights",
     )
     parser.add_argument(
         "--skip-prep",
