@@ -1,7 +1,18 @@
+"""
+Model Training Dispatcher Script
+
+学習の実行前には、デフォルトで自動的にデータ統合 (`merge_data`: index.csv生成)
+および音声前処理 (`preprocess`: processed_dataset/生成) を実行します。
+
+自動処理を行わない場合は `--skip-prep` フラグを明示して実行してください。
+例: `uv run python train.py --skip-prep`
+"""
+
 import argparse
 from collections.abc import Sequence
 
 TRAINABLE_MODELS = ("cnn", "wav2vec2")
+
 
 
 def build_dispatch_parser() -> argparse.ArgumentParser:

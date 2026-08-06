@@ -33,6 +33,7 @@ from config import (
     DEFAULT_RECOGNITION_CONFIG,
 )
 from dataset.hiragana_dataset import HiraganaDataset
+from preprocessing.dataset_builder import DatasetBuilder, ensure_merged_and_preprocessed
 from models.cnn.hiragana_cnn import HiraganaCNN
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -45,14 +46,12 @@ def fix_seed(seed: int) -> None:
     torch.manual_seed(seed)
 
 
+from utils.split_helper import safe_stratified_split
+
+
 def split_dataset(dataset: HiraganaDataset, val_rate: float, seed: int):
     labels = [label for _, label in dataset.data]
-    splitter = StratifiedShuffleSplit(
-        n_splits=1,
-        test_size=val_rate,
-        random_state=seed,
-    )
-    train_idx, val_idx = next(splitter.split(range(len(labels)), labels))
+    train_idx, val_idx = safe_stratified_split(labels, val_rate=val_rate, seed=seed)
     return Subset(dataset, train_idx), Subset(dataset, val_idx)
 
 
@@ -129,6 +128,7 @@ def save_plots(
 
 
 def train(args: argparse.Namespace) -> None:
+    ensure_merged_and_preprocessed(skip_prep=getattr(args, "skip_prep", False))
     fix_seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dataset = HiraganaDataset(
@@ -268,6 +268,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--resume",
         action="store_true",
         help="Resume training from existing best_model.pth if available",
+    )
+    parser.add_argument(
+        "--skip-prep",
+        action="store_true",
+        help="Skip automatic data merging (merge_data) and preprocessing before training (default: False, auto-prep is enabled by default)",
     )
     return parser
 
