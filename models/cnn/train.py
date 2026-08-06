@@ -11,7 +11,12 @@ Hiragana CNN Model Training Script
 import argparse
 import logging
 import random
+import sys
 from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -78,11 +83,16 @@ def train_epoch(model, loader, criterion, optimizer, device, epoch: int, epochs:
     return total_loss / len(loader), correct / total
 
 
-def validate(model, loader, criterion, device):
+from evaluation.evaluator import compute_evaluation_result
+
+
+def validate(model, loader, criterion, device, labels: tuple[str, ...]):
     model.eval()
     total_loss = 0.0
     correct = 0
     total = 0
+    all_true: list[str] = []
+    all_pred: list[str] = []
 
     with torch.no_grad():
         for mel, label in loader:
@@ -96,7 +106,11 @@ def validate(model, loader, criterion, device):
             correct += (pred == label).sum().item()
             total += label.size(0)
 
-    return total_loss / len(loader), correct / total
+            for t, p in zip(label.cpu().numpy(), pred.cpu().numpy()):
+                all_true.append(labels[t])
+                all_pred.append(labels[p])
+
+    return total_loss / len(loader), correct / total, all_true, all_pred
 
 
 def save_plots(
@@ -113,10 +127,12 @@ def save_plots(
     plt.close()
 
     plt.figure(figsize=(8, 5))
-    plt.plot(history["train_acc"], label="Train")
-    plt.plot(history["val_acc"], label="Validation")
+    plt.plot(history["train_acc"], label="Train Acc")
+    plt.plot(history["val_acc"], label="Val Acc")
+    if "val_macro_f1" in history:
+        plt.plot(history["val_macro_f1"], label="Val Macro-F1", linestyle="--")
     plt.xlabel("Epoch")
-    plt.ylabel("Accuracy")
+    plt.ylabel("Score")
     plt.legend()
     plt.grid(True)
     plt.savefig(accuracy_path)
@@ -141,8 +157,8 @@ def train(args: argparse.Namespace) -> None:
     model = HiraganaCNN(num_classes=len(dataset.labels)).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
-    history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": []}
-    best_acc = 0.0
+    history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": [], "val_macro_f1": []}
+    best_macro_f1 = 0.0
 
     args.best_model_path.parent.mkdir(parents=True, exist_ok=True)
     args.last_model_path.parent.mkdir(parents=True, exist_ok=True)
@@ -157,27 +173,38 @@ def train(args: argparse.Namespace) -> None:
             epoch,
             args.epochs,
         )
-        val_loss, val_acc = validate(model, val_loader, criterion, device)
+        val_loss, val_acc, val_true, val_pred = validate(
+            model, val_loader, criterion, device, labels=dataset.labels
+        )
+        eval_result = compute_evaluation_result(val_true, val_pred, labels=dataset.labels)
+        macro_f1 = eval_result.overall.macro_f1
 
         history["train_loss"].append(train_loss)
         history["val_loss"].append(val_loss)
         history["train_acc"].append(train_acc)
         history["val_acc"].append(val_acc)
+        history["val_macro_f1"].append(macro_f1)
 
         logger.info(
-            "Epoch %d/%d - Train Loss: %.4f, Train Acc: %.4f | Val Loss: %.4f, Val Acc: %.4f",
+            "Epoch %d/%d - Train Loss: %.4f, Train Acc: %.4f | Val Loss: %.4f, Val Acc: %.4f, Val Macro-F1: %.4f",
             epoch + 1,
             args.epochs,
             train_loss,
             train_acc,
             val_loss,
             val_acc,
+            macro_f1,
         )
 
-        if val_acc > best_acc:
-            best_acc = val_acc
+        if macro_f1 > best_macro_f1:
+            best_macro_f1 = macro_f1
             torch.save(model.state_dict(), args.best_model_path)
-            logger.info("Best model saved: %s (Val Acc: %.4f)", args.best_model_path, best_acc)
+            logger.info(
+                "Best model saved: %s (Val Macro-F1: %.4f, Val Acc: %.4f)",
+                args.best_model_path,
+                best_macro_f1,
+                val_acc,
+            )
 
         if val_acc >= args.target_acc:
             logger.info("Target validation accuracy reached: %.2f%%", args.target_acc * 100)
