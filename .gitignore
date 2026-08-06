@@ -229,3 +229,5 @@ evaluation_results/
 
 # Weights & plots
 *.safetensors
+plots/
+*.png
