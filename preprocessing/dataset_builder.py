@@ -68,7 +68,7 @@ class DatasetBuilder:
         output_root.mkdir(parents=True, exist_ok=True)
         index_file = output_root / "index.csv"
 
-        entries: list[tuple[str, str]] = []
+        entries: list[tuple[str, str, str]] = []
 
         # 1. Rawデータの収集 (dataset/<person>/<label>/*.wav)
         if raw_root.exists():
@@ -79,7 +79,7 @@ class DatasetBuilder:
                     input_folder = person / label
                     if input_folder.is_dir():
                         for wav_path in sorted(input_folder.glob("*.wav")):
-                            entries.append((_to_rel_path(wav_path), label))
+                            entries.append((_to_rel_path(wav_path), label, ""))
 
         # 2. Collectedデータの収集 (dataset/collected/pc_xxxxxxxx/metadata.csv)
         if collected_dir.exists():
@@ -91,18 +91,24 @@ class DatasetBuilder:
                         if len(parts) < 3 or not parts[0]:
                             continue
                         filename = parts[1]
-                        ground_truth = parts[3] if len(parts) > 3 else ""
+
+                        if len(parts) >= 4:
+                            predicted_text = parts[2]
+                            ground_truth = parts[3]
+                        else:
+                            ground_truth = parts[2]
+                            predicted_text = ""
 
                         if ground_truth and (ground_truth in self.labels or ground_truth == "other"):
                             wav_path = folder / filename
                             if wav_path.exists():
-                                entries.append((_to_rel_path(wav_path), ground_truth))
+                                entries.append((_to_rel_path(wav_path), ground_truth, predicted_text))
 
         # 3. index.csv の書き出し
         with open(index_file, "w", encoding="utf-8") as f:
-            f.write("filepath,label\n")
-            for filepath, label in entries:
-                f.write(f"{filepath},{label}\n")
+            f.write("filepath,label,predicted_text\n")
+            for filepath, label, pred_text in entries:
+                f.write(f"{filepath},{label},{pred_text}\n")
 
         logger.info("インデックスファイルを作成しました: %s (全 %d 件)", index_file, len(entries))
         return index_file

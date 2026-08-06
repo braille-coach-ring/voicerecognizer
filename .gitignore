@@ -225,6 +225,8 @@ log
 # Datasets generated locally
 merged_dataset/
 processed_dataset/
+evaluation_results/
+
 
 
 
