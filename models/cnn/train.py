@@ -1,11 +1,13 @@
 """
 Hiragana CNN Model Training Script
 
-【設計理由: 学習パイプラインの構成】
-・`processed_dataset/` (または `merged_dataset/index.csv`) から前処理済みの音声・メルスペクトログラムをロード。
-・Stratified 80/20 分割によりクラス割合を均等に保持しながら Train / Validation データセットを作成。
-・CrossEntropyLoss および Adam オプティマイザで CNN モデルを自動学習し、最高精度の重み (best_model.pth)
-  および最新の重み (last_model.pth)、Loss/Accuracy グラフを出力保存します。
+役割:
+  前処理済みデータセット (processed_dataset/ や index.csv) から Stratified 分割により
+  CNN モデルの学習・検証を行い、best_model.pth および labels.json を保存します。
+
+使い方:
+  uv run python models/cnn/train.py                # デフォルト設定で CNN を継続学習
+  uv run python models/cnn/train.py --from-scratch  # 0 から新規学習
 """
 
 import argparse

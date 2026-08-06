@@ -1,15 +1,13 @@
 """
 Wav2Vec2 Fine-Tuning Script with Layer Freezing and On-Memory Caching
 
-【設計理由: 階層フリーズと高速化・過学習防止】
-・階層フリーズ (Layer Freezing):
-  Wav2Vec2 (約95Mパラメータ) の音響特徴抽出器 (7層CNN Feature Encoder) および
-  Transformer エンコーダの下位 10 層を固定 (requires_grad = False) します。
-  最上位 2 層 (10, 11層) および分類ヘッド (Classifier Head) のみをファインチューニング対象とすることで、
-  1. 学習計算量を約 1/3〜1/5 に劇的削減 (爆速化)
-  2. 事前学習で獲得した音響特徴表現の基礎知識の破壊を防止
-  3. 少量データにおける過学習 (Overfitting) を防止
-・オンメモリキャッシュ: データセット読み込み時に波形処理をメモリ上に全計算・保持し、毎エポックの CPU/IO オーバーヘッドをゼロ化。
+役割:
+  Wav2Vec2 プリトレイニードモデルの下位層フリーズ ＋ オンメモリキャッシュにより、
+  転移学習ファインチューニングを高速実行し、best_model ディレクトリおよび labels.json を保存します。
+
+使い方:
+  uv run python models/wav2vec2/train.py           # デフォルト設定で Wav2Vec2 を継続ファインチューニング
+  uv run python models/wav2vec2/train.py --no-resume # ベースモデル (facebook/wav2vec2-base) から新規学習
 """
 
 import argparse

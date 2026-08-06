@@ -1,3 +1,11 @@
+"""
+Voice Recognizer CLI / Interactive Annotation Entry Point
+
+Usage:
+  uv run python main.py                    # Continuous interactive mic recognition & human grading
+  uv run python main.py path/to/sample.wav # Recognize a single audio file
+"""
+
 import argparse
 import datetime
 import logging

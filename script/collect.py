@@ -1,3 +1,10 @@
+"""
+Interactive Voice Dataset Collector Script
+
+Usage:
+  uv run python script/collect.py
+"""
+
 import argparse
 import logging
 import subprocess

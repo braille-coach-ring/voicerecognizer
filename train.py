@@ -1,11 +1,16 @@
 """
 Model Training Dispatcher Script
 
-学習の実行前には、デフォルトで自動的にデータ統合 (`merge_data`: index.csv生成)
-および音声前処理 (`preprocess`: processed_dataset/生成) を実行します。
+役割:
+  学習前に自動でデータ統合 (merge_data: index.csv) および音声前処理 (preprocess: processed_dataset/)
+  を実行した上で、指定モデル (cnn / wav2vec2) の学習を行います。
+  既存重みはデフォルトで自動再利用 (reuse) されます。
 
-自動処理を行わない場合は `--skip-prep` フラグを明示して実行してください。
-例: `uv run python train.py --skip-prep`
+使い方:
+  uv run python train.py                           # CNN モデルを継続学習 (自動前処理ON)
+  uv run python train.py --model wav2vec2          # Wav2Vec2 モデルを継続ファインチューニング
+  uv run python train.py --from-scratch            # 既存重みを破棄して 0 から新規学習
+  uv run python train.py --skip-prep               # 前処理・データ統合をスキップして学習
 """
 
 import argparse

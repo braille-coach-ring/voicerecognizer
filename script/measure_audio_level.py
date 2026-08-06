@@ -1,3 +1,10 @@
+"""
+Audio Input Level & Noise Floor Measurement Utility
+
+Usage:
+  uv run python script/measure_audio_level.py
+"""
+
 import logging
 from pathlib import Path
 import sys

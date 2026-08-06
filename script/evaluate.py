@@ -1,5 +1,14 @@
 """
-Model Evaluation CLI Script
+Model Evaluation CLI & HTML Report Generator Script
+
+役割:
+  指定モデル (cnn / wav2vec2 / whisper) の精度 (Accuracy, Macro-F1) の定量評価を行い、
+  JSON 評価結果および対話型 HTML ダッシュボード (誤判定音声のインライン再生プレーヤー付き) を生成します。
+
+使い方:
+  uv run python script/evaluate.py                 # デフォルト CNN モデルの評価 ＆ HTML出力
+  uv run python script/evaluate.py --model-type wav2vec2
+  uv run python script/evaluate.py --from-dataset-only # 過去録音の predicted_text のみで即時評価
 """
 import argparse
 import logging
