@@ -53,8 +53,15 @@ def download_latest_team_weights_if_needed(
     api = HfApi()
 
     files_to_sync = []
-    if model_type in ["cnn", "best_only", "all"]:
+    if model_type == "cnn":
         files_to_sync.extend(["best_model.pth", "labels.json"])
+    elif model_type == "wav2vec2":
+        files_to_sync.extend([
+            "wav2vec2_best/config.json",
+            "wav2vec2_best/labels.json",
+            "wav2vec2_best/model.safetensors",
+            "wav2vec2_best/preprocessor_config.json",
+        ])
 
     if not files_to_sync:
         return True
@@ -83,6 +90,7 @@ def download_latest_team_weights_if_needed(
                 repo_type="model",
                 token=token,
             )
+            local_file.parent.mkdir(parents=True, exist_ok=True)
             # ダウンロードしたファイルを target_dir に配置
             with open(downloaded_path, "rb") as src, open(local_file, "wb") as dst:
                 dst.write(src.read())
