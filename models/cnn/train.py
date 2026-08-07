@@ -33,6 +33,7 @@ from config import (
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
+    DEFAULT_HUGGINGFACE_CONFIG,
 )
 from dataset.hiragana_dataset import HiraganaDataset
 from preprocessing.dataset_builder import DatasetBuilder, ensure_merged_and_preprocessed
