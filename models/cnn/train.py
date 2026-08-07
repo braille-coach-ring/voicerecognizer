@@ -57,7 +57,9 @@ def split_dataset(
     dataset: HiraganaDataset, val_rate: float = 0.2, seed: int = 42
 ) -> tuple[Subset, Subset]:
     from utils.split_helper import safe_stratified_split
-    return safe_stratified_split(dataset, val_rate, seed)
+    labels = [label for _, label in dataset.data]
+    train_idx, val_idx = safe_stratified_split(labels, val_rate=val_rate, seed=seed)
+    return Subset(dataset, train_idx), Subset(dataset, val_idx)
 
 
 def train_epoch(
