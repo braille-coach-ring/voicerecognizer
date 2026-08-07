@@ -21,5 +21,9 @@ class VoiceRecognizer:
         logger.info("推論時間: %s", end_time - start_time)
         return text
 
+    @property
+    def strategy(self) -> RecognitionStrategy:
+        return self._strategy
+
     def set_strategy(self, strategy: RecognitionStrategy) -> None:
         self._strategy = strategy

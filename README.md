@@ -7,10 +7,11 @@
 現在は Strategy Pattern を中心にして、次の認識方式を切り替えられる構造になっています。
 
 - CNN: ゼロから学習したひらがな母音認識モデル。現在動作する実装です。
-- Wav2Vec2 Fine-tuning: 今後実装予定の空実装です。
+- Wav2Vec2 Fine-tuning: Hugging Face Wav2Vec2 に分類ヘッドを載せてファインチューニングする実装です。
 - Whisper: 今後実装予定の空実装です。
 
-現在のCNNモデルは `a`, `e`, `i`, `o`, `u` の5クラスを認識します。重みファイルは `weights/best_model.pth` を使用します。
+現在のCNNモデルは `a`, `e`, `i`, `o`, `u`, `other` のクラスを認識します。重みファイルは `weights/best_model.pth` を使用します。
+Wav2Vec2は学習後に `weights/wav2vec2_best/` のモデルディレクトリを使用します。
 
 ## 依存関係の流れ
 
@@ -41,7 +42,7 @@ Recognizerの切り替えは `RecognizerFactory` だけが担当します。`if`
 | `RecognizerFactory` | `core/factory/recognizer_factory.py` | `cnn`, `wav2vec2`, `whisper` からRecognizerを生成 |
 | `AudioPipeline` | `core/services/audio_pipeline.py` | 録音、認識、結果表示の流れを制御 |
 | `CNNRecognizer` | `recognizers/cnn_recognizer.py` | CNN用のモデルロード、前処理、Mel変換、推論、後処理 |
-| `Wav2Vec2Recognizer` | `recognizers/wav2vec2_recognizer.py` | Wav2Vec2用の将来実装枠 |
+| `Wav2Vec2Recognizer` | `recognizers/wav2vec2_recognizer.py` | Wav2Vec2用のモデルロード、FeatureExtractor前処理、推論、後処理 |
 | `WhisperRecognizer` | `recognizers/whisper_recognizer.py` | Whisper用の将来実装枠 |
 | `AudioPreprocessor` | `preprocessing/audio_preprocessor.py` | 録音データの共通波形処理 |
 
@@ -169,7 +170,7 @@ uv run python main.py --model wav2vec2
 uv run python main.py --model whisper
 ```
 
-ただし、現在実際に認識まで動くのは `cnn` のみです。`wav2vec2` と `whisper` は将来実装用の空実装なので、認識実行時には `NotImplementedError` になります。
+`wav2vec2` は事前にファインチューニング済みモデルを作成してから使います。デフォルトでは `weights/wav2vec2_best/` を読み込みます。`whisper` は将来実装用の空実装です。
 
 ## CNNモデルを学習する
 
@@ -177,6 +178,12 @@ uv run python main.py --model whisper
 
 ```powershell
 uv run python -m models.cnn.train
+```
+
+共通入口からもCNNを学習できます。
+
+```powershell
+uv run python train.py --model cnn
 ```
 
 主なオプション:
@@ -197,6 +204,39 @@ uv run python -m models.cnn.train `
 - `weights/last_model.pth`
 - `loss.png`
 - `accuracy.png`
+
+## Wav2Vec2モデルを学習する
+
+`--model wav2vec2` を指定すると、Wav2Vec2をラベル分類用にファインチューニングし、検証Macro-F1が最も高いモデルを `weights/wav2vec2_best/` に保存します。
+
+```powershell
+uv run python train.py --model wav2vec2
+```
+
+主なオプション:
+
+```powershell
+uv run python train.py --model wav2vec2 `
+  --root-dir processed_dataset `
+  --epochs 30 `
+  --batch-size 4 `
+  --learning-rate 0.00003 `
+  --best-model-path weights\wav2vec2_best `
+  --last-model-path weights\wav2vec2_last
+```
+
+学習後は次のファイル・ディレクトリが更新されます。
+
+- `weights/wav2vec2_best/`
+- `weights/wav2vec2_last/`
+- `wav2vec2_loss.png`
+- `wav2vec2_accuracy.png`
+
+学習済みモデルを使った推論:
+
+```powershell
+uv run python main.py dataset\mikeryu\a\001.wav --model wav2vec2
+```
 
 ## CNNモデルを評価する
 

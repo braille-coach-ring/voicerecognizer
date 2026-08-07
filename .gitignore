@@ -227,6 +227,5 @@ merged_dataset/
 processed_dataset/
 evaluation_results/
 
-
-
-
+# Weights & plots
+*.safetensors

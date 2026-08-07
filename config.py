@@ -39,7 +39,7 @@ class RecognitionConfig:
     sample_rate: int = 16000
     model_type: RecognizerType = "cnn"
     target_length_seconds: float = 1.0
-    top_db: float = 30.0
+    top_db: float = 74.9
     n_mels: int = 64
     n_fft: int = 400
     hop_length: int = 160
@@ -47,6 +47,11 @@ class RecognitionConfig:
     cnn_weight_path: Path = PROJECT_ROOT / "weights" / "best_model.pth"
     last_model_path: Path = PROJECT_ROOT / "weights" / "last_model.pth"
     torchscript_model_path: Path = PROJECT_ROOT / "weights" / "hiragana_cnn.pt"
+    wav2vec2_pretrained_model_name: str = "facebook/wav2vec2-base"
+    wav2vec2_best_model_dir: Path = PROJECT_ROOT / "weights" / "wav2vec2_best"
+    wav2vec2_last_model_dir: Path = PROJECT_ROOT / "weights" / "wav2vec2_last"
+    wav2vec2_loss_plot_path: Path = PROJECT_ROOT / "wav2vec2_loss.png"
+    wav2vec2_accuracy_plot_path: Path = PROJECT_ROOT / "wav2vec2_accuracy.png"
     output_audio_path: Path = PROJECT_ROOT / "predicted_audio.wav"
     raw_dataset_dir: Path = PROJECT_ROOT / "dataset"
     collected_dataset_dir: Path = PROJECT_ROOT / "dataset" / "collected"

@@ -9,6 +9,7 @@ Hiragana CNN Model Training Script
 """
 
 import argparse
+import json
 import logging
 import random
 import sys
@@ -113,30 +114,18 @@ def validate(model, loader, criterion, device, labels: tuple[str, ...]):
     return total_loss / len(loader), correct / total, all_true, all_pred
 
 
+from utils.plot_saver import save_history_plots
+
+
 def save_plots(
     history: dict[str, list[float]], loss_path: Path, accuracy_path: Path
 ) -> None:
-    plt.figure(figsize=(8, 5))
-    plt.plot(history["train_loss"], label="Train")
-    plt.plot(history["val_loss"], label="Validation")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(loss_path)
-    plt.close()
-
-    plt.figure(figsize=(8, 5))
-    plt.plot(history["train_acc"], label="Train Acc")
-    plt.plot(history["val_acc"], label="Val Acc")
-    if "val_macro_f1" in history:
-        plt.plot(history["val_macro_f1"], label="Val Macro-F1", linestyle="--")
-    plt.xlabel("Epoch")
-    plt.ylabel("Score")
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(accuracy_path)
-    plt.close()
+    save_history_plots(
+        history=history,
+        model_name="cnn",
+        legacy_loss_path=loss_path,
+        legacy_accuracy_path=accuracy_path,
+    )
 
 
 def train(args: argparse.Namespace) -> None:
@@ -159,6 +148,23 @@ def train(args: argparse.Namespace) -> None:
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": [], "val_macro_f1": []}
     best_macro_f1 = 0.0
+
+    if args.best_model_path.exists():
+        try:
+            eval_model = HiraganaCNN(num_classes=len(dataset.labels)).to(device)
+            eval_model.load_state_dict(torch.load(args.best_model_path, map_location=device, weights_only=True))
+            _, val_acc, val_true, val_pred = validate(
+                eval_model, val_loader, criterion, device, labels=dataset.labels
+            )
+            init_result = compute_evaluation_result(val_true, val_pred, labels=dataset.labels)
+            best_macro_f1 = init_result.overall.macro_f1
+            logger.info("保存済みベストモデル (%s) の評価スコア - Val Acc: %.4f, Val Macro-F1: %.4f", args.best_model_path, val_acc, best_macro_f1)
+
+            if args.resume:
+                model.load_state_dict(torch.load(args.best_model_path, map_location=device, weights_only=True))
+                logger.info("既存モデルの重みをロードして継続学習を開始します。")
+        except Exception as e:
+            logger.warning("既存モデル %s の評価/ロードに失敗しました (%s)。", args.best_model_path, e)
 
     args.best_model_path.parent.mkdir(parents=True, exist_ok=True)
     args.last_model_path.parent.mkdir(parents=True, exist_ok=True)
@@ -199,6 +205,9 @@ def train(args: argparse.Namespace) -> None:
         if macro_f1 > best_macro_f1:
             best_macro_f1 = macro_f1
             torch.save(model.state_dict(), args.best_model_path)
+            labels_path = args.best_model_path.parent / "labels.json"
+            with open(labels_path, "w", encoding="utf-8") as f:
+                json.dump(list(dataset.labels), f, ensure_ascii=False, indent=2)
             logger.info(
                 "Best model saved: %s (Val Macro-F1: %.4f, Val Acc: %.4f)",
                 args.best_model_path,
@@ -254,6 +263,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--accuracy-plot-path",
         type=Path,
         default=DEFAULT_RECOGNITION_CONFIG.accuracy_plot_path,
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume training from existing best_model.pth if available",
     )
     return parser
 

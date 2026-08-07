@@ -47,7 +47,27 @@ class AudioPreprocessor:
         waveform = self.load(audio)
         self.threshold_calculator.update(waveform)
         current_top_db = self.threshold_calculator.get_silence_threshold()
-        waveform, _ = librosa.effects.trim(waveform, top_db=current_top_db)
+
+        # 1. 無音境界の検索
+        intervals = librosa.effects.split(waveform, top_db=current_top_db)
+        if len(intervals) > 0:
+            start_idx = intervals[0][0]
+            end_idx = intervals[-1][1]
+
+            # 2. 「頭切れ」防止マージン (前後に約50msの余裕を確保)
+            margin_samples = int(self.sample_rate * 0.05)  # 50ms
+            start_idx = max(0, start_idx - margin_samples)
+            end_idx = min(len(waveform), end_idx + margin_samples)
+            waveform = waveform[start_idx:end_idx]
+
+        # 3. 「ブツッ」という波形不連続ノイズ（クリック音）を抑えるソフトフェード処理 (5ms)
+        fade_samples = int(self.sample_rate * 0.005)  # 5ms
+        if len(waveform) > fade_samples * 2:
+            fade_in = np.linspace(0.0, 1.0, fade_samples, dtype=np.float32)
+            fade_out = np.linspace(1.0, 0.0, fade_samples, dtype=np.float32)
+            waveform[:fade_samples] *= fade_in
+            waveform[-fade_samples:] *= fade_out
+
         waveform = self._normalize_volume(waveform)
         logger.info("AudioPreprocessor is normalized volume")
         return self._fit_length(waveform)

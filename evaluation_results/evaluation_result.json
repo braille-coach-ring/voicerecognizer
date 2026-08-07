@@ -1,0 +1,194 @@
+{
+  "overall": {
+    "accuracy": 0.9609,
+    "macro_f1": 0.9493,
+    "weighted_f1": 0.9606,
+    "total_samples": 409
+  },
+  "per_class": {
+    "a": {
+      "precision": 0.9684,
+      "recall": 0.9892,
+      "f1_score": 0.9787,
+      "support": 93
+    },
+    "e": {
+      "precision": 0.9375,
+      "recall": 0.9615,
+      "f1_score": 0.9494,
+      "support": 78
+    },
+    "i": {
+      "precision": 0.9211,
+      "recall": 0.9859,
+      "f1_score": 0.9524,
+      "support": 71
+    },
+    "o": {
+      "precision": 1.0,
+      "recall": 0.8902,
+      "f1_score": 0.9419,
+      "support": 82
+    },
+    "u": {
+      "precision": 0.9863,
+      "recall": 1.0,
+      "f1_score": 0.9931,
+      "support": 72
+    },
+    "other": {
+      "precision": 0.9167,
+      "recall": 0.8462,
+      "f1_score": 0.88,
+      "support": 13
+    }
+  },
+  "confusion_matrix": {
+    "a": {
+      "a": 92,
+      "e": 0,
+      "i": 1,
+      "o": 0,
+      "u": 0,
+      "other": 0
+    },
+    "e": {
+      "a": 0,
+      "e": 75,
+      "i": 3,
+      "o": 0,
+      "u": 0,
+      "other": 0
+    },
+    "i": {
+      "a": 0,
+      "e": 1,
+      "i": 70,
+      "o": 0,
+      "u": 0,
+      "other": 0
+    },
+    "o": {
+      "a": 2,
+      "e": 3,
+      "i": 2,
+      "o": 73,
+      "u": 1,
+      "other": 1
+    },
+    "u": {
+      "a": 0,
+      "e": 0,
+      "i": 0,
+      "o": 0,
+      "u": 72,
+      "other": 0
+    },
+    "other": {
+      "a": 1,
+      "e": 1,
+      "i": 0,
+      "o": 0,
+      "u": 0,
+      "other": 11
+    }
+  },
+  "misclassified": [
+    {
+      "true_label": "e",
+      "predicted_label": "i",
+      "filepath": "dataset/mikeryu/e/001.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "o",
+      "predicted_label": "e",
+      "filepath": "dataset/other/o/013.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "a",
+      "predicted_label": "i",
+      "filepath": "dataset/yu-ota/a/002.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "i",
+      "predicted_label": "e",
+      "filepath": "dataset/collected/pc_699ec508/1785911003_875322.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "o",
+      "predicted_label": "u",
+      "filepath": "dataset/collected/pc_699ec508/1786008789_948639.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "e",
+      "predicted_label": "i",
+      "filepath": "dataset/collected/pc_699ec508/1786008798_43882.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "other",
+      "predicted_label": "a",
+      "filepath": "dataset/collected/pc_699ec508/1786008814_293271.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "e",
+      "predicted_label": "i",
+      "filepath": "dataset/collected/pc_699ec508/1786009669_256243.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "other",
+      "predicted_label": "e",
+      "filepath": "dataset/collected/pc_699ec508/1786009695_264925.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "o",
+      "predicted_label": "i",
+      "filepath": "dataset/collected/pc_699ec508/1786009721_979704.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "o",
+      "predicted_label": "i",
+      "filepath": "dataset/collected/pc_699ec508/1786009745_370761.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "o",
+      "predicted_label": "e",
+      "filepath": "dataset/collected/pc_699ec508/1786010065_655264.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "o",
+      "predicted_label": "a",
+      "filepath": "dataset/collected/pc_699ec508/1786010072_717978.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "o",
+      "predicted_label": "a",
+      "filepath": "dataset/collected/pc_699ec508/1786010108_878127.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "o",
+      "predicted_label": "e",
+      "filepath": "dataset/collected/pc_699ec508/1786010119_306543.wav",
+      "confidence": null
+    },
+    {
+      "true_label": "o",
+      "predicted_label": "other",
+      "filepath": "dataset/collected/pc_699ec508/1786010143_026722.wav",
+      "confidence": null
+    }
+  ]
+}
