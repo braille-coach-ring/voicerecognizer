@@ -14,7 +14,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Upload model weights to Hugging Face Hub smartly (skip if identical)")
     parser.add_argument(
         "--type",
-        choices=["cnn", "wav2vec2", "best_only", "all"],
+        choices=["cnn", "wav2vec2"],
         default="cnn",
         help="Specify which model weights to upload (default: cnn)",
     )

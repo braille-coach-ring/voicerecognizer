@@ -1,14 +1,14 @@
 import hashlib
 import logging
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 from huggingface_hub import HfApi, hf_hub_download, login
 
 from config import DEFAULT_HUGGINGFACE_CONFIG, DEFAULT_RECOGNITION_CONFIG, HuggingFaceConfig
 
 logger = logging.getLogger(__name__)
 
-ModelType = Literal["cnn", "wav2vec2", "best_only", "all"]
+ModelType = Literal["cnn", "wav2vec2"]
 
 
 def calculate_file_sha256(file_path: Path) -> str:
@@ -38,8 +38,8 @@ def get_remote_file_sha256_map(api: HfApi, repo_id: str, paths: list[str]) -> di
 
 def download_latest_team_weights_if_needed(
     model_type: ModelType = "cnn",
-    hf_config: Optional[HuggingFaceConfig] = None,
-    weights_dir: Optional[Path] = None,
+    hf_config: HuggingFaceConfig | None = None,
+    weights_dir: Path | None = None,
 ) -> bool:
     """
     学習開始時等に呼ぶことで、Hugging Face リモートのチーム共有最新モデルと手元のモデルの SHA-256 を比較し、
@@ -95,8 +95,8 @@ def download_latest_team_weights_if_needed(
 
 def upload_weights_to_hf(
     model_type: ModelType = "cnn",
-    hf_config: Optional[HuggingFaceConfig] = None,
-    weights_dir: Optional[Path] = None,
+    hf_config: HuggingFaceConfig | None = None,
+    weights_dir: Path | None = None,
     force_upload: bool = False,
 ) -> bool:
     """
@@ -177,26 +177,8 @@ def upload_weights_to_hf(
             )
             logger.info("✨ Wav2Vec2 ベストモデルのアップロードが完了しました: https://huggingface.co/%s", cfg.repo_id)
 
-        elif model_type == "best_only":
-            logger.info("🚀 Hugging Face Hub (%s) へ全モデルの Best 成果物をアップロード中...", cfg.repo_id)
-            api.upload_folder(
-                folder_path=str(target_dir),
-                repo_id=cfg.repo_id,
-                repo_type="model",
-                allow_patterns=["best_model.pth", "labels.json", "wav2vec2_best/*"],
-                ignore_patterns=["*.log", "*.tmp", ".DS_Store"],
-            )
-            logger.info("✨ 全 Best 成果物のアップロードが完了しました: https://huggingface.co/%s", cfg.repo_id)
-
-        else:  # "all"
-            logger.info("🚀 Hugging Face Hub (%s) へ weights 全ファイルをアップロード中...", cfg.repo_id)
-            api.upload_folder(
-                folder_path=str(target_dir),
-                repo_id=cfg.repo_id,
-                repo_type="model",
-                ignore_patterns=["*.log", "*.tmp", ".DS_Store"],
-            )
-            logger.info("✨ 全 weights のアップロードが完了しました: https://huggingface.co/%s", cfg.repo_id)
+        else:
+            logger.warning("未対応の model_type: %s (cnn または wav2vec2 を指定してください)", model_type)
 
         return True
 

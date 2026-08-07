@@ -62,24 +62,6 @@ class TestModelUploader(unittest.TestCase):
             self.assertTrue(res)
             self.assertEqual(mock_api_instance.upload_file.call_count, 0)
 
-    @patch("utils.model_uploader.login")
-    @patch("utils.model_uploader.HfApi")
-    def test_upload_weights_best_only(self, mock_hf_api_class, mock_login):
-        mock_api_instance = MagicMock()
-        mock_hf_api_class.return_value = mock_api_instance
-
-        dummy_cfg = HuggingFaceConfig(
-            token="dummy_token_123",
-            repo_id="dummy/repo-id",
-            auto_upload=True,
-        )
-
-        dummy_dir = Path("weights")
-        with patch.object(Path, "exists", return_value=True):
-            res = upload_weights_to_hf(model_type="best_only", hf_config=dummy_cfg, weights_dir=dummy_dir)
-            self.assertTrue(res)
-            mock_login.assert_called_once_with(token="dummy_token_123")
-            mock_api_instance.upload_folder.assert_called_once()
 
     def test_upload_weights_missing_token(self):
         dummy_cfg = HuggingFaceConfig(token="", repo_id="dummy/repo-id")

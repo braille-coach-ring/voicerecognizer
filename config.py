@@ -65,15 +65,11 @@ class RecognitionConfig:
     wav2vec2_pretrained_model_name: str = "facebook/wav2vec2-base"
     wav2vec2_best_model_dir: Path = PROJECT_ROOT / "weights" / "wav2vec2_best"
     wav2vec2_last_model_dir: Path = PROJECT_ROOT / "weights" / "wav2vec2_last"
-    wav2vec2_loss_plot_path: Path = PROJECT_ROOT / "wav2vec2_loss.png"
-    wav2vec2_accuracy_plot_path: Path = PROJECT_ROOT / "wav2vec2_accuracy.png"
     output_audio_path: Path = PROJECT_ROOT / "predicted_audio.wav"
     raw_dataset_dir: Path = PROJECT_ROOT / "dataset"
     collected_dataset_dir: Path = PROJECT_ROOT / "dataset" / "collected"
     merged_dataset_dir: Path = PROJECT_ROOT / "merged_dataset"
     processed_dataset_dir: Path = PROJECT_ROOT / "processed_dataset"
-    loss_plot_path: Path = PROJECT_ROOT / "loss.png"
-    accuracy_plot_path: Path = PROJECT_ROOT / "accuracy.png"
     log_path: Path = PROJECT_ROOT / "log"
 
 

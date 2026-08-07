@@ -21,11 +21,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
-from sklearn.model_selection import StratifiedShuffleSplit
 from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
 
@@ -37,7 +35,7 @@ from config import (
 )
 from dataset.hiragana_dataset import HiraganaDataset
 from evaluation.evaluator import compute_evaluation_result
-from preprocessing.dataset_builder import DatasetBuilder, ensure_merged_and_preprocessed
+from preprocessing.dataset_builder import ensure_merged_and_preprocessed
 from models.cnn.hiragana_cnn import HiraganaCNN
 from utils.plot_saver import save_history_plots
 
@@ -254,8 +252,6 @@ def train(args: argparse.Namespace) -> None:
     save_history_plots(
         history=history,
         model_name="cnn",
-        legacy_loss_path=DEFAULT_RECOGNITION_CONFIG.loss_plot_path,
-        legacy_accuracy_path=DEFAULT_RECOGNITION_CONFIG.accuracy_plot_path,
         num_classes=len(dataset.labels),
         num_samples=len(dataset),
     )

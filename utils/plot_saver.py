@@ -196,52 +196,23 @@ def save_history_plots(
             logger.warning("旧ロスグラフパスへの保存に失敗しました: %s", e)
     plt.close()
 
-    # --- Accuracy / 4-Metric & Long-Term Trend Plot ---
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 8))
-
-    # Top Panel: Epoch-wise Metrics (4 metrics)
+    # --- Accuracy / Macro-F1 Plot ---
+    plt.figure(figsize=(8, 5))
     if "train_acc" in history:
-        ax1.plot(history["train_acc"], label="Train Acc", color="steelblue", linewidth=1.5)
+        plt.plot(history["train_acc"], label="Train Acc", color="steelblue", linewidth=1.5)
     if "val_acc" in history:
-        ax1.plot(history["val_acc"], label="Val Acc", color="navy", linewidth=2.0)
+        plt.plot(history["val_acc"], label="Val Acc", color="navy", linewidth=2.0)
     if "val_macro_f1" in history:
-        ax1.plot(history["val_macro_f1"], label="Val Macro-F1", color="darkorange", linestyle="--", linewidth=2.0)
+        plt.plot(history["val_macro_f1"], label="Val Macro-F1", color="darkorange", linestyle="--", linewidth=2.0)
     if "val_weighted_f1" in history:
-        ax1.plot(history["val_weighted_f1"], label="Val Weighted-F1", color="forestgreen", linestyle=":", linewidth=2.0)
+        plt.plot(history["val_weighted_f1"], label="Val Weighted-F1", color="forestgreen", linestyle=":", linewidth=2.0)
+    plt.xlabel("Epoch")
+    plt.ylabel("Score (0.0 - 1.0)")
+    plt.title(f"{model_name.upper()} Training & Validation Metrics ({timestamp})")
+    plt.legend(loc="lower right")
+    plt.grid(True, alpha=0.3)
+    plt.ylim(0, 1.05)
 
-    ax1.set_xlabel("Epoch")
-    ax1.set_ylabel("Score (0.0 - 1.0)")
-    ax1.set_title(f"{model_name.upper()} Training & Validation Metrics ({timestamp})")
-    ax1.legend(loc="lower right")
-    ax1.grid(True, alpha=0.3)
-    ax1.set_ylim(0, 1.05)
-
-    # Bottom Panel: Long-Term Progress Across Training Runs
-    records = []
-    history_json_path = model_plot_dir / "experiment_history.json"
-    if history_json_path.exists():
-        try:
-            with open(history_json_path, "r", encoding="utf-8") as f:
-                records = json.load(f)
-        except Exception:
-            records = []
-
-    if records:
-        run_ids = [r["run_id"] for r in records]
-        accs = [r["val_acc"] for r in records]
-        f1s = [r["val_macro_f1"] for r in records]
-        ax2.plot(run_ids, accs, marker="o", color="navy", label="Historical Val Acc")
-        ax2.plot(run_ids, f1s, marker="s", color="darkorange", linestyle="--", label="Historical Val Macro-F1")
-        ax2.set_xlabel("Training Run #")
-        ax2.set_ylabel("Score (0.0 - 1.0)")
-        ax2.set_title("Long-Term Performance Progress Across Runs")
-        ax2.legend(loc="lower right")
-        ax2.grid(True, alpha=0.3)
-        ax2.set_ylim(0, 1.05)
-    else:
-        ax2.text(0.5, 0.5, "No historical runs recorded yet", ha="center", va="center")
-
-    plt.tight_layout()
     plt.savefig(hist_acc_path, bbox_inches="tight")
     plt.savefig(latest_acc_path, bbox_inches="tight")
     if legacy_accuracy_path:
