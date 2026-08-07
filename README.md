@@ -1,4 +1,4 @@
-﻿# voicelibrary 現在の構成と実行方法
+# voicelibrary 現在の構成と実行方法
 
 ## このプログラムについて
 
@@ -10,10 +10,10 @@
 - Wav2Vec2 Fine-tuning: Hugging Face Wav2Vec2 に分類ヘッドを載せてファインチューニングする実装です。
 - Whisper: 今後実装予定の空実装です。
 
+モデルの重み管理および Hugging Face Hub 同期設定については、[モデル管理ガイド (Docs/MODEL_HUB_GUIDE.md)](Docs/MODEL_HUB_GUIDE.md) を参照してください。
+
 現在のCNNモデルは `a`, `e`, `i`, `o`, `u`, `other` のクラスを認識します。重みファイルは `weights/best_model.pth` を使用します。
 Wav2Vec2は学習後に `weights/wav2vec2_best/` のモデルディレクトリを使用します。
-
-## 依存関係の流れ
 
 実行時の依存関係は次の形です。
 

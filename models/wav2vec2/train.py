@@ -418,6 +418,7 @@ def train(args: argparse.Namespace) -> None:
         "val_acc": [],
         "val_macro_f1": [],
     }
+    is_best_updated = False
 
     for epoch in range(args.epochs):
         train_loss, train_acc = train_epoch(
@@ -458,6 +459,7 @@ def train(args: argparse.Namespace) -> None:
 
         if macro_f1 > best_macro_f1:
             best_macro_f1 = macro_f1
+            is_best_updated = True
             save_pretrained_model(
                 model,
                 feature_extractor,
@@ -484,11 +486,28 @@ def train(args: argparse.Namespace) -> None:
         args.last_model_path,
         dataset.labels,
     )
-    save_plots(history, args.loss_plot_path, args.accuracy_plot_path)
+    save_history_plots(
+        history=history,
+        model_name="wav2vec2",
+        legacy_loss_path=args.loss_plot_path,
+        legacy_accuracy_path=args.accuracy_plot_path,
+        num_classes=len(dataset.labels),
+        num_samples=len(dataset),
+    )
     logger.info(
         "Training finished. Last Wav2Vec2 model saved to %s",
         args.last_model_path,
     )
+
+    # Hugging Face 自動アップロード判定 (ベストモデルが更新された場合のみ)
+    from config import DEFAULT_HUGGINGFACE_CONFIG
+    if getattr(args, "upload_hf", False) or DEFAULT_HUGGINGFACE_CONFIG.auto_upload:
+        if is_best_updated:
+            from utils.model_uploader import upload_weights_to_hf
+            upload_weights_to_hf(model_type="wav2vec2")
+        else:
+            logger.info("ベストモデルが更新されなかったため、Hugging Face へのアップロードをスキップします。")
+
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -229,5 +229,13 @@ evaluation_results/
 
 # Weights & plots
 *.safetensors
+*.pth
+*.bin
+weights/wav2vec2_best/
+weights/wav2vec2_last/
+!weights/labels.json
+!weights/**/labels.json
+!weights/**/config.json
+!weights/**/preprocessor_config.json
 plots/
 *.png

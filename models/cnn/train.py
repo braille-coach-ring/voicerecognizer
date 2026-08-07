@@ -171,11 +171,18 @@ def train(args: argparse.Namespace) -> None:
                 )
                 init_result = compute_evaluation_result(val_true, val_pred, labels=dataset.labels)
                 best_macro_f1 = init_result.overall.macro_f1
-                logger.info("既存モデル重み (%s) を再利用 (reuse) して継続学習します - Val Acc: %.4f, Val Macro-F1: %.4f", args.best_model_path, val_acc, best_macro_f1)
-            else:
-                logger.info("既存モデル (%s) の特徴抽出層重みを再利用 (reuse) し、分類ヘッドを更新して継続学習を開始します。", args.best_model_path)
+            checkpoint = torch.load(args.best_model_path, map_location=device, weights_only=True)
+            model.load_state_dict(checkpoint)
+            logger.info("既存のチェックポイント (%s) を再利用して継続学習を行います。", args.best_model_path)
+            # 初期評価を行って現在の best_macro_f1 をセット
+            _, val_acc_init, val_true_init, val_pred_init = validate(
+                model, val_loader, criterion, device, labels=dataset.labels
+            )
+            eval_result_init = compute_evaluation_result(val_true_init, val_pred_init, labels=dataset.labels)
+            best_macro_f1 = eval_result_init.overall.macro_f1
+            logger.info("保存済みベストモデルの評価スコア - Val Acc: %.4f, Val Macro-F1: %.4f", val_acc_init, best_macro_f1)
         except Exception as e:
-            logger.warning("既存モデル %s の再利用に失敗したため新規学習を行います (%s)。", args.best_model_path, e)
+            logger.warning("既存チェックポイントの読み込み/評価に失敗しました: %s", e)
     elif not args.resume:
         logger.info("=== [--from-scratch / --no-resume が指定されたため、既存重みを破棄して 0 から新規学習を開始します] ===")
     else:
@@ -219,6 +226,7 @@ def train(args: argparse.Namespace) -> None:
 
         if macro_f1 > best_macro_f1:
             best_macro_f1 = macro_f1
+            is_best_updated = True
             torch.save(model.state_dict(), args.best_model_path)
             labels_path = args.best_model_path.parent / "labels.json"
             with open(labels_path, "w", encoding="utf-8") as f:
@@ -235,8 +243,23 @@ def train(args: argparse.Namespace) -> None:
             break
 
     torch.save(model.state_dict(), args.last_model_path)
-    save_plots(history, args.loss_plot_path, args.accuracy_plot_path)
+    save_history_plots(
+        history=history,
+        model_name="cnn",
+        legacy_loss_path=args.loss_plot_path,
+        legacy_accuracy_path=args.accuracy_plot_path,
+        num_classes=len(dataset.labels),
+        num_samples=len(dataset),
+    )
     logger.info("Training finished. Last model saved to %s", args.last_model_path)
+
+    # Hugging Face 自動アップロード判定 (ベストモデルが更新された場合のみ)
+    if (getattr(args, "upload_hf", False) or DEFAULT_HUGGINGFACE_CONFIG.auto_upload):
+        if is_best_updated:
+            from utils.model_uploader import upload_weights_to_hf
+            upload_weights_to_hf(model_type="cnn")
+        else:
+            logger.info("ベストモデルが更新されなかったため、Hugging Face へのアップロードをスキップします。")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -296,6 +319,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--skip-prep",
         action="store_true",
         help="Skip automatic data merging (merge_data) and preprocessing before training (default: False, auto-prep is enabled by default)",
+    )
+    parser.add_argument(
+        "--upload-hf",
+        action="store_true",
+        help="Upload trained model weights to Hugging Face Hub after training finishes",
     )
     return parser
 
