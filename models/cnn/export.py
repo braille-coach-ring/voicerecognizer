@@ -13,14 +13,30 @@ from models.cnn.hiragana_cnn import HiraganaCNN
 logger = logging.getLogger(__name__)
 
 
+import json
+
+
 def export_torchscript(
     model_path: Path,
     output_path: Path,
-    num_classes: int,
-    n_mels: int,
-    time_steps: int,
+    num_classes: int | None = None,
+    n_mels: int = DEFAULT_PREPROCESS_CONFIG.n_mels,
+    time_steps: int = 101,
 ) -> None:
     logger.info("TorchScript モデルへの書き出しを開始します: %s", model_path)
+
+    labels_json_path = model_path.parent / "labels.json"
+    if num_classes is None:
+        if labels_json_path.exists():
+            try:
+                labels = json.loads(labels_json_path.read_text(encoding="utf-8"))
+                num_classes = len(labels)
+                logger.info("labels.json からクラス数を自動検出しました: %d クラス", num_classes)
+            except Exception as e:
+                logger.warning("labels.json の読み込みに失敗しました: %s", e)
+        if num_classes is None:
+            num_classes = len(DEFAULT_RECOGNITION_CONFIG.labels)
+
     model = HiraganaCNN(num_classes=num_classes)
     model.load_state_dict(torch.load(model_path, map_location="cpu"))
     model.eval()

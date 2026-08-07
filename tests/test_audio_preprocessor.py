@@ -1,0 +1,47 @@
+import unittest
+import numpy as np
+
+from preprocessing.audio_preprocessor import AudioPreprocessor
+
+
+class TestAudioPreprocessor(unittest.TestCase):
+    def setUp(self):
+        self.preprocessor = AudioPreprocessor()
+
+    def test_smooth_fade_and_rms_normalization(self):
+        # 100Hz Sine wave simulating low-frequency vowel "o"
+        sr = 16000
+        t = np.linspace(0, 0.5, int(sr * 0.5), endpoint=False)
+        audio = (0.05 * np.sin(2 * np.pi * 100 * t)).astype(np.float32)  # Soft "o" sound
+
+        processed = self.preprocessor.preprocess_waveform(audio)
+
+        # Output shape should match target length (1.0s = 16000 samples)
+        self.assertEqual(len(processed), 16000)
+
+        # RMS-based normalization should boost soft "o" sound to target level (~0.12 RMS or near 0.2-0.5 peak)
+        rms = np.sqrt(np.mean(processed**2))
+        self.assertGreater(rms, 0.05)
+
+        # Peak amplitude bounded within 0.95
+        peak = np.max(np.abs(processed))
+        self.assertLessEqual(peak, 0.95 + 1e-4)
+
+        # Smooth fade-in at the beginning
+        self.assertLess(abs(processed[0]), 0.05)
+
+    def test_long_audio_truncation_has_smooth_fadeout(self):
+        # 1.5s long audio exceeding target 1.0s
+        sr = 16000
+        t = np.linspace(0, 1.5, int(sr * 1.5), endpoint=False)
+        audio = (0.8 * np.sin(2 * np.pi * 100 * t)).astype(np.float32)
+
+        processed = self.preprocessor.preprocess_waveform(audio)
+
+        self.assertEqual(len(processed), 16000)
+        # End of truncated audio should fade out smoothly to 0 without hard cut
+        self.assertAlmostEqual(processed[-1], 0.0, places=3)
+
+
+if __name__ == "__main__":
+    unittest.main()

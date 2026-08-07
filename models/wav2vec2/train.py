@@ -1,15 +1,13 @@
 """
 Wav2Vec2 Fine-Tuning Script with Layer Freezing and On-Memory Caching
 
-【設計理由: 階層フリーズと高速化・過学習防止】
-・階層フリーズ (Layer Freezing):
-  Wav2Vec2 (約95Mパラメータ) の音響特徴抽出器 (7層CNN Feature Encoder) および
-  Transformer エンコーダの下位 10 層を固定 (requires_grad = False) します。
-  最上位 2 層 (10, 11層) および分類ヘッド (Classifier Head) のみをファインチューニング対象とすることで、
-  1. 学習計算量を約 1/3〜1/5 に劇的削減 (爆速化)
-  2. 事前学習で獲得した音響特徴表現の基礎知識の破壊を防止
-  3. 少量データにおける過学習 (Overfitting) を防止
-・オンメモリキャッシュ: データセット読み込み時に波形処理をメモリ上に全計算・保持し、毎エポックの CPU/IO オーバーヘッドをゼロ化。
+役割:
+  Wav2Vec2 プリトレイニードモデルの下位層フリーズ ＋ オンメモリキャッシュにより、
+  転移学習ファインチューニングを高速実行し、best_model ディレクトリおよび labels.json を保存します。
+
+使い方:
+  uv run python models/wav2vec2/train.py           # デフォルト設定で Wav2Vec2 を継続ファインチューニング
+  uv run python models/wav2vec2/train.py --no-resume # ベースモデル (facebook/wav2vec2-base) から新規学習
 """
 
 import argparse
@@ -31,7 +29,7 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from torch.utils.data import DataLoader, Dataset, Subset
 from tqdm import tqdm
 
-from config import DEFAULT_RECOGNITION_CONFIG
+from config import DEFAULT_AUDIO_CONFIG, DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG
 from dataset.hiragana_dataset import HiraganaDataset
 from evaluation.evaluator import compute_evaluation_result
 from preprocessing.audio_preprocessor import AudioPreprocessor
@@ -86,16 +84,14 @@ def fix_seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
+from utils.split_helper import safe_stratified_split
+
+
 def split_dataset(
     dataset: Wav2Vec2ClassificationDataset, val_rate: float, seed: int
 ) -> tuple[Subset, Subset]:
     labels = [label for _, label in dataset.data]
-    splitter = StratifiedShuffleSplit(
-        n_splits=1,
-        test_size=val_rate,
-        random_state=seed,
-    )
-    train_idx, val_idx = next(splitter.split(range(len(labels)), labels))
+    train_idx, val_idx = safe_stratified_split(labels, val_rate=val_rate, seed=seed)
     return Subset(dataset, train_idx), Subset(dataset, val_idx)
 
 
@@ -275,8 +271,40 @@ def freeze_wav2vec2_layers(
         )
 
 
+from preprocessing.dataset_builder import ensure_merged_and_preprocessed
+
+
 def train(args: argparse.Namespace) -> None:
-    fix_seed(args.seed)
+    ensure_merged_and_preprocessed(skip_prep=getattr(args, "skip_prep", False))
+
+    resume = getattr(args, "resume", True)
+    if resume:
+        from utils.model_uploader import download_latest_team_weights_if_needed
+        download_latest_team_weights_if_needed(model_type="wav2vec2")
+
+    seed = getattr(args, "seed", 42)
+    root_dir = (
+        DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir
+        if DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir.exists()
+        else DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir
+    )
+    sample_rate = getattr(args, "sample_rate", DEFAULT_RECOGNITION_CONFIG.sample_rate)
+    target_length_seconds = getattr(args, "target_length_seconds", DEFAULT_RECOGNITION_CONFIG.target_length_seconds)
+    top_db = getattr(args, "top_db", DEFAULT_RECOGNITION_CONFIG.top_db)
+    val_rate = getattr(args, "val_rate", 0.2)
+    target_acc = getattr(args, "target_acc", 0.97)
+    num_workers = getattr(args, "num_workers", 0)
+    pretrained_model_name = getattr(args, "pretrained_model_name", DEFAULT_RECOGNITION_CONFIG.wav2vec2_pretrained_model_name)
+    best_model_path = getattr(args, "best_model_path", DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir)
+    last_model_path = getattr(args, "last_model_path", DEFAULT_RECOGNITION_CONFIG.wav2vec2_last_model_dir)
+    weight_decay = getattr(args, "weight_decay", 0.01)
+    warmup_ratio = getattr(args, "warmup_ratio", 0.1)
+    max_grad_norm = getattr(args, "max_grad_norm", 1.0)
+    freeze_feature_encoder = True
+    loss_plot_path = None
+    accuracy_plot_path = None
+
+    fix_seed(seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     (
         AutoFeatureExtractor,
@@ -285,54 +313,59 @@ def train(args: argparse.Namespace) -> None:
     ) = import_transformers()
 
     dataset = Wav2Vec2ClassificationDataset(
-        root_dir=args.root_dir,
-        sample_rate=args.sample_rate,
-        target_length_seconds=args.target_length_seconds,
-        top_db=args.top_db,
+        root_dir=root_dir,
+        sample_rate=sample_rate,
+        target_length_seconds=target_length_seconds,
+        top_db=top_db,
     )
-    train_dataset, val_dataset = split_dataset(dataset, args.val_rate, args.seed)
+    train_dataset, val_dataset = split_dataset(dataset, val_rate, seed)
 
     has_weights = (
-        args.best_model_path.exists()
+        best_model_path.exists()
         and (
-            (args.best_model_path / "model.safetensors").exists()
-            or (args.best_model_path / "pytorch_model.bin").exists()
+            (best_model_path / "model.safetensors").exists()
+            or (best_model_path / "pytorch_model.bin").exists()
         )
     )
 
-    model_source = args.pretrained_model_name
-    if args.resume and has_weights:
-        model_source = str(args.best_model_path)
-        logger.info("既存のチェックポイントから継続学習を行います: %s", model_source)
-    elif args.resume:
+    model_source = pretrained_model_name
+    if resume and has_weights:
+        model_source = str(best_model_path)
+        logger.info("既存のチェックポイント (%s) を再利用 (reuse) して継続学習を行います。", model_source)
+    elif not resume:
         logger.info(
-            "継続学習の指定を受けましたが、有効なチェックポイント (%s) が無いため %s から開始します。",
-            args.best_model_path,
+            "=== [--from-scratch / --no-resume が指定されたため、既存チェックポイントを読み込まずベースモデル (%s) から新規ファインチューニングを開始します] ===",
+            model_source,
+        )
+    elif resume:
+        logger.info(
+            "過去のチェックポイント (%s) が存在しないため、ベースモデル (%s) から新規学習を開始します。",
+            best_model_path,
             model_source,
         )
 
     feature_extractor = AutoFeatureExtractor.from_pretrained(model_source)
     feature_sample_rate = getattr(feature_extractor, "sampling_rate", None)
-    if feature_sample_rate and feature_sample_rate != args.sample_rate:
+    if feature_sample_rate and feature_sample_rate != sample_rate:
         logger.warning(
             "Feature extractor expects %s Hz but training uses %s Hz",
             feature_sample_rate,
-            args.sample_rate,
+            sample_rate,
         )
 
-    collate_fn = build_collate_fn(feature_extractor, args.sample_rate)
+    collate_fn = build_collate_fn(feature_extractor, sample_rate)
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=args.num_workers,
+        num_workers=num_workers,
         collate_fn=collate_fn,
     )
     val_loader = DataLoader(
         val_dataset,
         batch_size=args.batch_size,
         shuffle=False,
-        num_workers=args.num_workers,
+        num_workers=num_workers,
         collate_fn=collate_fn,
     )
 
@@ -348,7 +381,7 @@ def train(args: argparse.Namespace) -> None:
     )
     freeze_wav2vec2_layers(
         model,
-        freeze_feature_encoder=args.freeze_feature_encoder,
+        freeze_feature_encoder=freeze_feature_encoder,
         freeze_transformer_layers=args.freeze_transformer_layers,
     )
     model.to(device)
@@ -356,10 +389,10 @@ def train(args: argparse.Namespace) -> None:
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=args.learning_rate,
-        weight_decay=args.weight_decay,
+        weight_decay=weight_decay,
     )
     training_steps = max(len(train_loader) * args.epochs, 1)
-    warmup_steps = int(training_steps * args.warmup_ratio)
+    warmup_steps = int(training_steps * warmup_ratio)
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
         num_warmup_steps=warmup_steps,
@@ -369,17 +402,17 @@ def train(args: argparse.Namespace) -> None:
 
     if has_weights:
         try:
-            eval_fe = AutoFeatureExtractor.from_pretrained(str(args.best_model_path))
-            eval_collate = build_collate_fn(eval_fe, args.sample_rate)
+            eval_fe = AutoFeatureExtractor.from_pretrained(str(best_model_path))
+            eval_collate = build_collate_fn(eval_fe, sample_rate)
             eval_val_loader = DataLoader(
                 val_dataset,
                 batch_size=args.batch_size,
                 shuffle=False,
-                num_workers=args.num_workers,
+                num_workers=num_workers,
                 collate_fn=eval_collate,
             )
             eval_m = Wav2Vec2ForSequenceClassification.from_pretrained(
-                str(args.best_model_path),
+                str(best_model_path),
                 num_labels=len(dataset.labels),
                 label2id=label2id,
                 id2label=id2label,
@@ -395,7 +428,7 @@ def train(args: argparse.Namespace) -> None:
             best_macro_f1 = init_result.overall.macro_f1
             logger.info(
                 "保存済み Wav2Vec2 ベストモデル (%s) の評価スコア - Val Acc: %.4f, Val Macro-F1: %.4f",
-                args.best_model_path,
+                best_model_path,
                 val_acc,
                 best_macro_f1,
             )
@@ -413,6 +446,7 @@ def train(args: argparse.Namespace) -> None:
         "val_acc": [],
         "val_macro_f1": [],
     }
+    is_best_updated = False
 
     for epoch in range(args.epochs):
         train_loss, train_acc = train_epoch(
@@ -423,7 +457,7 @@ def train(args: argparse.Namespace) -> None:
             device,
             epoch,
             args.epochs,
-            args.max_grad_norm,
+            max_grad_norm,
         )
         val_loss, val_acc, val_true, val_pred = validate(
             model, val_loader, device, labels=dataset.labels
@@ -453,110 +487,60 @@ def train(args: argparse.Namespace) -> None:
 
         if macro_f1 > best_macro_f1:
             best_macro_f1 = macro_f1
+            is_best_updated = True
             save_pretrained_model(
                 model,
                 feature_extractor,
-                args.best_model_path,
+                best_model_path,
                 dataset.labels,
             )
             logger.info(
                 "Best Wav2Vec2 model saved: %s (Val Macro-F1: %.4f, Val Acc: %.4f)",
-                args.best_model_path,
+                best_model_path,
                 best_macro_f1,
                 val_acc,
             )
 
-        if val_acc >= args.target_acc:
+        if val_acc >= target_acc:
             logger.info(
                 "Target validation accuracy reached: %.2f%%",
-                args.target_acc * 100,
+                target_acc * 100,
             )
             break
 
     save_pretrained_model(
         model,
         feature_extractor,
-        args.last_model_path,
+        last_model_path,
         dataset.labels,
     )
-    save_plots(history, args.loss_plot_path, args.accuracy_plot_path)
+    save_history_plots(
+        history=history,
+        model_name="wav2vec2",
+        num_classes=len(dataset.labels),
+        num_samples=len(dataset),
+    )
     logger.info(
         "Training finished. Last Wav2Vec2 model saved to %s",
-        args.last_model_path,
+        last_model_path,
     )
+
+    # Hugging Face 自動アップロード判定 (チーム最高精度を更新した場合のみ)
+    if is_best_updated:
+        from utils.model_uploader import upload_weights_to_hf
+        upload_weights_to_hf(model_type="wav2vec2")
+    else:
+        logger.info("チーム最高精度が更新されなかったため、Hugging Face へのアップロードをスキップします。")
+
 
 
 def build_parser() -> argparse.ArgumentParser:
-    default_root = (
-        DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir
-        if DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir.exists()
-        else DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir
-    )
     parser = argparse.ArgumentParser(
         description="Fine-tune Wav2Vec2 for hiragana label classification."
     )
-    parser.add_argument("--root-dir", type=Path, default=default_root)
-    parser.add_argument(
-        "--pretrained-model-name",
-        default=DEFAULT_RECOGNITION_CONFIG.wav2vec2_pretrained_model_name,
-    )
-    parser.add_argument(
-        "--best-model-path",
-        type=Path,
-        default=DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir,
-    )
-    parser.add_argument(
-        "--last-model-path",
-        type=Path,
-        default=DEFAULT_RECOGNITION_CONFIG.wav2vec2_last_model_dir,
-    )
-    parser.add_argument(
-        "--loss-plot-path",
-        type=Path,
-        default=DEFAULT_RECOGNITION_CONFIG.wav2vec2_loss_plot_path,
-    )
-    parser.add_argument(
-        "--accuracy-plot-path",
-        type=Path,
-        default=DEFAULT_RECOGNITION_CONFIG.wav2vec2_accuracy_plot_path,
-    )
-    parser.add_argument(
-        "--sample-rate",
-        type=int,
-        default=DEFAULT_RECOGNITION_CONFIG.sample_rate,
-    )
-    parser.add_argument(
-        "--target-length-seconds",
-        type=float,
-        default=DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
-    )
-    parser.add_argument(
-        "--top-db",
-        type=float,
-        default=DEFAULT_RECOGNITION_CONFIG.top_db,
-    )
-    parser.add_argument("--batch-size", type=int, default=4)
-    parser.add_argument("--epochs", type=int, default=30)
-    parser.add_argument("--learning-rate", type=float, default=3e-5)
-    parser.add_argument("--weight-decay", type=float, default=0.01)
-    parser.add_argument("--warmup-ratio", type=float, default=0.1)
-    parser.add_argument("--max-grad-norm", type=float, default=1.0)
-    parser.add_argument("--val-rate", type=float, default=0.2)
-    parser.add_argument("--target-acc", type=float, default=0.97)
-    parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--num-workers", type=int, default=0)
-    parser.add_argument(
-        "--freeze-feature-encoder",
-        action="store_true",
-        default=True,
-        help="Freeze Wav2Vec2 feature encoder layers for faster training (default: True)",
-    )
-    parser.add_argument(
-        "--no-freeze-feature-encoder",
-        action="store_false",
-        dest="freeze_feature_encoder",
-        help="Unfreeze Wav2Vec2 feature encoder layers",
-    )
+    parser.add_argument("--epochs", type=int, default=30, help="Number of training epochs (default: 30)")
+    parser.add_argument("--batch-size", type=int, default=4, help="Batch size (default: 4)")
+    parser.add_argument("--learning-rate", type=float, default=3e-5, help="Learning rate (default: 3e-5)")
     parser.add_argument(
         "--freeze-transformer-layers",
         type=int,
@@ -564,9 +548,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Number of bottom Transformer layers to freeze (default: 10 out of 12)",
     )
     parser.add_argument(
-        "--resume",
+        "--from-scratch",
+        "--no-resume",
+        action="store_false",
+        dest="resume",
+        help="Train from base pretrained model without reusing existing checkpoint",
+    )
+    parser.add_argument(
+        "--skip-prep",
         action="store_true",
-        help="Resume fine-tuning from existing best model checkpoint if available",
+        help="Skip automatic data merging and preprocessing before training",
     )
     return parser
 

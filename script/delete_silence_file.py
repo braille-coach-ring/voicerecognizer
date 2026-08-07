@@ -1,3 +1,10 @@
+"""
+Silence Audio File Cleaner Script
+
+Usage:
+  uv run python script/delete_silence_file.py
+"""
+
 import logging
 import sys
 from pathlib import Path

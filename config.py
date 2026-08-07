@@ -1,8 +1,22 @@
+import os
 from dataclasses import dataclass, field
 from typing import Literal
 from pathlib import Path
+from dotenv import load_dotenv
+
+from config_labels import (
+    ALL_HIRAGANA_LABELS,
+    SEION_LABELS,
+    DAKUON_LABELS,
+    HANDAKUON_LABELS,
+    YOON_LABELS,
+    OTHER_LABELS,
+    HIRAGANA_TO_ROMAJI,
+    ROMAJI_TO_HIRAGANA,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent
+load_dotenv(PROJECT_ROOT / ".env")
 
 
 @dataclass(frozen=True)
@@ -43,25 +57,37 @@ class RecognitionConfig:
     n_mels: int = 64
     n_fft: int = 400
     hop_length: int = 160
-    labels: tuple[str, ...] = field(default_factory=lambda: ("a", "e", "i", "o", "u", "other"))
+    labels: tuple[str, ...] = field(default_factory=lambda: ALL_HIRAGANA_LABELS)
+    weights_dir: Path = PROJECT_ROOT / "weights"
     cnn_weight_path: Path = PROJECT_ROOT / "weights" / "best_model.pth"
     last_model_path: Path = PROJECT_ROOT / "weights" / "last_model.pth"
     torchscript_model_path: Path = PROJECT_ROOT / "weights" / "hiragana_cnn.pt"
     wav2vec2_pretrained_model_name: str = "facebook/wav2vec2-base"
     wav2vec2_best_model_dir: Path = PROJECT_ROOT / "weights" / "wav2vec2_best"
     wav2vec2_last_model_dir: Path = PROJECT_ROOT / "weights" / "wav2vec2_last"
-    wav2vec2_loss_plot_path: Path = PROJECT_ROOT / "wav2vec2_loss.png"
-    wav2vec2_accuracy_plot_path: Path = PROJECT_ROOT / "wav2vec2_accuracy.png"
     output_audio_path: Path = PROJECT_ROOT / "predicted_audio.wav"
     raw_dataset_dir: Path = PROJECT_ROOT / "dataset"
     collected_dataset_dir: Path = PROJECT_ROOT / "dataset" / "collected"
     merged_dataset_dir: Path = PROJECT_ROOT / "merged_dataset"
     processed_dataset_dir: Path = PROJECT_ROOT / "processed_dataset"
-    loss_plot_path: Path = PROJECT_ROOT / "loss.png"
-    accuracy_plot_path: Path = PROJECT_ROOT / "accuracy.png"
     log_path: Path = PROJECT_ROOT / "log"
+
+
+@dataclass(frozen=True)
+class HuggingFaceConfig:
+    token: str = field(default_factory=lambda: os.getenv("HF_TOKEN", ""))
+    repo_id: str = field(
+        default_factory=lambda: os.getenv(
+            "HF_REPO_ID", "rikutoyamada01/braille-mate-hiragana-recognizer"
+        )
+    )
+    auto_upload: bool = field(
+        default_factory=lambda: os.getenv("HF_AUTO_UPLOAD", "false").lower() == "true"
+    )
 
 
 DEFAULT_AUDIO_CONFIG = AudioConfig()
 DEFAULT_PREPROCESS_CONFIG = PreprocessConfig()
 DEFAULT_RECOGNITION_CONFIG = RecognitionConfig()
+DEFAULT_HUGGINGFACE_CONFIG = HuggingFaceConfig()
+

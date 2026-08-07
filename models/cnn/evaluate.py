@@ -1,3 +1,13 @@
+"""
+CNN Recognizer Evaluation Script
+
+役割:
+  CNNRecognizer を読み込み、指定データセットに対する認識精度・クラス別正解率を出力評価します。
+
+使い方:
+  uv run python models/cnn/evaluate.py
+"""
+
 import argparse
 import logging
 from pathlib import Path

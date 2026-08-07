@@ -1,3 +1,10 @@
+"""
+Raw Dataset File Sequential Renaming Utility
+
+Usage:
+  uv run python script/rename.py
+"""
+
 import logging
 from pathlib import Path
 

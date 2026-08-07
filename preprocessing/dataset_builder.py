@@ -190,3 +190,21 @@ class DatasetBuilder:
                 )
                 file_number += 1
             logger.info(f"{label_dir.name}の音声データを{output_dir}にコピーしました")
+
+
+def ensure_merged_and_preprocessed(skip_prep: bool = False) -> None:
+    """
+    学習の実行前に自動でデータ統合 (merge_data) および音声前処理 (preprocess) を実行します。
+    skip_prep=True (--skip-prep 指定時) の場合は明示的に自動処理をスキップします。
+    """
+    if skip_prep:
+        logger.info("=== [--skip-prep が指定されたため、自動データ統合・前処理をスキップします] ===")
+        return
+
+    logger.info("=== [学習前自動処理] データ統合 (index.csv 生成) ＆ 音声前処理を開始します ===")
+    builder = DatasetBuilder()
+    index_file = builder.build_index()
+    logger.info("  [1/2] 統合インデックス作成完了: %s", index_file)
+    builder.preprocess_dataset()
+    logger.info("  [2/2] 音声前処理完了: processed_dataset/")
+

@@ -1,3 +1,10 @@
+"""
+Interactive Voice Dataset Collector Script
+
+Usage:
+  uv run python script/collect.py
+"""
+
 import argparse
 import logging
 import subprocess
@@ -13,6 +20,7 @@ from config import (
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
 )
+from config_labels import ROMAJI_TO_HIRAGANA
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +67,10 @@ def run_collection() -> None:
     # ==========================
 
     for label in LABELS:
+        hiragana = ROMAJI_TO_HIRAGANA.get(label, label)
+        disp_text = f"{label} ({hiragana})" if hiragana != label else label
         print("\n" + "=" * 40)
-        print(f"現在の文字：{label}")
+        print(f"現在の文字：{disp_text}")
         print("=" * 40)
 
         folder = person_dir / label

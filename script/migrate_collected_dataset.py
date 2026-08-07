@@ -1,3 +1,10 @@
+"""
+Collected Dataset Directory Structure & Manifest Migration Script
+
+Usage:
+  uv run python script/migrate_collected_dataset.py
+"""
+
 import logging
 import sys
 from pathlib import Path
