@@ -78,7 +78,7 @@ class HuggingFaceConfig:
     token: str = field(default_factory=lambda: os.getenv("HF_TOKEN", ""))
     repo_id: str = field(
         default_factory=lambda: os.getenv(
-            "HF_REPO_ID", "rikutoyamada01/braille-mate-hiragana-recognizer"
+            "HF_REPO_ID", "braille-mate/braille-mate-hiragana-recognizer"
         )
     )
     auto_upload: bool = field(

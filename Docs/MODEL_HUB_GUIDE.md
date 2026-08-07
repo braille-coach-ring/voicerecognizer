@@ -1,12 +1,33 @@
-# 📦 モデル管理および Hugging Face Hub 同期ガイド
+# モデル管理および Hugging Face Hub チーム共有ガイド
 
-本プロジェクトでは、リポジトリの軽量化とバージョン管理の最適化のため、**モデルの重みバイナリファイル（`*.pth`, `*.safetensors`, `*.bin`）を Git Tracking から除外**し、外部ストレージ（**Hugging Face Hub**）にて同期・管理しています。
+本プロジェクトでは、リポジトリの軽量化とチーム開発の円滑化のため、**モデルの重みバイナリファイル（*.pth, *.safetensors, *.bin）を Git Tracking から除外**し、外部ストレージ（**Hugging Face Hub**）にてチーム共有・同期管理を行っています。
 
 ---
 
-## 🔑 1. 事前準備 (環境設定)
+## 1. Hugging Face Organization (braille-mate) の作成と準備
 
-プロジェクト直下に `.env` ファイルを作成し、ご自身の Hugging Face アカウント（またはチーム Org）の情報を記述します。
+個人アカウントではなく **Organization（組織: braille-mate）** を使用することで、チームメンバー全員が同一のモデルリポジトリに対して安全に同期・自動共有を行えるようになります。
+
+### ステップ 1: Organization の作成
+1. Hugging Face（ https://huggingface.co/ ）にログイン。
+2. 右上のアイコンから **[New Organization]** を選択。
+3. Organization Name に `braille-mate` を入力して作成。
+
+### ステップ 2: チームモデルリポジトリの作成
+1. 作成した Organization (`braille-mate`) のページから **[New Model]** を選択。
+2. Model Name に `braille-mate-hiragana-recognizer` を入力して作成（Public または Private）。
+
+### ステップ 3: メンバーの追加と Access Token の準備
+1. Organization の **[Members]** タブからチームメンバーを招待。
+2. 各自の個人アカウント設定（Settings -> Access Tokens）にて Token を発行。
+   - **個人アカウントで作成した Access Token で問題ありません。**（Hugging Face では個人の Access Token を使用して所属 Organization へのアクセスを行います）
+   - トークン作成時、**Write（書き込み）権限** を付与してください。
+
+---
+
+## 2. ローカル環境設定 (.env)
+
+プロジェクト直下に `.env` ファイルを作成し、ご自身の Hugging Face アクセストークンと Organization リポジトリ ID を記述します。
 
 ```bash
 cp .env.example .env
@@ -15,37 +36,34 @@ cp .env.example .env
 `.env` 内の設定内容:
 ```env
 # Hugging Face Hub 設定
-HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxx      # Write 権限を持つアクセス Token
-HF_REPO_ID=rikutoyamada01/braille-mate-hiragana-recognizer  # 対象リポジトリID
-HF_AUTO_UPLOAD=false                          # 学習終了時に常に自動アップロードを有効化する場合は true
+HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+HF_REPO_ID=braille-mate/braille-mate-hiragana-recognizer
+HF_AUTO_UPLOAD=false
 ```
-
-> ⚠️ **チーム運用時の注意点**
-> メンバー各自がモデルをアップロードできるようにするには、Hugging Face 上で **Organization (組織)** を作成してリポジトリを移動するか、リポジトリの `Settings` -> `Collaborators` からチームメンバーを追加してください。
 
 ---
 
-## 🏋️ 2. 学習時の自動同期
+## 3. 学習時の完全自動同期
 
-学習スクリプト実行時、`--upload-hf` オプションを付与すると学習終了時に Hugging Face へ成果物を同期できます。
+学習スクリプト実行時、手動でのフラグ指定なしでチームモデルとの相互同期が自動適用されます。
 
 ```powershell
-# CNN モデルの学習と自動同期
-uv run python models/cnn/train.py --upload-hf
+# CNN モデルの学習 (チーム最新モデルの自動取得 ＆ 新記録更新時の自動同期)
+uv run python models/cnn/train.py
 
-# Wav2Vec2 モデルの学習と自動同期
-uv run python models/wav2vec2/train.py --upload-hf
+# Wav2Vec2 モデルの学習
+uv run python models/wav2vec2/train.py
 ```
 
-### ⚡ 無駄のないアップロード制御 (Smart Upload)
-* **ベストモデル更新時のみ実行**: 学習の結果、最高評価精度（Validation Macro-F1）が更新されたセッションでのみアップロードが起動します。精度向上がなかったセッションでは自動的にスキップされます。
-* **軽量成果物のみ送信**: CNN 学習時は `best_model.pth` および `labels.json`（約1.4MB）のみを送信し、関係のない大容量モデル（Wav2Vec2等）や途中経過（`last_model.pth`）は送信されません。
+### 動作仕様
+- **開始時 (Auto-Pull)**: Hugging Face リモートのチーム共有最新モデルと手元ファイルの SHA-256 ハッシュ値を照合。手元が古い場合や未存在の場合のみ自動取得（一致していれば通信 0 秒でスキップ）。
+- **完了時 (Auto-Push)**: 学習結果の Validation Macro-F1 が過去最高精度（チーム最高）を更新した場合のみ、自動的に Hugging Face へプッシュ送信。チームの既存スコアを壊す心配がありません。
 
 ---
 
-## 🛠️ 3. 手動でのモデル同期コマンド
+## 4. 手動でのモデル同期コマンド
 
-CLI スクリプト [`script/upload_to_hf.py`](file:///c:/Users/yamadarikuto/Mycode/voicerecognizer/script/upload_to_hf.py) を使って、いつでも手動でモデル成果物を同期できます。
+CLI スクリプト [`script/upload_to_hf.py`](file:///c:/Users/yamadarikuto/Mycode/voicerecognizer/script/upload_to_hf.py) を使用して手動同期を行うことも可能です。
 
 ```powershell
 # CNN のベストモデル成果物（best_model.pth, labels.json）を同期 (デフォルト)
@@ -54,12 +72,6 @@ uv run python script/upload_to_hf.py
 # Wav2Vec2 のベストモデル成果物を同期
 uv run python script/upload_to_hf.py --type wav2vec2
 
-# 全モデルの Best 成果物を同期
-uv run python script/upload_to_hf.py --type best_only
-
 # ローカルハッシュチェックを無視して強制再送信
 uv run python script/upload_to_hf.py --force
 ```
-
-### 🔍 SHA-256 事前判定
-手動スクリプト実行時は、ローカルファイルの SHA-256 ハッシュ値をリモート側と事前照合します。すでにリモートと完全同一のファイルであれば **0秒で通信を自動スキップ** します。
