@@ -2,7 +2,7 @@ import hashlib
 import logging
 from pathlib import Path
 from typing import Literal, Optional
-from huggingface_hub import HfApi, login
+from huggingface_hub import HfApi, hf_hub_download, login
 
 from config import DEFAULT_HUGGINGFACE_CONFIG, DEFAULT_RECOGNITION_CONFIG, HuggingFaceConfig
 
@@ -34,6 +34,63 @@ def get_remote_file_sha256_map(api: HfApi, repo_id: str, paths: list[str]) -> di
     except Exception as e:
         logger.debug("リモートファイルメタデータの取得をスキップしました: %s", e)
     return remote_map
+
+
+def download_latest_team_weights_if_needed(
+    model_type: ModelType = "cnn",
+    hf_config: Optional[HuggingFaceConfig] = None,
+    weights_dir: Optional[Path] = None,
+) -> bool:
+    """
+    学習開始時等に呼ぶことで、Hugging Face リモートのチーム共有最新モデルと手元のモデルの SHA-256 を比較し、
+    手元が古い場合や未存在の場合のみ高速ダウンロードして同期します。
+    """
+    cfg = hf_config or DEFAULT_HUGGINGFACE_CONFIG
+    target_dir = weights_dir or DEFAULT_RECOGNITION_CONFIG.weights_dir
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    token = cfg.token or None
+    api = HfApi()
+
+    files_to_sync = []
+    if model_type in ["cnn", "best_only", "all"]:
+        files_to_sync.extend(["best_model.pth", "labels.json"])
+
+    if not files_to_sync:
+        return True
+
+    remote_sha_map = get_remote_file_sha256_map(api, cfg.repo_id, files_to_sync)
+    if not remote_sha_map:
+        logger.info("ℹ️ リモートリポジトリ %s に事前モデルが見つからないため、ローカルのまま続行します。", cfg.repo_id)
+        return True
+
+    for rel_path in files_to_sync:
+        local_file = target_dir / rel_path
+        remote_sha = remote_sha_map.get(rel_path)
+
+        if local_file.exists() and remote_sha:
+            local_sha = calculate_file_sha256(local_file)
+            if local_sha.lower() == remote_sha.lower():
+                logger.info("ℹ️ 手元の %s はチーム共有の最新モデルと一致しています。(ダウンロード不要)", rel_path)
+                continue
+
+        # リモートからダウンロード
+        logger.info("📥 チーム共有の最新モデル (%s) をダウンロード中...", rel_path)
+        try:
+            downloaded_path = hf_hub_download(
+                repo_id=cfg.repo_id,
+                filename=rel_path,
+                repo_type="model",
+                token=token,
+            )
+            # ダウンロードしたファイルを target_dir に配置
+            with open(downloaded_path, "rb") as src, open(local_file, "wb") as dst:
+                dst.write(src.read())
+            logger.info("✨ %s をチーム共有最新版に更新しました。", rel_path)
+        except Exception as e:
+            logger.warning("チーム最新モデル (%s) の取得をスキップしました: %s", rel_path, e)
+
+    return True
 
 
 def upload_weights_to_hf(

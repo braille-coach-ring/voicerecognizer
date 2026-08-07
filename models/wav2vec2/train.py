@@ -276,6 +276,11 @@ from preprocessing.dataset_builder import DatasetBuilder, ensure_merged_and_prep
 
 def train(args: argparse.Namespace) -> None:
     ensure_merged_and_preprocessed(skip_prep=getattr(args, "skip_prep", False))
+
+    if getattr(args, "resume", True):
+        from utils.model_uploader import download_latest_team_weights_if_needed
+        download_latest_team_weights_if_needed(model_type="wav2vec2")
+
     fix_seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     (
