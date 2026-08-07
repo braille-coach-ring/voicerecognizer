@@ -25,6 +25,23 @@ class TestModelUploader(unittest.TestCase):
             # ハッシュが一致しているためダウンロード処理は呼ばれない
             mock_download.assert_not_called()
 
+    @patch("utils.model_uploader.calculate_file_sha256", return_value="same_hash")
+    @patch("utils.model_uploader.get_remote_file_sha256_map", return_value={
+        "wav2vec2_best/config.json": "same_hash",
+        "wav2vec2_best/labels.json": "same_hash",
+        "wav2vec2_best/model.safetensors": "same_hash",
+        "wav2vec2_best/preprocessor_config.json": "same_hash"
+    })
+    @patch("utils.model_uploader.hf_hub_download")
+    def test_download_latest_team_weights_wav2vec2(self, mock_download, mock_remote_map, mock_sha):
+        dummy_cfg = HuggingFaceConfig(token="dummy_token_123", repo_id="dummy/repo-id")
+        dummy_dir = Path("weights")
+
+        with patch.object(Path, "exists", return_value=True):
+            res = download_latest_team_weights_if_needed(model_type="wav2vec2", hf_config=dummy_cfg, weights_dir=dummy_dir)
+            self.assertTrue(res)
+            mock_download.assert_not_called()
+
     @patch("utils.model_uploader.login")
     @patch("utils.model_uploader.HfApi")
     @patch("utils.model_uploader.calculate_file_sha256", return_value="dummy_hash_123")
