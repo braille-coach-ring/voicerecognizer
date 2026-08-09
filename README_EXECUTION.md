@@ -257,11 +257,10 @@ uv run python script\upload_to_hf.py --type wav2vec2
 uv run python script\upload_to_hf.py --type cnn --force
 ```
 
-Wav2Vec2 の ONNX エクスポートと量子化は、現状は未実装です。
+Wav2Vec2 の ONNX エクスポートおよび INT8 量子化（ベンチマーク計測込み）を実行します。
 
 ```powershell
 uv run python models\wav2vec2\export_onnx.py
-uv run python models\wav2vec2\quantize.py
 ```
 
 ## 8. 補助スクリプト
