@@ -28,9 +28,11 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         sample_rate: int = DEFAULT_RECOGNITION_CONFIG.sample_rate,
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
         top_db: float = DEFAULT_RECOGNITION_CONFIG.top_db,
+        dynamic_trimming: bool = True,
     ):
         self.model_path = Path(model_path)
         self.labels = list(labels)
+        self.dynamic_trimming = dynamic_trimming
 
         # ONNX モデルファイルの優先順位 (model_int8.onnx > model_fp32.onnx > model.onnx)
         self.onnx_model_path: Path | None = None
@@ -61,11 +63,18 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         self.session: Any | None = None
         self.input_name: str | None = None
         self.last_confidence: float | None = None
-        logger.info("Wav2Vec2Recognizer (ONNX) 初期化完了: %s", self.onnx_model_path)
+        logger.info("Wav2Vec2Recognizer (ONNX) 初期化完了 (動的トリミング=%s): %s", self.dynamic_trimming, self.onnx_model_path)
 
     def recognize(self, audio: Any) -> str:
+        import time
         self._ensure_model_loaded()
-        waveform = self.audio_preprocessor.preprocess_waveform(audio)
+        t_start = time.perf_counter()
+
+        t_prep_start = time.perf_counter()
+        waveform = self.audio_preprocessor.preprocess_waveform(
+            audio,
+            pad_to_target=not self.dynamic_trimming,
+        )
         inputs = self.feature_extractor(
             waveform,
             sampling_rate=self.sample_rate,
@@ -73,17 +82,30 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
             padding=True,
         )
         input_values = inputs["input_values"].astype(np.float32)
+        t_prep_end = time.perf_counter()
 
-        # ONNX Runtime 推論
+        t_inf_start = time.perf_counter()
         outputs = self.session.run(None, {self.input_name: input_values})
-        logits = outputs[0][0]  # shape: (num_classes,)
+        t_inf_end = time.perf_counter()
 
-        # Softmax 計算
+        logits = outputs[0][0]  # shape: (num_classes,)
         exp_logits = np.exp(logits - np.max(logits))
         probabilities = exp_logits / np.sum(exp_logits)
 
         predicted_index = int(np.argmax(probabilities))
         self.last_confidence = float(probabilities[predicted_index])
+
+        prep_stats = getattr(self.audio_preprocessor, "last_stats", {})
+        self.last_timing_stats = {
+            "onset_ms": prep_stats.get("onset_ms", 0.0),
+            "offset_ms": prep_stats.get("offset_ms", 0.0),
+            "speech_duration_ms": prep_stats.get("speech_duration_ms", 0.0),
+            "preprocess_latency_ms": (t_prep_end - t_prep_start) * 1000.0,
+            "inference_latency_ms": (t_inf_end - t_inf_start) * 1000.0,
+            "total_latency_ms": (t_inf_end - t_start) * 1000.0,
+            "confidence": self.last_confidence,
+        }
+
         logger.debug("Wav2Vec2 ONNX 確率: %s", probabilities)
         return self._label_for_index(predicted_index)
 

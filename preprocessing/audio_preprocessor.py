@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any
+import time
 
 import librosa
 import numpy as np
@@ -50,7 +51,13 @@ class AudioPreprocessor:
         waveform, _ = librosa.load(Path(audio), sr=self.sample_rate, mono=True)
         return waveform.astype(np.float32)
 
-    def preprocess_waveform(self, audio: Any) -> np.ndarray:
+    def preprocess_waveform(
+        self,
+        audio: Any,
+        pad_to_target: bool = True,
+        min_length_seconds: float = 0.2,
+    ) -> np.ndarray:
+        t_prep_start = time.perf_counter()
         waveform = self.load(audio)
         self.threshold_calculator.update(waveform)
         current_top_db = self.threshold_calculator.get_silence_threshold()
@@ -65,14 +72,20 @@ class AudioPreprocessor:
             frame_length=1024,
             hop_length=256,
         )
+        onset_ms = 0.0
+        offset_ms = 0.0
+        speech_duration_ms = 0.0
+
         if len(intervals) > 0:
             start_idx = intervals[0][0]
             end_idx = intervals[-1][1]
+            onset_ms = float(start_idx / self.sample_rate * 1000.0)
+            offset_ms = float(end_idx / self.sample_rate * 1000.0)
+            speech_duration_ms = float((end_idx - start_idx) / self.sample_rate * 1000.0)
 
-            # 2. 「頭切れ・語尾切れ」防止マージン (先頭80ms / 末尾120ms の安全余白)
-            # 「お」のような低音域フォルマント（約100Hz）の長い減衰音を完全に保護
-            start_margin = int(self.sample_rate * 0.08)  # 80ms
-            end_margin = int(self.sample_rate * 0.12)    # 120ms
+            # 2. 「頭切れ・語尾切れ」絶対防止マージン (先頭120ms / 末尾150ms の安全余白)
+            start_margin = int(self.sample_rate * 0.12)  # 120ms
+            end_margin = int(self.sample_rate * 0.15)    # 150ms
             start_idx = max(0, start_idx - start_margin)
             end_idx = min(len(waveform), end_idx + end_margin)
             waveform = waveform[start_idx:end_idx]
@@ -87,7 +100,21 @@ class AudioPreprocessor:
 
         # 4. RMSベースのダイナミックレンジ補正 ＆ tanh ソフトクリッピング
         waveform = self._normalize_volume(waveform)
-        return self._fit_length(waveform)
+        result_waveform = self._fit_length(
+            waveform,
+            pad_to_target=pad_to_target,
+            min_length_seconds=min_length_seconds,
+        )
+
+        t_prep_end = time.perf_counter()
+        self.last_stats = {
+            "onset_ms": onset_ms,
+            "offset_ms": offset_ms,
+            "speech_duration_ms": speech_duration_ms,
+            "preprocess_latency_ms": (t_prep_end - t_prep_start) * 1000.0,
+        }
+
+        return result_waveform
 
     def _normalize_volume(self, waveform: np.ndarray) -> np.ndarray:
         """
@@ -111,7 +138,12 @@ class AudioPreprocessor:
 
         return waveform
 
-    def _fit_length(self, waveform: np.ndarray) -> np.ndarray:
+    def _fit_length(
+        self,
+        waveform: np.ndarray,
+        pad_to_target: bool = True,
+        min_length_seconds: float = 0.2,
+    ) -> np.ndarray:
         target_samples = int(self.target_length_seconds * self.sample_rate)
         if len(waveform) > target_samples:
             # ターゲット長でカットする際にも末尾20msにフェードアウトを施しブツ切れを防止
@@ -121,4 +153,12 @@ class AudioPreprocessor:
                 fade_out = 0.5 * (1.0 + np.cos(np.pi * np.linspace(0, 1, fade_samples, dtype=np.float32)))
                 truncated[-fade_samples:] *= fade_out
             return truncated
+
+        if not pad_to_target:
+            min_samples = int(min_length_seconds * self.sample_rate)
+            if len(waveform) < min_samples:
+                return np.pad(waveform, (0, min_samples - len(waveform)))
+            return waveform
+
         return np.pad(waveform, (0, target_samples - len(waveform)))
+

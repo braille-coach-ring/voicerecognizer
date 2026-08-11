@@ -77,22 +77,39 @@ class AudioPipeline:
                 logger.info("\n音声待機を停止しました。")
                 return None
 
-    def capture_until_speech(self) -> tuple[np.ndarray, str] | None:
+    def capture_until_speech(self) -> tuple[np.ndarray, str, dict] | None:
         """
         発話が検出されるまでマイク入力をループ監視し、
-        前処理済みの綺麗な録音波形 (np.ndarray) と推論予測テキスト (str) のペアを返します。
+        生の録音波形 (np.ndarray)、推論予測テキスト (str)、および計測統計情報 (dict) のタプルを返します。
         """
+        from datetime import timedelta
         logger.info("音声を待機中... マイクに向かってお話しください（Ctrl+Cで終了）")
         while True:
             try:
-                audio = self.audio_capture.capture_once()
-                if audio is not None and audio.size > 0:
-                    if self.vad.is_speech(audio):
-                        predicted_text = self.recognizer.recognize(audio)
-                        strategy = getattr(self.recognizer, "strategy", getattr(self.recognizer, "_strategy", None))
-                        if strategy and hasattr(strategy, "audio_preprocessor"):
-                            preprocessed_audio = strategy.audio_preprocessor.preprocess_waveform(audio)
-                        return preprocessed_audio, predicted_text
+                chunk = self.audio_capture.capture_once()
+                if chunk is not None and chunk.size > 0:
+                    if self.vad.is_speech(chunk):
+                        speech_detected_dt = self.datetime.now()
+                        # VADが発声を検知した → 発声がバッファに完全に収まるよう少し待つ
+                        time.sleep(0.3)
+                        # 待機後にリングバッファから最新の1秒を再取得
+                        raw_audio = self.audio_capture.capture_once()
+                        predicted_text = self.recognizer.recognize(raw_audio)
+
+                        stats = getattr(self.recognizer, "last_timing_stats", {}).copy()
+                        stats["detected_time"] = speech_detected_dt
+
+                        # raw_audio の長さ (秒)
+                        total_audio_sec = len(raw_audio) / self.audio_capture.sample_rate
+                        onset_sec = stats.get("onset_ms", 0.0) / 1000.0
+                        offset_sec = stats.get("offset_ms", 0.0) / 1000.0
+
+                        # 0.3s の待機込みでの raw_audio の先頭時刻
+                        raw_start_dt = speech_detected_dt + timedelta(seconds=0.3 - total_audio_sec)
+                        stats["speech_start_time"] = raw_start_dt + timedelta(seconds=onset_sec)
+                        stats["speech_end_time"] = raw_start_dt + timedelta(seconds=offset_sec)
+
+                        return raw_audio, predicted_text, stats
                 time.sleep(DEFAULT_AUDIO_CONFIG.chunk_seconds)
             except KeyboardInterrupt:
                 logger.info("\n音声待機を停止しました。")

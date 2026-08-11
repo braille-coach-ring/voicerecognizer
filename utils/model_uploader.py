@@ -175,15 +175,48 @@ def upload_weights_to_hf(
                 logger.warning("Wav2Vec2 ベストモデルディレクトリ (%s) が存在しません。", wav2vec2_best_dir)
                 return True
 
-            logger.info("🚀 Hugging Face Hub (%s) へ Wav2Vec2 ベストモデルをアップロード中...", cfg.repo_id)
-            api.upload_folder(
-                folder_path=str(wav2vec2_best_dir),
-                path_in_repo="wav2vec2_best",
-                repo_id=cfg.repo_id,
-                repo_type="model",
-                ignore_patterns=["*.log", "*.tmp", ".DS_Store"],
-            )
-            logger.info("✨ Wav2Vec2 ベストモデルのアップロードが完了しました: https://huggingface.co/%s", cfg.repo_id)
+            essential_filenames = [
+                "config.json",
+                "labels.json",
+                "model.safetensors",
+                "preprocessor_config.json",
+                "vocab.json",
+                "tokenizer_config.json",
+            ]
+            files_to_check = []
+            for fname in essential_filenames:
+                fpath = wav2vec2_best_dir / fname
+                if fpath.exists():
+                    files_to_check.append((f"wav2vec2_best/{fname}", fpath))
+
+            if not files_to_check:
+                logger.warning("Wav2Vec2 モデルのアップロード対象ファイルが見つかりません。")
+                return True
+
+            remote_sha_map = {} if force_upload else get_remote_file_sha256_map(api, cfg.repo_id, [r for r, _ in files_to_check])
+            uploaded_any = False
+
+            for rel_path, local_file in files_to_check:
+                local_sha = calculate_file_sha256(local_file)
+                remote_sha = remote_sha_map.get(rel_path)
+
+                if not force_upload and remote_sha and remote_sha.lower() == local_sha.lower():
+                    logger.info("ℹ️ %s はリモートと一致しているため送信をスキップします。", rel_path)
+                    continue
+
+                logger.info("🚀 Hugging Face Hub (%s) へ %s をアップロード中...", cfg.repo_id, rel_path)
+                api.upload_file(
+                    path_or_fileobj=str(local_file),
+                    path_in_repo=rel_path,
+                    repo_id=cfg.repo_id,
+                    repo_type="model",
+                )
+                uploaded_any = True
+
+            if not uploaded_any:
+                logger.info("✨ すべての Wav2Vec2 ベストモデルファイルは既にリモートと最新同期されています。")
+            else:
+                logger.info("✨ Wav2Vec2 ベストモデルのアップロードが完了しました: https://huggingface.co/%s", cfg.repo_id)
 
         else:
             logger.warning("未対応の model_type: %s (cnn または wav2vec2 を指定してください)", model_type)

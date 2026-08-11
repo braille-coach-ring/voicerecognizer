@@ -6,6 +6,7 @@ from collections.abc import Callable
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event
+import numpy as np
 import soundfile as sf
 
 from config import DEFAULT_AUDIO_CONFIG, DEFAULT_RECOGNITION_CONFIG
@@ -80,7 +81,7 @@ class OutputWorker:
             logger.error("テキストログファイルの書き込みに失敗しました: %s", log_file, exc_info=True)
 
         # 2. 音声波形（.wav）の保存
-        if audio_data is not None and len(audio_data) > 0:
+        if audio_data is not None and isinstance(audio_data, np.ndarray) and audio_data.size > 0:
             wav_path = self.save_dir / file_name
             try:
                 sf.write(wav_path, audio_data, sample_rate)

@@ -94,7 +94,7 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
                 print("\nセッションを終了しました。")
                 break
 
-            audio_data, predicted_text = res
+            audio_data, predicted_text, stats = res
             hiragana_pred = ROMAJI_TO_HIRAGANA.get(predicted_text, predicted_text)
             disp_pred = (
                 f"{predicted_text} ({hiragana_pred})"
@@ -102,9 +102,40 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
                 else predicted_text
             )
 
-            print("\n" + "─" * 45)
-            print(f"🤖 予測結果: 【 {disp_pred} 】")
-            print("─" * 45)
+            confidence_str = ""
+            if "confidence" in stats:
+                confidence_str = f" (確信度: {stats['confidence']*100:.1f}%)"
+
+            print("\n" + "─" * 60)
+            print(f"🤖 予測結果: 【 {disp_pred} 】{confidence_str}")
+            print("─" * 60)
+
+            # 詳細タイムライン & 計測内訳の表示
+            start_dt_str = (
+                stats["speech_start_time"].strftime("%H:%M:%S.%f")[:-3]
+                if "speech_start_time" in stats
+                else "N/A"
+            )
+            end_dt_str = (
+                stats["speech_end_time"].strftime("%H:%M:%S.%f")[:-3]
+                if "speech_end_time" in stats
+                else "N/A"
+            )
+            onset_ms = stats.get("onset_ms", 0.0)
+            offset_ms = stats.get("offset_ms", 0.0)
+            speech_dur_ms = stats.get("speech_duration_ms", 0.0)
+            prep_ms = stats.get("preprocess_latency_ms", 0.0)
+            inf_ms = stats.get("inference_latency_ms", 0.0)
+            total_ms = stats.get("total_latency_ms", 0.0)
+
+            print("⏱️  詳細タイムライン & 処理時間計測内訳:")
+            print(f"  ・話し始め時刻   : {start_dt_str} (録音波形内: {onset_ms:.1f} ms)")
+            print(f"  ・話し終わり時刻 : {end_dt_str} (録音波形内: {offset_ms:.1f} ms)")
+            print(f"  ・発声持続時間   : {speech_dur_ms:.1f} ms ({speech_dur_ms/1000.0:.2f}秒)")
+            print(f"  ・前処理時間     : {prep_ms:5.1f} ms (VADトリミング・特徴量抽出)")
+            print(f"  ・推論時間       : {inf_ms:5.1f} ms (モデル推論)")
+            print(f"  ・合計処理時間   : {total_ms:5.1f} ms (前処理 + 推論)")
+            print("─" * 60)
 
             # 音声の再生
             try:

@@ -52,7 +52,7 @@ RecognizerType = Literal["cnn", "wav2vec2", "whisper"]
 class RecognitionConfig:
     sample_rate: int = 16000
     model_type: RecognizerType = "cnn"
-    target_length_seconds: float = 1.0
+    target_length_seconds: float = 0.6
     top_db: float = 31.6
     n_mels: int = 64
     n_fft: int = 400
@@ -90,4 +90,3 @@ DEFAULT_AUDIO_CONFIG = AudioConfig()
 DEFAULT_PREPROCESS_CONFIG = PreprocessConfig()
 DEFAULT_RECOGNITION_CONFIG = RecognitionConfig()
 DEFAULT_HUGGINGFACE_CONFIG = HuggingFaceConfig()
-
