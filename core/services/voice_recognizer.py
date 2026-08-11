@@ -17,8 +17,13 @@ class VoiceRecognizer:
         logger.info("推論開始: %s", start_time)
         text = self._strategy.recognize(audio)
         end_time = time.perf_counter()
-        logger.info("推論終了: %s", end_time)
-        logger.info("推論時間: %s", end_time - start_time)
+        
+        stats = getattr(self._strategy, "last_timing_stats", {}).copy()
+        if not stats:
+            stats = {"total_latency_ms": (end_time - start_time) * 1000.0}
+        self.last_timing_stats = stats
+        
+        logger.info("推論終了: %s (所要時間: %.2f ms)", end_time, stats.get("total_latency_ms", 0.0))
         return text
 
     @property

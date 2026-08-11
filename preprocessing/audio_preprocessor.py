@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any
+import time
 
 import librosa
 import numpy as np
@@ -56,6 +57,7 @@ class AudioPreprocessor:
         pad_to_target: bool = True,
         min_length_seconds: float = 0.2,
     ) -> np.ndarray:
+        t_prep_start = time.perf_counter()
         waveform = self.load(audio)
         self.threshold_calculator.update(waveform)
         current_top_db = self.threshold_calculator.get_silence_threshold()
@@ -70,9 +72,16 @@ class AudioPreprocessor:
             frame_length=1024,
             hop_length=256,
         )
+        onset_ms = 0.0
+        offset_ms = 0.0
+        speech_duration_ms = 0.0
+
         if len(intervals) > 0:
             start_idx = intervals[0][0]
             end_idx = intervals[-1][1]
+            onset_ms = float(start_idx / self.sample_rate * 1000.0)
+            offset_ms = float(end_idx / self.sample_rate * 1000.0)
+            speech_duration_ms = float((end_idx - start_idx) / self.sample_rate * 1000.0)
 
             # 2. 「頭切れ・語尾切れ」絶対防止マージン (先頭120ms / 末尾150ms の安全余白)
             start_margin = int(self.sample_rate * 0.12)  # 120ms
@@ -91,11 +100,21 @@ class AudioPreprocessor:
 
         # 4. RMSベースのダイナミックレンジ補正 ＆ tanh ソフトクリッピング
         waveform = self._normalize_volume(waveform)
-        return self._fit_length(
+        result_waveform = self._fit_length(
             waveform,
             pad_to_target=pad_to_target,
             min_length_seconds=min_length_seconds,
         )
+
+        t_prep_end = time.perf_counter()
+        self.last_stats = {
+            "onset_ms": onset_ms,
+            "offset_ms": offset_ms,
+            "speech_duration_ms": speech_duration_ms,
+            "preprocess_latency_ms": (t_prep_end - t_prep_start) * 1000.0,
+        }
+
+        return result_waveform
 
     def _normalize_volume(self, waveform: np.ndarray) -> np.ndarray:
         """

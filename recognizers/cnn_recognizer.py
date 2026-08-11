@@ -57,9 +57,32 @@ class CNNRecognizer(RecognitionStrategy):
         logger.info("CNNレコグナイザーの初期化完了")
 
     def recognize(self, audio: Any) -> str:
+        import time
+        t_start = time.perf_counter()
+
+        t_prep_start = time.perf_counter()
         waveform = self._preprocess(audio)
         mel_tensor = self._create_mel(waveform)
+        t_prep_end = time.perf_counter()
+
+        t_inf_start = time.perf_counter()
         probabilities = self._predict(mel_tensor)
+        t_inf_end = time.perf_counter()
+
+        predicted_index = int(torch.argmax(probabilities).item())
+        confidence = float(probabilities[predicted_index].item())
+
+        prep_stats = getattr(self.audio_preprocessor, "last_stats", {})
+        self.last_timing_stats = {
+            "onset_ms": prep_stats.get("onset_ms", 0.0),
+            "offset_ms": prep_stats.get("offset_ms", 0.0),
+            "speech_duration_ms": prep_stats.get("speech_duration_ms", 0.0),
+            "preprocess_latency_ms": (t_prep_end - t_prep_start) * 1000.0,
+            "inference_latency_ms": (t_inf_end - t_inf_start) * 1000.0,
+            "total_latency_ms": (t_inf_end - t_start) * 1000.0,
+            "confidence": confidence,
+        }
+
         logger.info(f"推論結果: {probabilities}")
         return self._postprocess(probabilities)
 
