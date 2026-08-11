@@ -52,7 +52,7 @@ RecognizerType = Literal["cnn", "wav2vec2", "whisper"]
 class RecognitionConfig:
     sample_rate: int = 16000
     model_type: RecognizerType = "cnn"
-    target_length_seconds: float = 1.0
+    target_length_seconds: float = 0.5
     top_db: float = 74.9
     n_mels: int = 64
     n_fft: int = 400
