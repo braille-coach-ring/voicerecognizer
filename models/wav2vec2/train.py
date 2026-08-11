@@ -525,13 +525,22 @@ def train(args: argparse.Namespace) -> None:
         last_model_path,
     )
 
+    # ONNX 自動エクスポート ＆ 量子化
+    no_onnx_export = getattr(args, "no_onnx_export", False)
+    if not no_onnx_export and best_model_path.exists():
+        try:
+            logger.info("学習完了後の Wav2Vec2 ONNX エクスポート ＆ INT8 量子化を開始します...")
+            from models.wav2vec2.export_onnx import export_and_benchmark
+            export_and_benchmark(model_dir=best_model_path)
+        except Exception as e:
+            logger.error("ONNX 自動エクスポート中にエラーが発生しました: %s", e)
+
     # Hugging Face 自動アップロード判定 (チーム最高精度を更新した場合のみ)
     if is_best_updated:
         from utils.model_uploader import upload_weights_to_hf
         upload_weights_to_hf(model_type="wav2vec2")
     else:
         logger.info("チーム最高精度が更新されなかったため、Hugging Face へのアップロードをスキップします。")
-
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -558,6 +567,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--skip-prep",
         action="store_true",
         help="Skip automatic data merging and preprocessing before training",
+    )
+    parser.add_argument(
+        "--no-onnx-export",
+        action="store_true",
+        help="Skip automatic ONNX export and INT8 quantization after training",
     )
     return parser
 

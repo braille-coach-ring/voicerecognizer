@@ -1,9 +1,10 @@
+import json
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
 import numpy as np
-import torch
 
 from config import DEFAULT_RECOGNITION_CONFIG
 from core.interfaces import RecognitionStrategy
@@ -13,6 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 class Wav2Vec2Recognizer(RecognitionStrategy):
+    """
+    Wav2Vec2 ONNX Runtime 推論ストラテジー
+
+    ONNX モデル (model_fp32.onnx / model_int8.onnx / model.onnx) を用いて
+    CPU 上で超高速かつ高精度な音声を推論認識します。
+    """
+
     def __init__(
         self,
         model_path: str | Path = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir,
@@ -20,99 +28,105 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         sample_rate: int = DEFAULT_RECOGNITION_CONFIG.sample_rate,
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
         top_db: float = DEFAULT_RECOGNITION_CONFIG.top_db,
-        device: torch.device | None = None,
     ):
         self.model_path = Path(model_path)
-        self.labels = tuple(labels)
+        self.labels = list(labels)
+
+        # ONNX モデルファイルの優先順位 (model_int8.onnx > model_fp32.onnx > model.onnx)
+        self.onnx_model_path: Path | None = None
+        for candidate_name in ("model_int8.onnx", "model_fp32.onnx", "model.onnx"):
+            candidate = self.model_path / candidate_name
+            if candidate.exists():
+                self.onnx_model_path = candidate
+                break
+
+        # labels.json のロード
         labels_json = self.model_path / "labels.json"
         if labels_json.exists():
             try:
-                import json
                 with open(labels_json, "r", encoding="utf-8") as f:
                     loaded_labels = json.load(f)
                     if isinstance(loaded_labels, list) and len(loaded_labels) > 0:
-                        self.labels = tuple(loaded_labels)
-                        logger.info("Loaded labels from labels.json: %s", self.labels)
+                        self.labels = loaded_labels
             except Exception as e:
-                logger.warning("Failed to load labels.json: %s", e)
+                logger.warning("labels.json の読込失敗: %s", e)
 
         self.sample_rate = sample_rate
-        self.device = device or torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu"
-        )
         self.audio_preprocessor = AudioPreprocessor(
             sample_rate=sample_rate,
             target_length_seconds=target_length_seconds,
             top_db=top_db,
         )
         self.feature_extractor: Any | None = None
-        self.model: Any | None = None
+        self.session: Any | None = None
+        self.input_name: str | None = None
         self.last_confidence: float | None = None
-        logger.info("Wav2Vec2Recognizer initialized: %s", self.model_path)
+        logger.info("Wav2Vec2Recognizer (ONNX) 初期化完了: %s", self.onnx_model_path)
 
     def recognize(self, audio: Any) -> str:
         self._ensure_model_loaded()
         waveform = self.audio_preprocessor.preprocess_waveform(audio)
-        inputs = self._prepare_inputs(waveform)
-
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-            probabilities = torch.softmax(outputs.logits, dim=-1)[0]
-
-        predicted_index = int(torch.argmax(probabilities).item())
-        self.last_confidence = float(probabilities[predicted_index].item())
-        logger.info("Wav2Vec2 probabilities: %s", probabilities)
-        return self._label_for_index(predicted_index)
-
-    def _ensure_model_loaded(self) -> None:
-        if self.model is not None and self.feature_extractor is not None:
-            return
-
-        if not self.model_path.exists():
-            raise FileNotFoundError(
-                "Fine-tuned Wav2Vec2 model was not found at "
-                f"{self.model_path}. Train it with: "
-                "python train.py --model wav2vec2"
-            )
-
-        try:
-            from transformers import (
-                AutoFeatureExtractor,
-                Wav2Vec2ForSequenceClassification,
-            )
-        except ImportError as exc:
-            raise ImportError(
-                "Wav2Vec2 support requires the 'transformers' package. "
-                "Install project dependencies with: uv sync"
-            ) from exc
-
-        self.feature_extractor = AutoFeatureExtractor.from_pretrained(
-            self.model_path
-        )
-        self.model = Wav2Vec2ForSequenceClassification.from_pretrained(
-            self.model_path
-        )
-        self.model.to(self.device)
-        self.model.eval()
-        logger.info("Loaded fine-tuned Wav2Vec2 model from %s", self.model_path)
-
-    def _prepare_inputs(self, waveform: np.ndarray) -> dict[str, torch.Tensor]:
         inputs = self.feature_extractor(
             waveform,
             sampling_rate=self.sample_rate,
-            return_tensors="pt",
+            return_tensors="np",
             padding=True,
         )
-        return {
-            key: value.to(self.device)
-            for key, value in inputs.items()
-            if isinstance(value, torch.Tensor)
-        }
+        input_values = inputs["input_values"].astype(np.float32)
+
+        # ONNX Runtime 推論
+        outputs = self.session.run(None, {self.input_name: input_values})
+        logits = outputs[0][0]  # shape: (num_classes,)
+
+        # Softmax 計算
+        exp_logits = np.exp(logits - np.max(logits))
+        probabilities = exp_logits / np.sum(exp_logits)
+
+        predicted_index = int(np.argmax(probabilities))
+        self.last_confidence = float(probabilities[predicted_index])
+        logger.debug("Wav2Vec2 ONNX 確率: %s", probabilities)
+        return self._label_for_index(predicted_index)
+
+    def _ensure_model_loaded(self) -> None:
+        if self.session is not None and self.feature_extractor is not None:
+            return
+
+        if self.onnx_model_path is None or not self.onnx_model_path.exists():
+            raise FileNotFoundError(
+                f"Wav2Vec2 ONNX モデルが見つかりません: {self.model_path}\n"
+                "以下のエクスポートコマンドを実行してください:\n"
+                "  uv run python models/wav2vec2/export_onnx.py"
+            )
+
+        try:
+            import onnxruntime as ort
+            from transformers import AutoFeatureExtractor
+        except ImportError as exc:
+            raise ImportError("Wav2Vec2 ONNX サポートには 'onnxruntime' と 'transformers' が必要です。") from exc
+
+        # Feature Extractor ロード
+        try:
+            self.feature_extractor = AutoFeatureExtractor.from_pretrained(self.model_path)
+        except Exception:
+            self.feature_extractor = AutoFeatureExtractor.from_pretrained(
+                DEFAULT_RECOGNITION_CONFIG.wav2vec2_pretrained_model_name
+            )
+
+        # ONNX Runtime セッション初期化 (CPU 最適化)
+        sess_options = ort.SessionOptions()
+        sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+        cpu_threads = max(1, min(4, os.cpu_count() or 4))
+        sess_options.intra_op_num_threads = cpu_threads
+        sess_options.inter_op_num_threads = 1
+        self.session = ort.InferenceSession(
+            str(self.onnx_model_path),
+            sess_options,
+            providers=["CPUExecutionProvider"],
+        )
+        self.input_name = self.session.get_inputs()[0].name
+        logger.info("ONNX モデルを正常ロードしました: %s", self.onnx_model_path)
 
     def _label_for_index(self, index: int) -> str:
-        id2label = getattr(self.model.config, "id2label", None)
-        if id2label is not None:
-            label = id2label.get(index, id2label.get(str(index)))
-            if label is not None:
-                return str(label)
-        return self.labels[index]
+        if 0 <= index < len(self.labels):
+            return self.labels[index]
+        return str(index)
