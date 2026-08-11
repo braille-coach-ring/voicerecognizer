@@ -80,6 +80,23 @@ class TestModelUploader(unittest.TestCase):
             self.assertEqual(mock_api_instance.upload_file.call_count, 0)
 
 
+    @patch("utils.model_uploader.login")
+    @patch("utils.model_uploader.HfApi")
+    @patch("utils.model_uploader.calculate_file_sha256", return_value="dummy_hash_123")
+    @patch("utils.model_uploader.get_remote_file_sha256_map", return_value={})
+    def test_upload_weights_wav2vec2_essential_files(self, mock_remote_map, mock_sha, mock_hf_api_class, mock_login):
+        mock_api_instance = MagicMock()
+        mock_hf_api_class.return_value = mock_api_instance
+
+        dummy_cfg = HuggingFaceConfig(token="dummy_token_123", repo_id="dummy/repo-id")
+        dummy_dir = Path("weights")
+
+        with patch.object(Path, "exists", return_value=True):
+            res = upload_weights_to_hf(model_type="wav2vec2", hf_config=dummy_cfg, weights_dir=dummy_dir, force_upload=True)
+            self.assertTrue(res)
+            # Should upload essential files (config.json, labels.json, model.safetensors, preprocessor_config.json, etc.)
+            self.assertGreaterEqual(mock_api_instance.upload_file.call_count, 4)
+
     def test_upload_weights_missing_token(self):
         dummy_cfg = HuggingFaceConfig(token="", repo_id="dummy/repo-id")
         dummy_dir = Path("weights")
@@ -90,3 +107,4 @@ class TestModelUploader(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
