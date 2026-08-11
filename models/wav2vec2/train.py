@@ -26,12 +26,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from sklearn.model_selection import StratifiedShuffleSplit
-from torch.utils.data import DataLoader, Dataset, Subset
+from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
+from collections import Counter
 from tqdm import tqdm
 
 from config import DEFAULT_AUDIO_CONFIG, DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG
 from dataset.hiragana_dataset import HiraganaDataset
 from evaluation.evaluator import compute_evaluation_result
+from preprocessing.audio_augmentor import AudioAugmentor
 from preprocessing.audio_preprocessor import AudioPreprocessor
 
 logging.basicConfig(
@@ -95,6 +97,58 @@ def split_dataset(
     return Subset(dataset, train_idx), Subset(dataset, val_idx)
 
 
+class AugmentedSubset(Dataset):
+    """
+    データ拡張（AudioAugmentor）を訓練データセットにのみ動的適用するための Subset ラッパー。
+    """
+
+    def __init__(self, subset: Subset, augmentor: AudioAugmentor | None = None):
+        self.subset = subset
+        self.augmentor = augmentor
+
+    def __len__(self) -> int:
+        return len(self.subset)
+
+    def __getitem__(self, index: int) -> tuple[np.ndarray, int]:
+        waveform, label = self.subset[index]
+        if self.augmentor is not None:
+            waveform = self.augmentor.augment(waveform)
+        return waveform, label
+
+
+def compute_class_weights(
+    labels: list[int] | torch.Tensor | np.ndarray,
+    num_classes: int,
+    power: float = 0.5,
+) -> torch.Tensor:
+    """
+    クラス出現頻度の逆数根（Smooth Inverse Frequency）に応じたクラス重みを計算する。
+    W_c = ( max(N_k) / (N_c + eps) ) ** power
+    """
+    labels_arr = np.asarray(labels)
+    counts = np.bincount(labels_arr, minlength=num_classes)
+    counts = np.maximum(counts, 1)
+    max_count = np.max(counts)
+    weights = (max_count / counts) ** power
+    weights = weights / np.mean(weights)
+    return torch.tensor(weights, dtype=torch.float32)
+
+
+def is_labels_compatible(model_path: Path, current_labels: list[str]) -> bool:
+    """
+    保存済みチェックポイントの labels.json と現在のデータセットの labels が完全一致するか確認する。
+    濁音・半濁音の追加などでラベル構成が変わった場合、MISMATCH 崩壊を防ぐため False を返す。
+    """
+    labels_file = model_path / "labels.json"
+    if not labels_file.exists():
+        return False
+    try:
+        saved_labels = json.loads(labels_file.read_text(encoding="utf-8"))
+        return saved_labels == list(current_labels)
+    except Exception:
+        return False
+
+
 def build_collate_fn(feature_extractor: Any, sample_rate: int) -> Callable:
     def collate(batch: list[tuple[np.ndarray, int]]) -> dict[str, torch.Tensor]:
         waveforms = [waveform for waveform, _ in batch]
@@ -126,6 +180,7 @@ def train_epoch(
     epoch: int,
     epochs: int,
     max_grad_norm: float,
+    loss_fct: torch.nn.Module | None = None,
 ) -> tuple[float, float]:
     model.train()
     total_loss = 0.0
@@ -138,7 +193,11 @@ def train_epoch(
 
         optimizer.zero_grad()
         outputs = model(**batch)
-        loss = outputs.loss
+        if loss_fct is not None:
+            loss = loss_fct(outputs.logits, batch["labels"])
+        else:
+            loss = outputs.loss
+
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
         optimizer.step()
@@ -277,10 +336,28 @@ from preprocessing.dataset_builder import ensure_merged_and_preprocessed
 def train(args: argparse.Namespace) -> None:
     ensure_merged_and_preprocessed(skip_prep=getattr(args, "skip_prep", False))
 
+    resume_from_arg = getattr(args, "resume_from", None)
+    best_model_path = getattr(args, "best_model_path", DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir)
+    last_model_path = getattr(args, "last_model_path", DEFAULT_RECOGNITION_CONFIG.wav2vec2_last_model_dir)
     resume = getattr(args, "resume", True)
-    if resume:
+
+    target_resume_path: Path | None = None
+
+    if resume_from_arg:
+        # 1. --resume-from で明示的にパスが指定された場合: HFダウンロードをスキップし、指定パスを直接ロード
+        target_resume_path = Path(resume_from_arg)
+        if not target_resume_path.exists():
+            raise FileNotFoundError(f"指定されたチェックポイントが見つかりません: {target_resume_path}")
+        logger.info("📌 指定されたローカルチェックポイント (%s) から学習を再開します。(HFダウンロード送信なし)", target_resume_path)
+    elif resume:
+        # 2. 通常の実行: HFからチーム共有最新モデルを自動ダウンロードして同期
         from utils.model_uploader import download_latest_team_weights_if_needed
         download_latest_team_weights_if_needed(model_type="wav2vec2")
+
+        if best_model_path.exists() and ((best_model_path / "model.safetensors").exists() or (best_model_path / "pytorch_model.bin").exists()):
+            target_resume_path = best_model_path
+        elif last_model_path.exists() and ((last_model_path / "model.safetensors").exists() or (last_model_path / "pytorch_model.bin").exists()):
+            target_resume_path = last_model_path
 
     seed = getattr(args, "seed", 42)
     root_dir = (
@@ -295,8 +372,6 @@ def train(args: argparse.Namespace) -> None:
     target_acc = getattr(args, "target_acc", 0.97)
     num_workers = getattr(args, "num_workers", 0)
     pretrained_model_name = getattr(args, "pretrained_model_name", DEFAULT_RECOGNITION_CONFIG.wav2vec2_pretrained_model_name)
-    best_model_path = getattr(args, "best_model_path", DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir)
-    last_model_path = getattr(args, "last_model_path", DEFAULT_RECOGNITION_CONFIG.wav2vec2_last_model_dir)
     weight_decay = getattr(args, "weight_decay", 0.01)
     warmup_ratio = getattr(args, "warmup_ratio", 0.1)
     max_grad_norm = getattr(args, "max_grad_norm", 1.0)
@@ -320,28 +395,56 @@ def train(args: argparse.Namespace) -> None:
     )
     train_dataset, val_dataset = split_dataset(dataset, val_rate, seed)
 
-    has_weights = (
-        best_model_path.exists()
-        and (
-            (best_model_path / "model.safetensors").exists()
-            or (best_model_path / "pytorch_model.bin").exists()
-        )
-    )
+    use_class_weights = getattr(args, "use_class_weights", True)
+    augment = getattr(args, "augment", True)
+    class_weight_power = getattr(args, "class_weight_power", 0.5)
 
+    if augment:
+        logger.info("Audio Data Augmentation (ノイズ加算・音量変調・タイムシフト) を訓練データセットに有効化しました。")
+        train_augmentor = AudioAugmentor()
+        train_dataset = AugmentedSubset(train_dataset, train_augmentor)
+    else:
+        train_dataset = AugmentedSubset(train_dataset, augmentor=None)
+
+    loss_fct: torch.nn.Module | None = None
+    if use_class_weights:
+        raw_train_subset = train_dataset.subset if isinstance(train_dataset, AugmentedSubset) else train_dataset
+        train_labels = [dataset.cached_data[i][1] for i in raw_train_subset.indices]
+        class_weights = compute_class_weights(
+            train_labels, num_classes=len(dataset.labels), power=class_weight_power
+        ).to(device)
+        loss_fct = torch.nn.CrossEntropyLoss(weight=class_weights)
+        logger.info(
+            "クラス重み付き損失関数 (Weighted CrossEntropyLoss) を有効化しました。(power=%.2f, num_classes=%d)",
+            class_weight_power,
+            len(dataset.labels),
+        )
+
+    has_weights = target_resume_path is not None
+    labels_matched = is_labels_compatible(target_resume_path, dataset.labels) if target_resume_path else False
     model_source = pretrained_model_name
-    if resume and has_weights:
-        model_source = str(best_model_path)
-        logger.info("既存のチェックポイント (%s) を再利用 (reuse) して継続学習を行います。", model_source)
+
+    if target_resume_path and has_weights:
+        model_source = str(target_resume_path)
+        if labels_matched:
+            logger.info("チーム共有/ローカルチェックポイント (%s) から学習を開始します。(全 %d クラス)", model_source, len(dataset.labels))
+        else:
+            logger.info(
+                "💡 旧モデル (%s) の音声特徴表現 (CNN+Transformer) を引き継ぎつつ、分類層を新しいクラス数 (%dクラス) に自動拡張してファインチューニングを開始します。",
+                model_source,
+                len(dataset.labels),
+            )
     elif not resume:
         logger.info(
-            "=== [--from-scratch / --no-resume が指定されたため、既存チェックポイントを読み込まずベースモデル (%s) から新規ファインチューニングを開始します] ===",
+            "=== [--from-scratch が指定されたため、ベースモデル (%s) から新規ファインチューニングを開始します (全 %d クラス)] ===",
             model_source,
+            len(dataset.labels),
         )
-    elif resume:
+    else:
         logger.info(
-            "過去のチェックポイント (%s) が存在しないため、ベースモデル (%s) から新規学習を開始します。",
-            best_model_path,
+            "過去のチェックポイントが存在しないため、ベースモデル (%s) から新規学習を開始します (全 %d クラス)。",
             model_source,
+            len(dataset.labels),
         )
 
     feature_extractor = AutoFeatureExtractor.from_pretrained(model_source)
@@ -354,10 +457,26 @@ def train(args: argparse.Namespace) -> None:
         )
 
     collate_fn = build_collate_fn(feature_extractor, sample_rate)
+
+    use_balanced_sampler = getattr(args, "use_balanced_sampler", True)
+    train_sampler = None
+    if use_balanced_sampler:
+        label_counts = Counter(train_labels)
+        class_weights_dict = {lbl: 1.0 / (count ** 0.5) for lbl, count in label_counts.items()}
+        sample_weights = [class_weights_dict[lbl] for lbl in train_labels]
+        sample_weights_tensor = torch.tensor(sample_weights, dtype=torch.float)
+        train_sampler = WeightedRandomSampler(
+            weights=sample_weights_tensor,
+            num_samples=len(sample_weights_tensor),
+            replacement=True,
+        )
+        logger.info("⚖️ マイルド全クラスサンプラー (WeightedRandomSampler: power=0.5) を有効化しました。aiueo の正解率を維持しつつマイナー音もバランスよく学習します。")
+
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
-        shuffle=True,
+        shuffle=(train_sampler is None),
+        sampler=train_sampler,
         num_workers=num_workers,
         collate_fn=collate_fn,
     )
@@ -400,7 +519,9 @@ def train(args: argparse.Namespace) -> None:
     )
     best_macro_f1 = -1.0
 
-    if has_weights:
+    # ラベル構成が完全一致する場合のみ、旧ベストモデルのベースラインスコアを事前評価する。
+    # ラベルが変わった場合、旧分類器で評価しても無意味なのでスキップする。
+    if has_weights and labels_matched:
         try:
             eval_fe = AutoFeatureExtractor.from_pretrained(str(best_model_path))
             eval_collate = build_collate_fn(eval_fe, sample_rate)
@@ -458,6 +579,7 @@ def train(args: argparse.Namespace) -> None:
             epoch,
             args.epochs,
             max_grad_norm,
+            loss_fct=loss_fct,
         )
         val_loss, val_acc, val_true, val_pred = validate(
             model, val_loader, device, labels=dataset.labels
@@ -564,6 +686,32 @@ def build_parser() -> argparse.ArgumentParser:
         help="Train from base pretrained model without reusing existing checkpoint",
     )
     parser.add_argument(
+        "--resume-from",
+        type=str,
+        default=None,
+        help="Path to specific checkpoint directory to resume from (e.g. weights/wav2vec2_last). Skips HF download when specified.",
+    )
+    parser.add_argument(
+        "--no-class-weights",
+        action="store_false",
+        dest="use_class_weights",
+        default=True,
+        help="Disable class weighting for loss calculation (enabled by default)",
+    )
+    parser.add_argument(
+        "--no-augment",
+        action="store_false",
+        dest="augment",
+        default=True,
+        help="Disable training audio data augmentation (enabled by default)",
+    )
+    parser.add_argument(
+        "--class-weight-power",
+        type=float,
+        default=0.5,
+        help="Power exponent for smooth inverse class weighting (default: 0.5)",
+    )
+    parser.add_argument(
         "--skip-prep",
         action="store_true",
         help="Skip automatic data merging and preprocessing before training",
@@ -572,6 +720,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-onnx-export",
         action="store_true",
         help="Skip automatic ONNX export and INT8 quantization after training",
+    )
+    parser.add_argument(
+        "--no-balanced-sampler",
+        action="store_false",
+        dest="use_balanced_sampler",
+        help="Disable WeightedRandomSampler for class-balanced training",
     )
     return parser
 
