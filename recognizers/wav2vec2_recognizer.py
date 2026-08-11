@@ -28,9 +28,11 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         sample_rate: int = DEFAULT_RECOGNITION_CONFIG.sample_rate,
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
         top_db: float = DEFAULT_RECOGNITION_CONFIG.top_db,
+        dynamic_trimming: bool = True,
     ):
         self.model_path = Path(model_path)
         self.labels = list(labels)
+        self.dynamic_trimming = dynamic_trimming
 
         # ONNX モデルファイルの優先順位 (model_int8.onnx > model_fp32.onnx > model.onnx)
         self.onnx_model_path: Path | None = None
@@ -61,11 +63,14 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         self.session: Any | None = None
         self.input_name: str | None = None
         self.last_confidence: float | None = None
-        logger.info("Wav2Vec2Recognizer (ONNX) 初期化完了: %s", self.onnx_model_path)
+        logger.info("Wav2Vec2Recognizer (ONNX) 初期化完了 (動的トリミング=%s): %s", self.dynamic_trimming, self.onnx_model_path)
 
     def recognize(self, audio: Any) -> str:
         self._ensure_model_loaded()
-        waveform = self.audio_preprocessor.preprocess_waveform(audio)
+        waveform = self.audio_preprocessor.preprocess_waveform(
+            audio,
+            pad_to_target=not self.dynamic_trimming,
+        )
         inputs = self.feature_extractor(
             waveform,
             sampling_rate=self.sample_rate,

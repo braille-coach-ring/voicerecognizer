@@ -42,6 +42,34 @@ class TestAudioPreprocessor(unittest.TestCase):
         # End of truncated audio should fade out smoothly to 0 without hard cut
         self.assertAlmostEqual(processed[-1], 0.0, places=3)
 
+    def test_dynamic_trimming_without_padding(self):
+        # 0.4s short audio
+        sr = 16000
+        t = np.linspace(0, 0.4, int(sr * 0.4), endpoint=False)
+        audio = (0.3 * np.sin(2 * np.pi * 100 * t)).astype(np.float32)
+
+        # Preprocess with pad_to_target=False
+        processed_dynamic = self.preprocessor.preprocess_waveform(audio, pad_to_target=False)
+
+        # Should be shorter than target 1.0s (16000 samples)
+        self.assertLess(len(processed_dynamic), 16000)
+        # Should be at least minimum length (0.2s = 3200 samples)
+        self.assertGreaterEqual(len(processed_dynamic), 3200)
+
+    def test_dynamic_trimming_min_length_guarantee(self):
+        # Very short 0.05s burst
+        sr = 16000
+        t = np.linspace(0, 0.05, int(sr * 0.05), endpoint=False)
+        audio = (0.3 * np.sin(2 * np.pi * 100 * t)).astype(np.float32)
+
+        processed = self.preprocessor.preprocess_waveform(
+            audio, pad_to_target=False, min_length_seconds=0.2
+        )
+
+        # Should guarantee minimum 0.2s (3200 samples)
+        self.assertEqual(len(processed), 3200)
+
 
 if __name__ == "__main__":
     unittest.main()
+

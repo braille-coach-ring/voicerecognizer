@@ -50,7 +50,12 @@ class AudioPreprocessor:
         waveform, _ = librosa.load(Path(audio), sr=self.sample_rate, mono=True)
         return waveform.astype(np.float32)
 
-    def preprocess_waveform(self, audio: Any) -> np.ndarray:
+    def preprocess_waveform(
+        self,
+        audio: Any,
+        pad_to_target: bool = True,
+        min_length_seconds: float = 0.2,
+    ) -> np.ndarray:
         waveform = self.load(audio)
         self.threshold_calculator.update(waveform)
         current_top_db = self.threshold_calculator.get_silence_threshold()
@@ -87,7 +92,11 @@ class AudioPreprocessor:
 
         # 4. RMSベースのダイナミックレンジ補正 ＆ tanh ソフトクリッピング
         waveform = self._normalize_volume(waveform)
-        return self._fit_length(waveform)
+        return self._fit_length(
+            waveform,
+            pad_to_target=pad_to_target,
+            min_length_seconds=min_length_seconds,
+        )
 
     def _normalize_volume(self, waveform: np.ndarray) -> np.ndarray:
         """
@@ -111,7 +120,12 @@ class AudioPreprocessor:
 
         return waveform
 
-    def _fit_length(self, waveform: np.ndarray) -> np.ndarray:
+    def _fit_length(
+        self,
+        waveform: np.ndarray,
+        pad_to_target: bool = True,
+        min_length_seconds: float = 0.2,
+    ) -> np.ndarray:
         target_samples = int(self.target_length_seconds * self.sample_rate)
         if len(waveform) > target_samples:
             # ターゲット長でカットする際にも末尾20msにフェードアウトを施しブツ切れを防止
@@ -121,4 +135,12 @@ class AudioPreprocessor:
                 fade_out = 0.5 * (1.0 + np.cos(np.pi * np.linspace(0, 1, fade_samples, dtype=np.float32)))
                 truncated[-fade_samples:] *= fade_out
             return truncated
+
+        if not pad_to_target:
+            min_samples = int(min_length_seconds * self.sample_rate)
+            if len(waveform) < min_samples:
+                return np.pad(waveform, (0, min_samples - len(waveform)))
+            return waveform
+
         return np.pad(waveform, (0, target_samples - len(waveform)))
+
