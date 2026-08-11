@@ -27,7 +27,9 @@ def benchmark():
         rec_fixed.recognize(short_audio)
         rec_dynamic.recognize(short_audio)
 
-    # 1.0s 固定長パディングの推論時間測定 (20回平均)
+    target_sec = getattr(rec_fixed.audio_preprocessor, "target_length_seconds", 0.6)
+
+    # 固定長パディングの推論時間測定 (20回平均)
     times_fixed = []
     for _ in range(20):
         t0 = time.perf_counter()
@@ -47,7 +49,7 @@ def benchmark():
     avg_dynamic = float(np.mean(times_dynamic))
     speedup = avg_fixed / avg_dynamic if avg_dynamic > 0 else 0.0
 
-    print(f"1.0秒固定長パディング (Fixed 1.0s) : {avg_fixed:.2f} ms")
+    print(f"{target_sec:.1f}秒固定長パディング (Fixed {target_sec:.1f}s) : {avg_fixed:.2f} ms")
     print(f"動的トリミング入力   (Dynamic ~0.4s): {avg_dynamic:.2f} ms")
     print(f"高速化率: {speedup:.2f} 倍 (レイテンシ {avg_fixed - avg_dynamic:.2f} ms 削減)")
 
