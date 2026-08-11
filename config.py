@@ -23,7 +23,7 @@ load_dotenv(PROJECT_ROOT / ".env")
 class AudioConfig:
     sample_rate: int = 16000
     chunk_seconds: float = 0.1
-    window_seconds: float = 1.5
+    window_seconds: float = 1.0
     channels: int = 1
     callback_blocksize_seconds: float = 0.05
     warmup_sleep_ms: int = 500

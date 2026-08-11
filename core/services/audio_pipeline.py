@@ -80,14 +80,21 @@ class AudioPipeline:
     def capture_until_speech(self) -> tuple[np.ndarray, str] | None:
         """
         発話が検出されるまでマイク入力をループ監視し、
-        前処理済みの綺麗な録音波形 (np.ndarray) と推論予測テキスト (str) のペアを返します。
+        生の録音波形 (np.ndarray) と推論予測テキスト (str) のペアを返します。
+
+        VAD検知後に短い待機を入れ、発声がリングバッファに完全に収まった状態で
+        再取得することで、ブツ切れを防止します。
         """
         logger.info("音声を待機中... マイクに向かってお話しください（Ctrl+Cで終了）")
         while True:
             try:
-                raw_audio = self.audio_capture.capture_once()
-                if raw_audio is not None and raw_audio.size > 0:
-                    if self.vad.is_speech(raw_audio):
+                chunk = self.audio_capture.capture_once()
+                if chunk is not None and chunk.size > 0:
+                    if self.vad.is_speech(chunk):
+                        # VADが発声を検知した → 発声がバッファに完全に収まるよう少し待つ
+                        time.sleep(0.3)
+                        # 待機後にリングバッファから最新の1秒を再取得
+                        raw_audio = self.audio_capture.capture_once()
                         predicted_text = self.recognizer.recognize(raw_audio)
                         return raw_audio, predicted_text
                 time.sleep(DEFAULT_AUDIO_CONFIG.chunk_seconds)
