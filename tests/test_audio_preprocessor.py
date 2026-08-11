@@ -16,8 +16,8 @@ class TestAudioPreprocessor(unittest.TestCase):
 
         processed = self.preprocessor.preprocess_waveform(audio)
 
-        # Output shape should match target length (0.5s = 8000 samples)
-        self.assertEqual(len(processed), 8000)
+        # Output shape should match target length (0.6s = 9600 samples)
+        self.assertEqual(len(processed), 9600)
 
         # RMS-based normalization should boost soft "o" sound to target level (~0.12 RMS or near 0.2-0.5 peak)
         rms = np.sqrt(np.mean(processed**2))
@@ -31,14 +31,14 @@ class TestAudioPreprocessor(unittest.TestCase):
         self.assertLess(abs(processed[0]), 0.05)
 
     def test_long_audio_truncation_has_smooth_fadeout(self):
-        # 1.5s long audio exceeding target 0.5s
+        # 1.5s long audio exceeding target 0.6s
         sr = 16000
         t = np.linspace(0, 1.5, int(sr * 1.5), endpoint=False)
         audio = (0.8 * np.sin(2 * np.pi * 100 * t)).astype(np.float32)
 
         processed = self.preprocessor.preprocess_waveform(audio)
 
-        self.assertEqual(len(processed), 8000)
+        self.assertEqual(len(processed), 9600)
         # End of truncated audio should fade out smoothly to 0 without hard cut
         self.assertAlmostEqual(processed[-1], 0.0, places=3)
 
@@ -51,8 +51,8 @@ class TestAudioPreprocessor(unittest.TestCase):
         # Preprocess with pad_to_target=False
         processed_dynamic = self.preprocessor.preprocess_waveform(audio, pad_to_target=False)
 
-        # Should be shorter than target 0.5s (8000 samples)
-        self.assertLess(len(processed_dynamic), 8000)
+        # Should be shorter than target 0.6s (9600 samples)
+        self.assertLess(len(processed_dynamic), 9600)
         # Should be at least minimum length (0.2s = 3200 samples)
         self.assertGreaterEqual(len(processed_dynamic), 3200)
 

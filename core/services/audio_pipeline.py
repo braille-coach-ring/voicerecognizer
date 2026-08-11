@@ -85,14 +85,11 @@ class AudioPipeline:
         logger.info("音声を待機中... マイクに向かってお話しください（Ctrl+Cで終了）")
         while True:
             try:
-                audio = self.audio_capture.capture_once()
-                if audio is not None and audio.size > 0:
-                    if self.vad.is_speech(audio):
-                        predicted_text = self.recognizer.recognize(audio)
-                        strategy = getattr(self.recognizer, "strategy", getattr(self.recognizer, "_strategy", None))
-                        if strategy and hasattr(strategy, "audio_preprocessor"):
-                            preprocessed_audio = strategy.audio_preprocessor.preprocess_waveform(audio)
-                        return preprocessed_audio, predicted_text
+                raw_audio = self.audio_capture.capture_once()
+                if raw_audio is not None and raw_audio.size > 0:
+                    if self.vad.is_speech(raw_audio):
+                        predicted_text = self.recognizer.recognize(raw_audio)
+                        return raw_audio, predicted_text
                 time.sleep(DEFAULT_AUDIO_CONFIG.chunk_seconds)
             except KeyboardInterrupt:
                 logger.info("\n音声待機を停止しました。")

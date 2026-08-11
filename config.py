@@ -23,7 +23,7 @@ load_dotenv(PROJECT_ROOT / ".env")
 class AudioConfig:
     sample_rate: int = 16000
     chunk_seconds: float = 0.1
-    window_seconds: float = 1.0
+    window_seconds: float = 1.5
     channels: int = 1
     callback_blocksize_seconds: float = 0.05
     warmup_sleep_ms: int = 500
@@ -52,7 +52,7 @@ RecognizerType = Literal["cnn", "wav2vec2", "whisper"]
 class RecognitionConfig:
     sample_rate: int = 16000
     model_type: RecognizerType = "cnn"
-    target_length_seconds: float = 0.5
+    target_length_seconds: float = 0.6
     top_db: float = 74.9
     n_mels: int = 64
     n_fft: int = 400

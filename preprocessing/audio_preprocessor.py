@@ -74,10 +74,9 @@ class AudioPreprocessor:
             start_idx = intervals[0][0]
             end_idx = intervals[-1][1]
 
-            # 2. 「頭切れ・語尾切れ」防止マージン (先頭80ms / 末尾120ms の安全余白)
-            # 「お」のような低音域フォルマント（約100Hz）の長い減衰音を完全に保護
-            start_margin = int(self.sample_rate * 0.08)  # 80ms
-            end_margin = int(self.sample_rate * 0.12)    # 120ms
+            # 2. 「頭切れ・語尾切れ」絶対防止マージン (先頭120ms / 末尾150ms の安全余白)
+            start_margin = int(self.sample_rate * 0.12)  # 120ms
+            end_margin = int(self.sample_rate * 0.15)    # 150ms
             start_idx = max(0, start_idx - start_margin)
             end_idx = min(len(waveform), end_idx + end_margin)
             waveform = waveform[start_idx:end_idx]
