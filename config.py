@@ -34,14 +34,14 @@ class PreprocessConfig:
     n_mels: int = 64
     n_fft: int = 400
     hop_length: int = 160
-    top_db: float = 74.9
-    vad_silence_threshold: float = 0.03
-    vad_rms_threshold: float = 0.008
+    top_db: float = 31.6
+    vad_silence_threshold: float = 0.015407
+    vad_rms_threshold: float = 0.005181
     vad_min_speech_chunks: int = 2
     vad_min_active_ratio: float = 0.02
     dynamic_threshold_enabled: bool = False
-    min_top_db: float = 74.9
-    max_top_db: float = 80.0
+    min_top_db: float = 23.6
+    max_top_db: float = 39.6
     noise_update_rate: float = 0.005
 
 
@@ -53,7 +53,7 @@ class RecognitionConfig:
     sample_rate: int = 16000
     model_type: RecognizerType = "cnn"
     target_length_seconds: float = 0.6
-    top_db: float = 74.9
+    top_db: float = 31.6
     n_mels: int = 64
     n_fft: int = 400
     hop_length: int = 160
@@ -90,4 +90,3 @@ DEFAULT_AUDIO_CONFIG = AudioConfig()
 DEFAULT_PREPROCESS_CONFIG = PreprocessConfig()
 DEFAULT_RECOGNITION_CONFIG = RecognitionConfig()
 DEFAULT_HUGGINGFACE_CONFIG = HuggingFaceConfig()
-
