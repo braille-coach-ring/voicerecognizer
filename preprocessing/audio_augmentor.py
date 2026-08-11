@@ -35,31 +35,30 @@ class AudioAugmentor:
         self.gain_range = gain_range
         self.shift_max_ratio = shift_max_ratio
         self.p = p
-        if seed is not None:
-            np.random.seed(seed)
+        self.rng = np.random.default_rng(seed)
 
     def add_noise(self, waveform: np.ndarray) -> np.ndarray:
         """ガウスノイズを加算"""
-        if np.random.rand() > self.p:
+        if self.rng.random() > self.p:
             return waveform
-        noise = np.random.randn(*waveform.shape).astype(np.float32) * self.noise_level
+        noise = self.rng.standard_normal(size=waveform.shape, dtype=np.float32) * self.noise_level
         return waveform + noise
 
     def change_gain(self, waveform: np.ndarray) -> np.ndarray:
         """音量をランダムに拡大・縮小"""
-        if np.random.rand() > self.p:
+        if self.rng.random() > self.p:
             return waveform
-        gain = np.random.uniform(self.gain_range[0], self.gain_range[1])
+        gain = self.rng.uniform(self.gain_range[0], self.gain_range[1])
         return (waveform * gain).astype(np.float32)
 
     def shift_time(self, waveform: np.ndarray) -> np.ndarray:
         """時間軸上で波形を前後シフト（端は0パディング）"""
-        if np.random.rand() > self.p:
+        if self.rng.random() > self.p:
             return waveform
         max_shift = int(len(waveform) * self.shift_max_ratio)
         if max_shift <= 0:
             return waveform
-        shift = np.random.randint(-max_shift, max_shift + 1)
+        shift = int(self.rng.integers(-max_shift, max_shift + 1))
         if shift == 0:
             return waveform
 

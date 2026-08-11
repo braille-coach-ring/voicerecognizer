@@ -406,10 +406,11 @@ def train(args: argparse.Namespace) -> None:
     else:
         train_dataset = AugmentedSubset(train_dataset, augmentor=None)
 
+    raw_train_subset = train_dataset.subset if isinstance(train_dataset, AugmentedSubset) else train_dataset
+    train_labels = [dataset.cached_data[i][1] for i in raw_train_subset.indices]
+
     loss_fct: torch.nn.Module | None = None
     if use_class_weights:
-        raw_train_subset = train_dataset.subset if isinstance(train_dataset, AugmentedSubset) else train_dataset
-        train_labels = [dataset.cached_data[i][1] for i in raw_train_subset.indices]
         class_weights = compute_class_weights(
             train_labels, num_classes=len(dataset.labels), power=class_weight_power
         ).to(device)
@@ -519,11 +520,11 @@ def train(args: argparse.Namespace) -> None:
     )
     best_macro_f1 = -1.0
 
-    # ラベル構成が完全一致する場合のみ、旧ベストモデルのベースラインスコアを事前評価する。
+    # ラベル構成が完全一致する場合のみ、旧モデルのベースラインスコアを事前評価する。
     # ラベルが変わった場合、旧分類器で評価しても無意味なのでスキップする。
-    if has_weights and labels_matched:
+    if has_weights and labels_matched and target_resume_path:
         try:
-            eval_fe = AutoFeatureExtractor.from_pretrained(str(best_model_path))
+            eval_fe = AutoFeatureExtractor.from_pretrained(str(target_resume_path))
             eval_collate = build_collate_fn(eval_fe, sample_rate)
             eval_val_loader = DataLoader(
                 val_dataset,
@@ -533,7 +534,7 @@ def train(args: argparse.Namespace) -> None:
                 collate_fn=eval_collate,
             )
             eval_m = Wav2Vec2ForSequenceClassification.from_pretrained(
-                str(best_model_path),
+                str(target_resume_path),
                 num_labels=len(dataset.labels),
                 label2id=label2id,
                 id2label=id2label,
@@ -548,8 +549,8 @@ def train(args: argparse.Namespace) -> None:
             )
             best_macro_f1 = init_result.overall.macro_f1
             logger.info(
-                "保存済み Wav2Vec2 ベストモデル (%s) の評価スコア - Val Acc: %.4f, Val Macro-F1: %.4f",
-                best_model_path,
+                "保存済み Wav2Vec2 チェックポイント (%s) の評価スコア - Val Acc: %.4f, Val Macro-F1: %.4f",
+                target_resume_path,
                 val_acc,
                 best_macro_f1,
             )
