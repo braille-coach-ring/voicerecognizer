@@ -40,8 +40,8 @@ logger = logging.getLogger(__name__)
 def export_to_onnx(
     model: torch.nn.Module,
     output_onnx_path: Path,
-    sample_rate: int = 16000,
-    target_length_seconds: float = 1.0,
+    sample_rate: int = DEFAULT_RECOGNITION_CONFIG.sample_rate,
+    target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
 ) -> None:
     """PyTorch Wav2Vec2 モデルを ONNX 形式にエクスポートします。"""
     model.eval()
