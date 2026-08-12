@@ -19,6 +19,7 @@ dependencies = [
     "onnxruntime>=1.19.0",
     "onnx>=1.22.0",
     "onnxscript>=0.7.1",
+    "accelerate>=1.11.0",
 ]
 
 [dependency-groups]

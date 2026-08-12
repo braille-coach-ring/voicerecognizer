@@ -1,9 +1,9 @@
 """
-Wav2Vec2 Fine-Tuning Script with Layer Freezing and On-Memory Caching
+Wav2Vec2 Fine-Tuning Script with Layer Freezing and Lazy Disk Loading
 
 役割:
-  Wav2Vec2 プリトレイニードモデルの下位層フリーズ ＋ オンメモリキャッシュにより、
-  転移学習ファインチューニングを高速実行し、best_model ディレクトリおよび labels.json を保存します。
+  Wav2Vec2 プリトレイニードモデルの下位層フリーズ ＋ processed_dataset からのlazy loadingにより、
+  RAM使用量を抑えてファインチューニングを実行し、best_model ディレクトリおよび labels.json を保存します。
 
 使い方:
   uv run python models/wav2vec2/train.py           # デフォルト設定で Wav2Vec2 を継続ファインチューニング
@@ -11,6 +11,9 @@ Wav2Vec2 Fine-Tuning Script with Layer Freezing and On-Memory Caching
 """
 
 import argparse
+from collections import Counter
+import gc
+import importlib.util
 import json
 import logging
 import random
@@ -22,19 +25,16 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import matplotlib.pyplot as plt
 import numpy as np
+import soundfile as sf
 import torch
-from sklearn.model_selection import StratifiedShuffleSplit
 from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
-from collections import Counter
 from tqdm import tqdm
 
-from config import DEFAULT_AUDIO_CONFIG, DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG
+from config import DEFAULT_RECOGNITION_CONFIG
 from dataset.hiragana_dataset import HiraganaDataset
 from evaluation.evaluator import compute_evaluation_result
 from preprocessing.audio_augmentor import AudioAugmentor
-from preprocessing.audio_preprocessor import AudioPreprocessor
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -53,29 +53,50 @@ class Wav2Vec2ClassificationDataset(Dataset):
         source_dataset = HiraganaDataset(
             root_dir=root_dir,
             sample_rate=sample_rate,
+            cache_in_memory=False,
         )
         self.labels = source_dataset.labels
         self.data = source_dataset.data
-        self.preprocessor = AudioPreprocessor(
-            sample_rate=sample_rate,
-            target_length_seconds=target_length_seconds,
-            top_db=top_db,
-        )
+        self.sample_rate = sample_rate
+        self.target_samples = int(target_length_seconds * sample_rate)
 
         if not self.data:
             raise ValueError(f"No training samples were found in {root_dir}")
 
-        logger.info("オンメモリキャッシュ作成中: %d 件の音声データを前処理しています...", len(self.data))
-        self.cached_data: list[tuple[np.ndarray, int]] = []
-        for wav_path, label in self.data:
-            waveform = self.preprocessor.preprocess_waveform(wav_path)
-            self.cached_data.append((waveform, label))
+        logger.info(
+            "Wav2Vec2 dataset lazy loading enabled: %d samples, %d classes. "
+            "Only file paths and labels are kept in RAM.",
+            len(self.data),
+            len(self.labels),
+        )
 
     def __len__(self) -> int:
-        return len(self.cached_data)
+        return len(self.data)
 
     def __getitem__(self, index: int) -> tuple[np.ndarray, int]:
-        return self.cached_data[index]
+        wav_path, label = self.data[index]
+        waveform, sr = sf.read(wav_path, dtype="float32", always_2d=False)
+        waveform = np.asarray(waveform, dtype=np.float32)
+        if waveform.ndim > 1:
+            waveform = np.mean(waveform, axis=1, dtype=np.float32)
+        waveform = waveform.reshape(-1)
+
+        if sr != self.sample_rate:
+            import librosa
+
+            waveform = librosa.resample(
+                waveform,
+                orig_sr=sr,
+                target_sr=self.sample_rate,
+            ).astype(np.float32)
+
+        if self.target_samples > 0:
+            if len(waveform) > self.target_samples:
+                waveform = waveform[: self.target_samples]
+            elif len(waveform) < self.target_samples:
+                waveform = np.pad(waveform, (0, self.target_samples - len(waveform)))
+
+        return np.ascontiguousarray(waveform, dtype=np.float32), label
 
 
 def fix_seed(seed: int) -> None:
@@ -279,10 +300,11 @@ def save_pretrained_model(
     )
 
 
-def import_transformers() -> tuple[Any, Any, Any]:
+def import_transformers() -> tuple[Any, Any, Any, Any]:
     try:
         from transformers import (
             AutoFeatureExtractor,
+            AutoConfig,
             Wav2Vec2ForSequenceClassification,
             get_linear_schedule_with_warmup,
         )
@@ -294,9 +316,309 @@ def import_transformers() -> tuple[Any, Any, Any]:
 
     return (
         AutoFeatureExtractor,
+        AutoConfig,
         Wav2Vec2ForSequenceClassification,
         get_linear_schedule_with_warmup,
     )
+
+
+def is_package_available(package_name: str) -> bool:
+    return importlib.util.find_spec(package_name) is not None
+
+
+def is_pagefile_or_memory_error(exc: BaseException) -> bool:
+    text = str(exc).lower()
+    return (
+        isinstance(exc, MemoryError)
+        or "os error 1455" in text
+        or "paging file" in text
+        or "ページング ファイル" in text
+    )
+
+
+def build_model_load_kwargs() -> dict[str, Any]:
+    kwargs: dict[str, Any] = {"use_safetensors": True}
+    if is_package_available("accelerate"):
+        kwargs["low_cpu_mem_usage"] = True
+    else:
+        logger.info(
+            "accelerate is not installed; local Wav2Vec2 checkpoints will use "
+            "streaming safetensors fallback if regular loading runs out of memory."
+        )
+    return kwargs
+
+
+def get_local_safetensor_files(model_source: str | Path) -> list[Path]:
+    model_path = Path(model_source)
+    if not model_path.is_dir():
+        return []
+
+    index_path = model_path / "model.safetensors.index.json"
+    if index_path.exists():
+        index_data = json.loads(index_path.read_text(encoding="utf-8"))
+        weight_map = index_data.get("weight_map", {})
+        filenames = sorted(set(weight_map.values()))
+        return [model_path / filename for filename in filenames]
+
+    safetensors_path = model_path / "model.safetensors"
+    if safetensors_path.exists():
+        return [safetensors_path]
+
+    return []
+
+
+def ensure_sharded_safetensors(
+    model_source: str | Path,
+    max_shard_size_mb: int = 16,
+) -> list[Path]:
+    model_path = Path(model_source)
+    index_path = model_path / "model.safetensors.index.json"
+    if index_path.exists():
+        return get_local_safetensor_files(model_path)
+
+    source_path = model_path / "model.safetensors"
+    if not source_path.exists():
+        return []
+
+    try:
+        from safetensors import safe_open
+        from safetensors.numpy import save_file
+    except ImportError as exc:
+        raise ImportError(
+            "Sharding Wav2Vec2 checkpoints requires the 'safetensors' package."
+        ) from exc
+
+    max_shard_bytes = max(1, int(max_shard_size_mb)) * 1024 * 1024
+    if source_path.stat().st_size <= max_shard_bytes:
+        return [source_path]
+
+    for partial_shard in model_path.glob("model-shard-*.safetensors"):
+        partial_shard.unlink(missing_ok=True)
+
+    logger.info(
+        "Creating sharded safetensors checkpoint for low-memory loading: %s",
+        source_path,
+    )
+    weight_map: dict[str, str] = {}
+    shard_files: list[Path] = []
+    total_size = 0
+    shard_index = 1
+    current_tensors: dict[str, np.ndarray] = {}
+    current_size = 0
+
+    def flush_shard() -> None:
+        nonlocal current_tensors, current_size, shard_index
+        if not current_tensors:
+            return
+
+        shard_name = f"model-shard-{shard_index:05d}.safetensors"
+        shard_path = model_path / shard_name
+        save_file(current_tensors, shard_path)
+        for tensor_name in current_tensors:
+            weight_map[tensor_name] = shard_name
+        shard_files.append(shard_path)
+        current_tensors = {}
+        current_size = 0
+        shard_index += 1
+        gc.collect()
+
+    with safe_open(str(source_path), framework="numpy") as tensors:
+        for key in tensors.keys():
+            tensor = tensors.get_tensor(key)
+            tensor_size = tensor.nbytes
+            if current_tensors and current_size + tensor_size > max_shard_bytes:
+                flush_shard()
+
+            current_tensors[key] = tensor
+            current_size += tensor_size
+            total_size += tensor_size
+
+            # Release each mmap-backed tensor as soon as it has been written.
+            # On Windows, grouping many tensors can still trip os error 1455.
+            flush_shard()
+
+    index_payload = {
+        "metadata": {"total_size": total_size},
+        "weight_map": weight_map,
+    }
+    index_path.write_text(
+        json.dumps(index_payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    logger.info(
+        "Sharded safetensors checkpoint created: %d shard(s), index=%s",
+        len(shard_files),
+        index_path,
+    )
+    return shard_files
+
+
+def load_local_safetensors_streaming(
+    model: torch.nn.Module,
+    model_source: str | Path,
+) -> tuple[list[str], list[str], list[str]]:
+    try:
+        from safetensors import safe_open
+    except ImportError as exc:
+        raise ImportError(
+            "Streaming Wav2Vec2 loading requires the 'safetensors' package."
+        ) from exc
+
+    tensor_files = get_local_safetensor_files(model_source)
+    if len(tensor_files) == 1 and tensor_files[0].name == "model.safetensors":
+        tensor_files = ensure_sharded_safetensors(model_source)
+    if not tensor_files:
+        raise FileNotFoundError(
+            f"No local safetensors checkpoint files were found in {model_source}"
+        )
+
+    state_dict = model.state_dict()
+    loaded: list[str] = []
+    unexpected: list[str] = []
+    mismatched: list[str] = []
+
+    with torch.no_grad():
+        for tensor_file in tensor_files:
+            with safe_open(str(tensor_file), framework="pt", device="cpu") as tensors:
+                for key in tensors.keys():
+                    if key not in state_dict:
+                        unexpected.append(key)
+                        continue
+
+                    target_tensor = state_dict[key]
+                    source_tensor = tensors.get_tensor(key)
+                    if tuple(source_tensor.shape) != tuple(target_tensor.shape):
+                        mismatched.append(key)
+                        continue
+
+                    target_tensor.copy_(source_tensor)
+                    loaded.append(key)
+
+    loaded_set = set(loaded)
+    missing = [key for key in state_dict if key not in loaded_set]
+    logger.info(
+        "Streaming safetensors load finished: loaded=%d, missing=%d, "
+        "mismatched=%d, unexpected=%d",
+        len(loaded),
+        len(missing),
+        len(mismatched),
+        len(unexpected),
+    )
+    if mismatched:
+        logger.info(
+            "Skipped mismatched tensors, usually classifier heads after label changes: %s",
+            ", ".join(mismatched[:10]),
+        )
+    return missing, mismatched, unexpected
+
+
+def instantiate_model_for_streaming(model_class: Any, config: Any) -> torch.nn.Module:
+    if hasattr(torch.nn.Module, "to_empty"):
+        try:
+            with torch.device("meta"):
+                model = model_class(config)
+            model = model.to_empty(device=torch.device("cpu"))
+            logger.info(
+                "Instantiated Wav2Vec2 model with meta tensors for low-memory loading."
+            )
+            return model
+        except Exception as exc:
+            if is_pagefile_or_memory_error(exc):
+                raise
+            logger.warning(
+                "Meta-device model initialization failed (%s). "
+                "Falling back to regular initialization.",
+                exc,
+            )
+
+    return model_class(config)
+
+
+def initialize_unloaded_classification_head(
+    model: torch.nn.Module,
+    unloaded_names: list[str],
+) -> None:
+    if not unloaded_names or not hasattr(model, "_init_weights"):
+        return
+
+    for module_name in ("projector", "classifier"):
+        if not any(
+            name == module_name or name.startswith(f"{module_name}.")
+            for name in unloaded_names
+        ):
+            continue
+
+        module = getattr(model, module_name, None)
+        if isinstance(module, torch.nn.Module):
+            model._init_weights(module)
+            logger.info("Initialized Wav2Vec2 %s parameters.", module_name)
+
+
+def load_wav2vec2_classifier(
+    model_class: Any,
+    config_class: Any,
+    model_source: str | Path,
+    labels: tuple[str, ...] | list[str],
+    label2id: dict[str, int],
+    id2label: dict[int, str],
+) -> Any:
+    common_kwargs = {
+        "num_labels": len(labels),
+        "label2id": label2id,
+        "id2label": id2label,
+        "problem_type": "single_label_classification",
+        "ignore_mismatched_sizes": True,
+    }
+    load_kwargs = build_model_load_kwargs()
+    local_safetensors = get_local_safetensor_files(model_source)
+
+    if local_safetensors and not is_package_available("accelerate"):
+        ensure_sharded_safetensors(model_source)
+        config = config_class.from_pretrained(model_source)
+        config.num_labels = len(labels)
+        config.label2id = label2id
+        config.id2label = id2label
+        config.problem_type = "single_label_classification"
+
+        model = instantiate_model_for_streaming(model_class, config)
+        missing, mismatched, _ = load_local_safetensors_streaming(model, model_source)
+        initialize_unloaded_classification_head(model, missing + mismatched)
+        return model
+
+    try:
+        return model_class.from_pretrained(
+            model_source,
+            **common_kwargs,
+            **load_kwargs,
+        )
+    except Exception as exc:
+        if not is_pagefile_or_memory_error(exc):
+            raise
+
+        local_safetensors = get_local_safetensor_files(model_source)
+        if not local_safetensors:
+            raise
+
+        logger.warning(
+            "Regular Wav2Vec2 checkpoint loading ran out of memory (%s). "
+            "Retrying with streaming safetensors loader.",
+            exc,
+        )
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        ensure_sharded_safetensors(model_source)
+        config = config_class.from_pretrained(model_source)
+        config.num_labels = len(labels)
+        config.label2id = label2id
+        config.id2label = id2label
+        config.problem_type = "single_label_classification"
+
+        model = instantiate_model_for_streaming(model_class, config)
+        missing, mismatched, _ = load_local_safetensors_streaming(model, model_source)
+        initialize_unloaded_classification_head(model, missing + mismatched)
+        return model
 
 
 def freeze_wav2vec2_layers(
@@ -383,6 +705,7 @@ def train(args: argparse.Namespace) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     (
         AutoFeatureExtractor,
+        AutoConfig,
         Wav2Vec2ForSequenceClassification,
         get_linear_schedule_with_warmup,
     ) = import_transformers()
@@ -407,7 +730,7 @@ def train(args: argparse.Namespace) -> None:
         train_dataset = AugmentedSubset(train_dataset, augmentor=None)
 
     raw_train_subset = train_dataset.subset if isinstance(train_dataset, AugmentedSubset) else train_dataset
-    train_labels = [dataset.cached_data[i][1] for i in raw_train_subset.indices]
+    train_labels = [dataset.data[i][1] for i in raw_train_subset.indices]
 
     loss_fct: torch.nn.Module | None = None
     if use_class_weights:
@@ -491,13 +814,13 @@ def train(args: argparse.Namespace) -> None:
 
     label2id = {label: index for index, label in enumerate(dataset.labels)}
     id2label = {index: label for label, index in label2id.items()}
-    model = Wav2Vec2ForSequenceClassification.from_pretrained(
+    model = load_wav2vec2_classifier(
+        Wav2Vec2ForSequenceClassification,
+        AutoConfig,
         model_source,
-        num_labels=len(dataset.labels),
-        label2id=label2id,
-        id2label=id2label,
-        problem_type="single_label_classification",
-        ignore_mismatched_sizes=True,
+        dataset.labels,
+        label2id,
+        id2label,
     )
     freeze_wav2vec2_layers(
         model,
@@ -524,25 +847,8 @@ def train(args: argparse.Namespace) -> None:
     # ラベルが変わった場合、旧分類器で評価しても無意味なのでスキップする。
     if has_weights and labels_matched and target_resume_path:
         try:
-            eval_fe = AutoFeatureExtractor.from_pretrained(str(target_resume_path))
-            eval_collate = build_collate_fn(eval_fe, sample_rate)
-            eval_val_loader = DataLoader(
-                val_dataset,
-                batch_size=args.batch_size,
-                shuffle=False,
-                num_workers=num_workers,
-                collate_fn=eval_collate,
-            )
-            eval_m = Wav2Vec2ForSequenceClassification.from_pretrained(
-                str(target_resume_path),
-                num_labels=len(dataset.labels),
-                label2id=label2id,
-                id2label=id2label,
-                problem_type="single_label_classification",
-                ignore_mismatched_sizes=True,
-            ).to(device)
             _, val_acc, val_true, val_pred = validate(
-                eval_m, eval_val_loader, device, labels=dataset.labels
+                model, val_loader, device, labels=dataset.labels
             )
             init_result = compute_evaluation_result(
                 val_true, val_pred, labels=dataset.labels
@@ -554,8 +860,6 @@ def train(args: argparse.Namespace) -> None:
                 val_acc,
                 best_macro_f1,
             )
-            del eval_m
-            del eval_fe
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
         except Exception as e:
@@ -670,9 +974,25 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Fine-tune Wav2Vec2 for hiragana label classification."
     )
-    parser.add_argument("--epochs", type=int, default=30, help="Number of training epochs (default: 30)")
-    parser.add_argument("--batch-size", type=int, default=4, help="Batch size (default: 4)")
-    parser.add_argument("--learning-rate", type=float, default=3e-5, help="Learning rate (default: 3e-5)")
+    parser.add_argument(
+        "--epochs",
+        "--epoch",
+        type=int,
+        default=30,
+        help="Number of training epochs (default: 30)",
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=4,
+        help="Batch size (default: 4)",
+    )
+    parser.add_argument(
+        "--learning-rate",
+        type=float,
+        default=3e-5,
+        help="Learning rate (default: 3e-5)",
+    )
     parser.add_argument(
         "--freeze-transformer-layers",
         type=int,

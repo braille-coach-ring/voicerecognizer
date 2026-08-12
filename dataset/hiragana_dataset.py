@@ -30,7 +30,7 @@ class HiraganaDataset(Dataset):
         n_mels: int = DEFAULT_PREPROCESS_CONFIG.n_mels,
         n_fft: int = DEFAULT_PREPROCESS_CONFIG.n_fft,
         hop_length: int = DEFAULT_PREPROCESS_CONFIG.hop_length,
-        cache_in_memory: bool = True,
+        cache_in_memory: bool = False,
     ):
         self.root = Path(root_dir)
         self.sample_rate = sample_rate
