@@ -12,6 +12,7 @@ from models.wav2vec2.train import (
     Wav2Vec2ClassificationDataset,
     build_parser,
     build_collate_fn,
+    determine_optimal_num_workers,
     is_pagefile_or_memory_error,
     load_wav2vec2_classifier,
     load_local_safetensors_streaming,
@@ -166,6 +167,16 @@ class TestWav2Vec2LazyDataset(unittest.TestCase):
             self.assertTrue(torch.equal(model.weight, expected_weight))
             self.assertTrue(torch.equal(model.bias, expected_bias))
             self.assertEqual(model.config.num_labels, 2)
+
+    def test_determine_optimal_num_workers(self):
+        # 手動指定がある場合はそれを優先する
+        self.assertEqual(determine_optimal_num_workers(2), 2)
+        self.assertEqual(determine_optimal_num_workers(0), 0)
+
+        # 未指定 (None) の場合、1以上の有効な数値が自動計算される
+        auto_workers = determine_optimal_num_workers(None)
+        self.assertGreaterEqual(auto_workers, 1)
+        self.assertLessEqual(auto_workers, 8)
 
 
 if __name__ == "__main__":

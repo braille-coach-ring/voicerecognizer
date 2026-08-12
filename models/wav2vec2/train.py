@@ -16,6 +16,7 @@ import gc
 import importlib.util
 import json
 import logging
+import os
 import random
 import sys
 from pathlib import Path
@@ -97,6 +98,28 @@ class Wav2Vec2ClassificationDataset(Dataset):
                 waveform = np.pad(waveform, (0, self.target_samples - len(waveform)))
 
         return np.ascontiguousarray(waveform, dtype=np.float32), label
+
+
+def determine_optimal_num_workers(requested_num_workers: int | None = None) -> int:
+    """
+    CPUコア数とOS特性に応じて DataLoader の num_workers を自動・動的に計算する。
+
+    ・引数 `requested_num_workers` が 0 以上の数値で指定されていれば手動指定を優先。
+    ・未指定 (None または < 0) の場合:
+      - os.cpu_count() の半数を基本値とする。
+      - Windowsの場合は spawn オーバーヘッドや仮想メモリ消費を抑えるため 1 〜 4 の範囲で動的設定。
+      - Linux/macOSの場合は 1 〜 8 の範囲で動的設定。
+    """
+    if requested_num_workers is not None and requested_num_workers >= 0:
+        return requested_num_workers
+
+    cpu_count = os.cpu_count() or 1
+    if sys.platform == "win32":
+        optimal = min(max(1, cpu_count // 2), 4)
+    else:
+        optimal = min(max(1, cpu_count // 2), 8)
+
+    return optimal
 
 
 def fix_seed(seed: int) -> None:
@@ -692,7 +715,13 @@ def train(args: argparse.Namespace) -> None:
     top_db = getattr(args, "top_db", DEFAULT_RECOGNITION_CONFIG.top_db)
     val_rate = getattr(args, "val_rate", 0.2)
     target_acc = getattr(args, "target_acc", 0.97)
-    num_workers = getattr(args, "num_workers", 0)
+    num_workers_arg = getattr(args, "num_workers", None)
+    num_workers = determine_optimal_num_workers(num_workers_arg)
+    logger.info(
+        "⚡ DataLoader の並列ワーカー数 (num_workers) を自動動的設定しました: %d (CPUコア数: %d)",
+        num_workers,
+        os.cpu_count() or 1,
+    )
     pretrained_model_name = getattr(args, "pretrained_model_name", DEFAULT_RECOGNITION_CONFIG.wav2vec2_pretrained_model_name)
     weight_decay = getattr(args, "weight_decay", 0.01)
     warmup_ratio = getattr(args, "warmup_ratio", 0.1)
@@ -796,12 +825,17 @@ def train(args: argparse.Namespace) -> None:
         )
         logger.info("⚖️ マイルド全クラスサンプラー (WeightedRandomSampler: power=0.5) を有効化しました。aiueo の正解率を維持しつつマイナー音もバランスよく学習します。")
 
+    pin_memory = device.type == "cuda"
+    persistent_workers = num_workers > 0
+
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
         shuffle=(train_sampler is None),
         sampler=train_sampler,
         num_workers=num_workers,
+        pin_memory=pin_memory,
+        persistent_workers=persistent_workers,
         collate_fn=collate_fn,
     )
     val_loader = DataLoader(
@@ -809,6 +843,8 @@ def train(args: argparse.Namespace) -> None:
         batch_size=args.batch_size,
         shuffle=False,
         num_workers=num_workers,
+        pin_memory=pin_memory,
+        persistent_workers=persistent_workers,
         collate_fn=collate_fn,
     )
 
@@ -1047,6 +1083,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_false",
         dest="use_balanced_sampler",
         help="Disable WeightedRandomSampler for class-balanced training",
+    )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=None,
+        help="Number of DataLoader background worker processes (default: auto-detected based on CPU cores)",
     )
     return parser
 
