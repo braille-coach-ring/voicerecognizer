@@ -193,20 +193,26 @@ def is_labels_compatible(model_path: Path, current_labels: list[str]) -> bool:
         return False
 
 
-def build_collate_fn(feature_extractor: Any, sample_rate: int) -> Callable:
-    def collate(batch: list[tuple[np.ndarray, int]]) -> dict[str, torch.Tensor]:
+class Wav2Vec2CollateFn:
+    def __init__(self, feature_extractor: Any, sample_rate: int):
+        self.feature_extractor = feature_extractor
+        self.sample_rate = sample_rate
+
+    def __call__(self, batch: list[tuple[np.ndarray, int]]) -> dict[str, torch.Tensor]:
         waveforms = [waveform for waveform, _ in batch]
         labels = torch.tensor([label for _, label in batch], dtype=torch.long)
-        inputs = feature_extractor(
+        inputs = self.feature_extractor(
             waveforms,
-            sampling_rate=sample_rate,
+            sampling_rate=self.sample_rate,
             return_tensors="pt",
             padding=True,
         )
         inputs["labels"] = labels
         return inputs
 
-    return collate
+
+def build_collate_fn(feature_extractor: Any, sample_rate: int) -> Wav2Vec2CollateFn:
+    return Wav2Vec2CollateFn(feature_extractor, sample_rate)
 
 
 def move_batch(

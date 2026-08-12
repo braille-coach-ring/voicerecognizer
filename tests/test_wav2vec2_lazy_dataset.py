@@ -84,10 +84,13 @@ class TestWav2Vec2LazyDataset(unittest.TestCase):
             self.assertEqual(waveform.shape, (sample_rate,))
             self.assertIsInstance(label, int)
 
+            collate_fn = build_collate_fn(FakeFeatureExtractor(), sample_rate)
+            pickle.dumps(collate_fn)
+
             loader = DataLoader(
                 dataset,
                 batch_size=2,
-                collate_fn=build_collate_fn(FakeFeatureExtractor(), sample_rate),
+                collate_fn=collate_fn,
             )
             batch = next(iter(loader))
 
