@@ -102,6 +102,7 @@ def run_single_condition(
         train_epoch,
         validate,
         compute_class_weights,
+        determine_optimal_num_workers,
     )
     from preprocessing.audio_augmentor import AudioAugmentor
     from evaluation.evaluator import compute_evaluation_result
@@ -170,14 +171,25 @@ def run_single_condition(
                 f"{trainable_params:,}", f"{total_params:,}",
                 trainable_params / total_params * 100)
 
-    # DataLoaders
+    # DataLoaders & Hardware Optimization (CUDA vs CPU dynamic settings)
+    num_workers = determine_optimal_num_workers() if device.type == "cuda" else 0
+    pin_memory = (device.type == "cuda")
+    persistent_workers = (num_workers > 0)
+
+    logger.info(
+        "Hardware Optimization: device=%s | num_workers=%d | pin_memory=%s | AMP=%s",
+        device, num_workers, pin_memory, (device.type == "cuda")
+    )
+
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True,
-        num_workers=0, collate_fn=collate_fn,
+        num_workers=num_workers, pin_memory=pin_memory,
+        persistent_workers=persistent_workers, collate_fn=collate_fn,
     )
     val_loader = DataLoader(
         val_subset, batch_size=batch_size, shuffle=False,
-        num_workers=0, collate_fn=collate_fn,
+        num_workers=num_workers, pin_memory=pin_memory,
+        persistent_workers=persistent_workers, collate_fn=collate_fn,
     )
 
     # Optimizer & Scheduler
@@ -187,6 +199,7 @@ def run_single_condition(
     scheduler = get_linear_schedule_with_warmup(
         optimizer, num_warmup_steps=warmup_steps, num_training_steps=training_steps,
     )
+    scaler = torch.amp.GradScaler("cuda") if device.type == "cuda" else None
 
     # Training loop
     history = []
@@ -196,8 +209,9 @@ def run_single_condition(
     for epoch in range(epochs):
         train_loss, train_acc = train_epoch(
             model, train_loader, optimizer, scheduler, device,
-            epoch, epochs, max_grad_norm=1.0, loss_fct=loss_fct,
+            epoch, epochs, max_grad_norm=1.0, loss_fct=loss_fct, scaler=scaler,
         )
+
         val_loss, val_acc, val_true, val_pred = validate(
             model, val_loader, device, labels=dataset.labels,
         )
@@ -253,7 +267,7 @@ def main():
     )
     parser.add_argument("--epochs", type=int, default=5, help="Epochs per condition (default: 5)")
     parser.add_argument("--learning-rate", type=float, default=2e-5, help="Learning rate (default: 2e-5)")
-    parser.add_argument("--batch-size", type=int, default=4, help="Batch size (default: 4)")
+    parser.add_argument("--batch-size", type=int, default=8, help="Batch size (default: 8)")
     parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
     parser.add_argument(
         "--output-json", type=Path,

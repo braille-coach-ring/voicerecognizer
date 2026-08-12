@@ -231,6 +231,7 @@ def train_epoch(
     epochs: int,
     max_grad_norm: float,
     loss_fct: torch.nn.Module | None = None,
+    scaler: torch.amp.GradScaler | None = None,
 ) -> tuple[float, float]:
     model.train()
     total_loss = 0.0
@@ -238,19 +239,34 @@ def train_epoch(
     total = 0
     progress = tqdm(loader)
 
+    use_amp = (scaler is not None and device.type == "cuda")
+
     for batch in progress:
         batch = move_batch(batch, device)
 
         optimizer.zero_grad()
-        outputs = model(**batch)
-        if loss_fct is not None:
-            loss = loss_fct(outputs.logits, batch["labels"])
+        if use_amp:
+            with torch.amp.autocast("cuda"):
+                outputs = model(**batch)
+                if loss_fct is not None:
+                    loss = loss_fct(outputs.logits, batch["labels"])
+                else:
+                    loss = outputs.loss
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+            scaler.step(optimizer)
+            scaler.update()
         else:
-            loss = outputs.loss
+            outputs = model(**batch)
+            if loss_fct is not None:
+                loss = loss_fct(outputs.logits, batch["labels"])
+            else:
+                loss = outputs.loss
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+            optimizer.step()
 
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
-        optimizer.step()
         scheduler.step()
 
         logits = outputs.logits.detach()
@@ -279,10 +295,17 @@ def validate(
     all_true: list[str] = []
     all_pred: list[str] = []
 
+    use_amp = (device.type == "cuda")
+
     with torch.no_grad():
         for batch in loader:
             batch = move_batch(batch, device)
-            outputs = model(**batch)
+            if use_amp:
+                with torch.amp.autocast("cuda"):
+                    outputs = model(**batch)
+            else:
+                outputs = model(**batch)
+
             loss = outputs.loss
             pred = outputs.logits.argmax(dim=-1)
             batch_labels = batch["labels"]
@@ -298,6 +321,7 @@ def validate(
                 all_pred.append(labels[int(pred_index)])
 
     return total_loss / max(len(loader), 1), correct / max(total, 1), all_true, all_pred
+
 
 
 from utils.plot_saver import save_history_plots
@@ -895,27 +919,36 @@ def train(args: argparse.Namespace) -> None:
     )
     best_macro_f1 = -1.0
 
-    # ラベル構成が完全一致する場合のみ、旧モデルのベースラインスコアを事前評価する。
-    # ラベルが変わった場合、旧分類器で評価しても無意味なのでスキップする。
-    if has_weights and labels_matched and target_resume_path:
+    # チーム最高精度 (best_model_path) のベースラインスコアを事前評価してハードルに設定する
+    if best_model_path.exists() and is_labels_compatible(best_model_path, dataset.labels):
         try:
+            baseline_model = load_wav2vec2_classifier(
+                Wav2Vec2ForSequenceClassification,
+                AutoConfig,
+                best_model_path,
+                dataset.labels,
+                label2id,
+                id2label,
+            ).to(device)
             _, val_acc, val_true, val_pred = validate(
-                model, val_loader, device, labels=dataset.labels
+                baseline_model, val_loader, device, labels=dataset.labels
             )
             init_result = compute_evaluation_result(
                 val_true, val_pred, labels=dataset.labels
             )
             best_macro_f1 = init_result.overall.macro_f1
             logger.info(
-                "保存済み Wav2Vec2 チェックポイント (%s) の評価スコア - Val Acc: %.4f, Val Macro-F1: %.4f",
-                target_resume_path,
+                "🏆 チーム最高精度モデル (%s) のベースラインスコア - Val Acc: %.4f, Val Macro-F1: %.4f",
+                best_model_path,
                 val_acc,
                 best_macro_f1,
             )
+            del baseline_model
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
         except Exception as e:
-            logger.warning("既存 Wav2Vec2 モデルの評価に失敗しました: %s", e)
+            logger.warning("既存ベストモデルの事前評価に失敗しました: %s", e)
+
 
     history = {
         "train_loss": [],
@@ -925,6 +958,10 @@ def train(args: argparse.Namespace) -> None:
         "val_macro_f1": [],
     }
     is_best_updated = False
+    scaler = torch.amp.GradScaler("cuda") if device.type == "cuda" else None
+
+    patience = getattr(args, "patience", 5)
+    patience_counter = 0
 
     interrupted = False
     try:
@@ -939,6 +976,7 @@ def train(args: argparse.Namespace) -> None:
                 args.epochs,
                 max_grad_norm,
                 loss_fct=loss_fct,
+                scaler=scaler,
             )
             val_loss, val_acc, val_true, val_pred = validate(
                 model, val_loader, device, labels=dataset.labels
@@ -969,6 +1007,7 @@ def train(args: argparse.Namespace) -> None:
             if macro_f1 > best_macro_f1:
                 best_macro_f1 = macro_f1
                 is_best_updated = True
+                patience_counter = 0
                 save_pretrained_model(
                     model,
                     feature_extractor,
@@ -981,6 +1020,15 @@ def train(args: argparse.Namespace) -> None:
                     best_macro_f1,
                     val_acc,
                 )
+            else:
+                patience_counter += 1
+                if patience > 0 and patience_counter >= patience:
+                    logger.info(
+                        "🛑 Early stopping: Validation Macro-F1 が %d エポック連続で向上しなかったため、頭打ちと判断して学習を自動終了します (Best Macro-F1: %.4f)",
+                        patience,
+                        best_macro_f1,
+                    )
+                    break
 
             if val_acc >= target_acc:
                 logger.info(
@@ -988,6 +1036,7 @@ def train(args: argparse.Namespace) -> None:
                     target_acc * 100,
                 )
                 break
+
     except KeyboardInterrupt:
         interrupted = True
         logger.warning(
@@ -1062,6 +1111,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=3e-5,
         help="Learning rate (default: 3e-5)",
+    )
+    parser.add_argument(
+        "--patience",
+        type=int,
+        default=5,
+        help="Number of epochs with no validation improvement after which training stops early (default: 5, set 0 to disable)",
     )
     parser.add_argument(
         "--freeze-transformer-layers",
