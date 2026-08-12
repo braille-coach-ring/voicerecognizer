@@ -916,79 +916,96 @@ def train(args: argparse.Namespace) -> None:
     }
     is_best_updated = False
 
-    for epoch in range(args.epochs):
-        train_loss, train_acc = train_epoch(
-            model,
-            train_loader,
-            optimizer,
-            scheduler,
-            device,
-            epoch,
-            args.epochs,
-            max_grad_norm,
-            loss_fct=loss_fct,
-        )
-        val_loss, val_acc, val_true, val_pred = validate(
-            model, val_loader, device, labels=dataset.labels
-        )
-        eval_result = compute_evaluation_result(
-            val_true, val_pred, labels=dataset.labels
-        )
-        macro_f1 = eval_result.overall.macro_f1
-
-        history["train_loss"].append(train_loss)
-        history["val_loss"].append(val_loss)
-        history["train_acc"].append(train_acc)
-        history["val_acc"].append(val_acc)
-        history["val_macro_f1"].append(macro_f1)
-
-        logger.info(
-            "Epoch %d/%d - Train Loss: %.4f, Train Acc: %.4f | "
-            "Val Loss: %.4f, Val Acc: %.4f, Val Macro-F1: %.4f",
-            epoch + 1,
-            args.epochs,
-            train_loss,
-            train_acc,
-            val_loss,
-            val_acc,
-            macro_f1,
-        )
-
-        if macro_f1 > best_macro_f1:
-            best_macro_f1 = macro_f1
-            is_best_updated = True
-            save_pretrained_model(
+    interrupted = False
+    try:
+        for epoch in range(args.epochs):
+            train_loss, train_acc = train_epoch(
                 model,
-                feature_extractor,
-                best_model_path,
-                dataset.labels,
+                train_loader,
+                optimizer,
+                scheduler,
+                device,
+                epoch,
+                args.epochs,
+                max_grad_norm,
+                loss_fct=loss_fct,
             )
+            val_loss, val_acc, val_true, val_pred = validate(
+                model, val_loader, device, labels=dataset.labels
+            )
+            eval_result = compute_evaluation_result(
+                val_true, val_pred, labels=dataset.labels
+            )
+            macro_f1 = eval_result.overall.macro_f1
+
+            history["train_loss"].append(train_loss)
+            history["val_loss"].append(val_loss)
+            history["train_acc"].append(train_acc)
+            history["val_acc"].append(val_acc)
+            history["val_macro_f1"].append(macro_f1)
+
             logger.info(
-                "Best Wav2Vec2 model saved: %s (Val Macro-F1: %.4f, Val Acc: %.4f)",
-                best_model_path,
-                best_macro_f1,
+                "Epoch %d/%d - Train Loss: %.4f, Train Acc: %.4f | "
+                "Val Loss: %.4f, Val Acc: %.4f, Val Macro-F1: %.4f",
+                epoch + 1,
+                args.epochs,
+                train_loss,
+                train_acc,
+                val_loss,
                 val_acc,
+                macro_f1,
             )
 
-        if val_acc >= target_acc:
-            logger.info(
-                "Target validation accuracy reached: %.2f%%",
-                target_acc * 100,
-            )
-            break
+            if macro_f1 > best_macro_f1:
+                best_macro_f1 = macro_f1
+                is_best_updated = True
+                save_pretrained_model(
+                    model,
+                    feature_extractor,
+                    best_model_path,
+                    dataset.labels,
+                )
+                logger.info(
+                    "Best Wav2Vec2 model saved: %s (Val Macro-F1: %.4f, Val Acc: %.4f)",
+                    best_model_path,
+                    best_macro_f1,
+                    val_acc,
+                )
 
+            if val_acc >= target_acc:
+                logger.info(
+                    "Target validation accuracy reached: %.2f%%",
+                    target_acc * 100,
+                )
+                break
+    except KeyboardInterrupt:
+        interrupted = True
+        logger.warning(
+            "⚠️ ユーザー操作 (Ctrl+C / SIGINT) により学習が途中で中断されました。"
+        )
+
+    logger.info("💾 チェックポイント保存中: 最新のモデル状態を %s に保存します...", last_model_path)
     save_pretrained_model(
         model,
         feature_extractor,
         last_model_path,
         dataset.labels,
     )
-    save_history_plots(
-        history=history,
-        model_name="wav2vec2",
-        num_classes=len(dataset.labels),
-        num_samples=len(dataset),
-    )
+    if history["train_loss"]:
+        save_history_plots(
+            history=history,
+            model_name="wav2vec2",
+            num_classes=len(dataset.labels),
+            num_samples=len(dataset),
+        )
+
+    if interrupted:
+        logger.info(
+            "👋 中断処理が正常に完了しました。保存されたチェックポイント (%s) から `--resume` で学習を再開可能です。",
+            last_model_path,
+        )
+        return
+
     logger.info(
         "Training finished. Last Wav2Vec2 model saved to %s",
         last_model_path,
