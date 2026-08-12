@@ -1001,7 +1001,8 @@ def train(args: argparse.Namespace) -> None:
 
     if interrupted:
         logger.info(
-            "👋 中断処理が正常に完了しました。保存されたチェックポイント (%s) から `--resume` で学習を再開可能です。",
+            "👋 中断処理が正常に完了しました。保存されたチェックポイント (%s) から `--resume-from %s` で学習を再開可能です。",
+            last_model_path,
             last_model_path,
         )
         return
