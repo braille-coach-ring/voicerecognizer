@@ -320,13 +320,24 @@ def save_pretrained_model(
     output_dir: Path,
     labels: tuple[str, ...] | list[str],
 ) -> None:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    model.save_pretrained(output_dir)
-    feature_extractor.save_pretrained(output_dir)
-    (output_dir / "labels.json").write_text(
-        json.dumps(list(labels), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    try:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        model.save_pretrained(output_dir)
+        feature_extractor.save_pretrained(output_dir)
+        (output_dir / "labels.json").write_text(
+            json.dumps(list(labels), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except Exception as exc:
+        err_text = str(exc).lower()
+        if "not enough space" in err_text or "os error 112" in err_text:
+            logger.error(
+                "❌ ディスク容量不足のためモデルの保存に失敗しました (%s)。Cドライブの空き容量を確保してください。",
+                output_dir,
+            )
+        else:
+            logger.error("❌ モデルの保存中にエラーが発生しました (%s): %s", output_dir, exc)
+        raise
 
 
 def import_transformers() -> tuple[Any, Any, Any, Any]:
@@ -848,9 +859,8 @@ def train(args: argparse.Namespace) -> None:
         val_dataset,
         batch_size=args.batch_size,
         shuffle=False,
-        num_workers=num_workers,
+        num_workers=0,
         pin_memory=pin_memory,
-        persistent_workers=persistent_workers,
         collate_fn=collate_fn,
     )
 
