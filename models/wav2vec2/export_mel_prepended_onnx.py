@@ -82,7 +82,7 @@ def export_mel_prepended_onnx(
     logger.info("前処理内包型 ONNX モデルを出力中: %s", output_fp32_path)
     torch.onnx.export(
         prepended_model,
-        dummy_waveform,
+        (dummy_waveform,),
         str(output_fp32_path),
         export_params=True,
         opset_version=14,

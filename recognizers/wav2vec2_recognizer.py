@@ -92,6 +92,9 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
             else:
                 input_values = waveform.astype(np.float32)
         else:
+            if self.feature_extractor is None:
+                logger.error("Wav2Vec2 FeatureExtractor が初期化されていません (None)。モデルパスを確認してください: %s", self.model_path)
+                raise ModelNotFoundError(f"Wav2Vec2 FeatureExtractor がロードされていません: {self.model_path}")
             # 従来型 ONNX: FeatureExtractor を呼び出し
             inputs = self.feature_extractor(
                 waveform,
@@ -105,6 +108,9 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
 
     def recognize(self, audio: Any) -> str:
         self._ensure_model_loaded()
+        if self.session is None:
+            logger.error("Wav2Vec2 ONNX セッション (session) がロードされていません (None)。モデルパスを確認してください: %s", self.model_path)
+            raise ModelNotFoundError(f"Wav2Vec2 ONNX セッションがロードされていません: {self.model_path}")
         t_start = time.perf_counter()
 
         input_values, t_prep_start, t_prep_end = self._prepare_input_values(audio)
@@ -137,6 +143,9 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
     def recognize_with_candidates(self, audio: Any, top_k: int = 3) -> list[tuple[str, float]]:
         """上位 top_k 個の認識候補ラベルと確信度スコアのリストを返します"""
         self._ensure_model_loaded()
+        if self.session is None:
+            logger.error("Wav2Vec2 ONNX セッション (session) がロードされていません (None)。モデルパスを確認してください: %s", self.model_path)
+            raise ModelNotFoundError(f"Wav2Vec2 ONNX セッションがロードされていません: {self.model_path}")
         input_values, _, _ = self._prepare_input_values(audio)
         outputs = self.session.run(None, {self.input_name: input_values})
         logits = outputs[0][0]

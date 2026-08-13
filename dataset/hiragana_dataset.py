@@ -38,12 +38,11 @@ class HiraganaDataset(Dataset):
         self.n_fft = n_fft
         self.hop_length = hop_length
         self.preprocessor = AudioPreprocessor(sample_rate=sample_rate)
+        self.index_file: Path | None = None
         if (self.root / "index.csv").exists():
             self.index_file = self.root / "index.csv"
         elif self.root.is_file():
             self.index_file = self.root
-        else:
-            self.index_file = None
 
         if self.index_file:
             # index.csv からラベル一覧を自動取得

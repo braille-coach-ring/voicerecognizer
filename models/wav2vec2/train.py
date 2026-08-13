@@ -803,13 +803,11 @@ def train(args: argparse.Namespace) -> None:
             "Audio Data Augmentation (ノイズ加算・音量変調・タイムシフト) を訓練データセットに有効化しました。"
         )
         train_augmentor = AudioAugmentor()
-        train_dataset = AugmentedSubset(train_dataset, train_augmentor)
+        train_augmented_subset = AugmentedSubset(train_dataset, train_augmentor)
     else:
-        train_dataset = AugmentedSubset(train_dataset, augmentor=None)
+        train_augmented_subset = AugmentedSubset(train_dataset, augmentor=None)
 
-    raw_train_subset = (
-        train_dataset.subset if isinstance(train_dataset, AugmentedSubset) else train_dataset
-    )
+    raw_train_subset = train_augmented_subset.subset
     train_labels = [dataset.data[i][1] for i in raw_train_subset.indices]
 
     loss_fct: torch.nn.Module | None = None
@@ -874,10 +872,9 @@ def train(args: argparse.Namespace) -> None:
         label_counts = Counter(train_labels)
         class_weights_dict = {lbl: 1.0 / (count**0.5) for lbl, count in label_counts.items()}
         sample_weights = [class_weights_dict[lbl] for lbl in train_labels]
-        sample_weights_tensor = torch.tensor(sample_weights, dtype=torch.float)
         train_sampler = WeightedRandomSampler(
-            weights=sample_weights_tensor,
-            num_samples=len(sample_weights_tensor),
+            weights=sample_weights,
+            num_samples=len(sample_weights),
             replacement=True,
         )
         logger.info(

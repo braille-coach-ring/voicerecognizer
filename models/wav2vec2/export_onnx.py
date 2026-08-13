@@ -49,7 +49,7 @@ def export_to_onnx(
     logger.info("PyTorch モデルを ONNX フォーマットへエクスポート中: %s", output_onnx_path)
     torch.onnx.export(
         model,
-        dummy_input,
+        (dummy_input,),
         str(output_onnx_path),
         export_params=True,
         opset_version=14,

@@ -1,6 +1,7 @@
 import csv
 import json
 import logging
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -61,18 +62,29 @@ class Evaluator:
     def __init__(
         self,
         model: RecognitionStrategy | None = None,
-        labels: tuple[str, ...] = DEFAULT_RECOGNITION_CONFIG.labels,
+        labels: Sequence[str] = DEFAULT_RECOGNITION_CONFIG.labels,
         dataset_path: Path | str = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir,
     ):
         """Evaluatorの初期化
 
         Args:
             model: RecognitionStrategyの実装モデル（推論なし集計時はNone可）
-            labels: 評価対象ラベルのタプル
+            labels: 評価対象ラベルのシーケンス (list, tuple 等)
             dataset_path: データセットのルートディレクトリ
         """
+        raw_labels: Any = labels
+        if not isinstance(raw_labels, (tuple, list)):
+            logger.error(
+                "Evaluator の labels 引数には Sequence[str] (tuple または list) 型を指定する必要があります。"
+                "受け取った型: %s。",
+                type(raw_labels).__name__,
+            )
+            raise TypeError(
+                f"Evaluator の labels 引数には Sequence[str] (tuple または list) 型を指定する必要があります。"
+                f"受け取った型: {type(raw_labels).__name__}"
+            )
         self.model = model
-        self.labels = labels
+        self.labels: tuple[str, ...] = tuple(labels)
         self.dataset_path = Path(dataset_path)
         self.index_file = self.dataset_path / "index.csv"
 
@@ -889,13 +901,13 @@ def generate_html_report(
 def compute_evaluation_result(
     y_true: list[str],
     y_pred: list[str],
-    labels: tuple[str, ...] | list[str] = DEFAULT_RECOGNITION_CONFIG.labels,
+    labels: Sequence[str] = DEFAULT_RECOGNITION_CONFIG.labels,
     filepaths: list[str] | None = None,
     confidences: list[float] | None = None,
 ) -> EvaluationResult:
     """スタンドアロンで y_true と y_pred から EvaluationResult を直接計算するユーティリティ関数"""
     evaluator = object.__new__(Evaluator)
-    evaluator.labels = labels
+    evaluator.labels = tuple(labels)
     evaluator.y_true = list(y_true)
     evaluator.y_pred = list(y_pred)
     evaluator.filepaths = list(filepaths) if filepaths else []

@@ -42,6 +42,7 @@ class TestWav2Vec2ONNXRecognizer(unittest.TestCase):
             result = recognizer.recognize(np.zeros(16000, dtype=np.float32))
             self.assertEqual(result, "a")
             self.assertIsNotNone(recognizer.last_confidence)
+            assert recognizer.last_confidence is not None
             self.assertGreater(recognizer.last_confidence, 0.5)
 
 
