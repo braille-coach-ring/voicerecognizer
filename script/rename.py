@@ -6,7 +6,6 @@ Usage:
 """
 
 import logging
-from pathlib import Path
 
 from config import DEFAULT_RECOGNITION_CONFIG
 
@@ -39,11 +38,12 @@ def main() -> None:
                 new_name = folder / f"{i:03d}.wav"
                 temp.rename(new_name)
 
-            logger.info("フォルダ [%s]: %d 個のファイル名を正規化しました", folder.name, len(temp_names))
+            logger.info(
+                "フォルダ [%s]: %d 個のファイル名を正規化しました", folder.name, len(temp_names)
+            )
 
     logger.info("リネーム完了")
 
 
 if __name__ == "__main__":
     main()
-

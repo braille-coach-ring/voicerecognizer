@@ -1,10 +1,11 @@
+import logging
 from queue import Empty, Queue
 from threading import Event
+
 import numpy as np
 
 from config import DEFAULT_PREPROCESS_CONFIG, PreprocessConfig
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -17,20 +18,16 @@ class VoiceActivityDetector:
     ):
         cfg = config or DEFAULT_PREPROCESS_CONFIG
         self.silence_threshold = (
-            silence_threshold
-            if silence_threshold is not None
-            else cfg.vad_silence_threshold
+            silence_threshold if silence_threshold is not None else cfg.vad_silence_threshold
         )
         self.rms_threshold = (
-            rms_threshold
-            if rms_threshold is not None
-            else getattr(cfg, "vad_rms_threshold", 0.008)
+            rms_threshold if rms_threshold is not None else getattr(cfg, "vad_rms_threshold", 0.008)
         )
         self.min_speech_chunks = max(1, int(cfg.vad_min_speech_chunks))
         self.min_active_ratio = min(1.0, max(0.0, float(cfg.vad_min_active_ratio)))
         self._speech_streak = 0
 
-    def is_speech(self, audio: np.ndarray) -> bool:
+    def is_speech(self, audio: np.ndarray | None) -> bool:
         if audio is None:
             logger.warning("入力された音声データがNoneです")
             self._speech_streak = 0
@@ -79,12 +76,17 @@ class VoiceActivityDetector:
 
         return True
 
-    def run(self, input_queue: Queue, output_queue: Queue, stop_event: Event) -> None:
+    def run(
+        self,
+        input_queue: Queue[np.ndarray | None],
+        output_queue: Queue[np.ndarray],
+        stop_event: Event,
+    ) -> None:
         while not stop_event.is_set():
             try:
                 audio = input_queue.get(timeout=0.1)
             except Empty:
                 continue
 
-            if self.is_speech(audio):
+            if audio is not None and self.is_speech(audio):
                 output_queue.put(audio)

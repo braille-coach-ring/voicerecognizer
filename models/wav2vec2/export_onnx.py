@@ -17,7 +17,6 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
@@ -26,14 +25,14 @@ if str(PROJECT_ROOT) not in sys.path:
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-import numpy as np
-import torch
+import contextlib
 
-from config import DEFAULT_RECOGNITION_CONFIG
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)
+from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -64,7 +63,11 @@ def export_to_onnx(
         },
         dynamo=False,
     )
-    logger.info("ONNX エクスポート完了: %s (%.2f MB)", output_onnx_path, output_onnx_path.stat().st_size / (1024 * 1024))
+    logger.info(
+        "ONNX エクスポート完了: %s (%.2f MB)",
+        output_onnx_path,
+        output_onnx_path.stat().st_size / (1024 * 1024),
+    )
 
 
 def quantize_onnx_int8(fp32_onnx_path: Path, int8_onnx_path: Path) -> None:
@@ -81,7 +84,9 @@ def quantize_onnx_int8(fp32_onnx_path: Path, int8_onnx_path: Path) -> None:
         weight_type=QuantType.QUInt8,
         op_types_to_quantize=["MatMul", "Gather", "Attention"],
     )
-    logger.info("INT8 量子化 ONNX モデル生成完了: %.2f MB", int8_onnx_path.stat().st_size / (1024 * 1024))
+    logger.info(
+        "INT8 量子化 ONNX モデル生成完了: %.2f MB", int8_onnx_path.stat().st_size / (1024 * 1024)
+    )
 
 
 def run_benchmark(
@@ -99,9 +104,11 @@ def run_benchmark(
     # 1. PyTorch
     pytorch_model.eval()
     with torch.no_grad():
-        for _ in range(5): _ = pytorch_model(dummy_tensor)
+        for _ in range(5):
+            _ = pytorch_model(dummy_tensor)
         t0 = time.perf_counter()
-        for _ in range(iterations): _ = pytorch_model(dummy_tensor)
+        for _ in range(iterations):
+            _ = pytorch_model(dummy_tensor)
         pt_time = (time.perf_counter() - t0) / iterations * 1000.0
 
     # ONNX SessionOptions
@@ -114,18 +121,24 @@ def run_benchmark(
     # 2. ONNX FP32
     sess_fp32 = ort.InferenceSession(str(fp32_onnx_path), so, providers=["CPUExecutionProvider"])
     inp_name = sess_fp32.get_inputs()[0].name
-    for _ in range(5): _ = sess_fp32.run(None, {inp_name: dummy_audio[np.newaxis, :]})
+    for _ in range(5):
+        _ = sess_fp32.run(None, {inp_name: dummy_audio[np.newaxis, :]})
     t0 = time.perf_counter()
-    for _ in range(iterations): _ = sess_fp32.run(None, {inp_name: dummy_audio[np.newaxis, :]})
+    for _ in range(iterations):
+        _ = sess_fp32.run(None, {inp_name: dummy_audio[np.newaxis, :]})
     onnx_fp32_time = (time.perf_counter() - t0) / iterations * 1000.0
 
     # 3. ONNX INT8 (指定された場合のみ)
     onnx_int8_time: float | None = None
     if int8_onnx_path and int8_onnx_path.exists():
-        sess_int8 = ort.InferenceSession(str(int8_onnx_path), so, providers=["CPUExecutionProvider"])
-        for _ in range(5): _ = sess_int8.run(None, {inp_name: dummy_audio[np.newaxis, :]})
+        sess_int8 = ort.InferenceSession(
+            str(int8_onnx_path), so, providers=["CPUExecutionProvider"]
+        )
+        for _ in range(5):
+            _ = sess_int8.run(None, {inp_name: dummy_audio[np.newaxis, :]})
         t0 = time.perf_counter()
-        for _ in range(iterations): _ = sess_int8.run(None, {inp_name: dummy_audio[np.newaxis, :]})
+        for _ in range(iterations):
+            _ = sess_int8.run(None, {inp_name: dummy_audio[np.newaxis, :]})
         onnx_int8_time = (time.perf_counter() - t0) / iterations * 1000.0
 
     return pt_time, onnx_fp32_time, onnx_int8_time
@@ -150,7 +163,7 @@ def export_and_benchmark(
 
     if labels_file.exists():
         try:
-            with open(labels_file, "r", encoding="utf-8") as f:
+            with open(labels_file, encoding="utf-8") as f:
                 labels = json.load(f)
         except Exception:
             pass
@@ -159,7 +172,10 @@ def export_and_benchmark(
         # hiragana_dataset から学習時のラベルを自動復元・保存
         try:
             from dataset.hiragana_dataset import HiraganaDataset
-            ds = HiraganaDataset(root_dir=DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir, sample_rate=16000)
+
+            ds = HiraganaDataset(
+                root_dir=DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir, sample_rate=16000
+            )
             labels = list(ds.labels)
             logger.info("HiraganaDataset からラベルリスト (%d 件) を復元しました。", len(labels))
         except Exception:
@@ -173,11 +189,11 @@ def export_and_benchmark(
     try:
         feature_extractor = AutoFeatureExtractor.from_pretrained(model_path)
     except Exception:
-        feature_extractor = AutoFeatureExtractor.from_pretrained(DEFAULT_RECOGNITION_CONFIG.wav2vec2_pretrained_model_name)
-        try:
+        feature_extractor = AutoFeatureExtractor.from_pretrained(
+            DEFAULT_RECOGNITION_CONFIG.wav2vec2_pretrained_model_name
+        )
+        with contextlib.suppress(Exception):
             feature_extractor.save_pretrained(model_path)
-        except Exception:
-            pass
 
     model = Wav2Vec2ForSequenceClassification.from_pretrained(
         model_path,
@@ -238,5 +254,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

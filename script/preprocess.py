@@ -16,8 +16,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from config import DEFAULT_RECOGNITION_CONFIG
-from preprocessing.dataset_builder import DatasetBuilder
+from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
+from preprocessing.dataset_builder import DatasetBuilder  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -32,7 +32,9 @@ def main() -> None:
     logger.info("  出力パス: %s", output_dir)
 
     if not input_dir.exists():
-        logger.warning("入力ディレクトリ/インデックスが存在しません: %s (スキップします)", input_dir)
+        logger.warning(
+            "入力ディレクトリ/インデックスが存在しません: %s (スキップします)", input_dir
+        )
         return
 
     start_time = time.time()
@@ -49,7 +51,11 @@ def main() -> None:
                 total_processed += count
                 logger.info("  処理完了ラベル [%s] : %d 件", label_dir.name, count)
 
-    logger.info("=== 音声前処理が完了しました (合計: %d 件, 処理時間: %.2f 秒) ===", total_processed, elapsed)
+    logger.info(
+        "=== 音声前処理が完了しました (合計: %d 件, 処理時間: %.2f 秒) ===",
+        total_processed,
+        elapsed,
+    )
 
 
 if __name__ == "__main__":

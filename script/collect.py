@@ -62,10 +62,7 @@ KNOWN_LABELS = set(DEFAULT_COLLECT_LABELS) | {"other"}
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description=(
-            "Collect short hiragana voice samples into "
-            "dataset/<speaker_id>/<label>/."
-        )
+        description=("Collect short hiragana voice samples into dataset/<speaker_id>/<label>/.")
     )
     parser.add_argument(
         "speaker_id",
@@ -216,17 +213,11 @@ def resolve_labels(args: argparse.Namespace) -> tuple[str, ...]:
         if not requested_groups or "all" in requested_groups:
             requested_groups = list(DEFAULT_GROUP_NAMES)
 
-        invalid_groups = [
-            group for group in requested_groups if group not in LABEL_GROUPS
-        ]
+        invalid_groups = [group for group in requested_groups if group not in LABEL_GROUPS]
         if invalid_groups:
             raise ValueError(f"Unknown label group(s): {', '.join(invalid_groups)}")
 
-        labels = [
-            label
-            for group_name in requested_groups
-            for label in LABEL_GROUPS[group_name]
-        ]
+        labels = [label for group_name in requested_groups for label in LABEL_GROUPS[group_name]]
 
     if args.include_other and "other" not in labels:
         labels.append("other")
@@ -274,8 +265,7 @@ def validate_args(args: argparse.Namespace) -> None:
         raise ValueError("--max-utterance-seconds must be greater than 0")
     if args.max_utterance_seconds < args.min_utterance_seconds:
         raise ValueError(
-            "--max-utterance-seconds must be greater than or equal to "
-            "--min-utterance-seconds"
+            "--max-utterance-seconds must be greater than or equal to --min-utterance-seconds"
         )
 
 
@@ -372,10 +362,7 @@ def collect_fixed(
 
         if not is_speech(waveform, args):
             peak, rms = audio_stats(waveform)
-            print(
-                "  ignored silence/noise "
-                f"(peak={peak:.4f}, rms={rms:.4f}); retrying"
-            )
+            print(f"  ignored silence/noise (peak={peak:.4f}, rms={rms:.4f}); retrying")
             continue
 
         filename = save_audio(folder, number, waveform)
@@ -558,10 +545,7 @@ def run_collection(argv: list[str] | None = None) -> None:
         print(f"New samples per label: {args.repeat}")
     else:
         print(f"Target wav files per label: {args.target_per_label}")
-    print(
-        "Thresholds: "
-        f"peak={args.silence_threshold:.4f}, rms={args.rms_threshold:.4f}"
-    )
+    print(f"Thresholds: peak={args.silence_threshold:.4f}, rms={args.rms_threshold:.4f}")
     input("\nPress Enter to start.")
 
     try:

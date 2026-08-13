@@ -1,11 +1,9 @@
-import tempfile
 import unittest
 from unittest.mock import patch
-from pathlib import Path
 
-from preprocessing.dataset_builder import ensure_merged_and_preprocessed
 from models.cnn.train import build_parser as cnn_build_parser
 from models.wav2vec2.train import build_parser as wav2vec2_build_parser
+from preprocessing.dataset_builder import ensure_merged_and_preprocessed
 
 
 class TestAutoPrepTraining(unittest.TestCase):

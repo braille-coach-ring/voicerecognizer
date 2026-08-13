@@ -14,7 +14,4 @@ class WhisperRecognizer(RecognitionStrategy):
 
     def recognize(self, audio: Any) -> str:
         logger.error("WhisperRecognizer.recognize が呼び出されましたが、まだ実装されていません")
-        raise NotImplementedError(
-            "WhisperRecognizer is reserved for future implementation."
-        )
-
+        raise NotImplementedError("WhisperRecognizer is reserved for future implementation.")

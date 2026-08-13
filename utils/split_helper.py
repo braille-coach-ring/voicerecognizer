@@ -1,5 +1,7 @@
-from collections import Counter
 import logging
+from collections import Counter
+from collections.abc import Sequence
+
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
 
@@ -7,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def safe_stratified_split(
-    labels: list[int | str], val_rate: float, seed: int
+    labels: Sequence[int | str], val_rate: float, seed: int
 ) -> tuple[list[int], list[int]]:
     """
     データセットのラベル分布に基づき、サンプル数が少ないクラス（1件のみ等）が存在する場合にも
@@ -30,7 +32,7 @@ def safe_stratified_split(
     logger.warning(
         "⚠️ 以下の %d クラスはデータセット内のサンプル数が1件のため、学習セット(train)へ優先割り当てします: %s",
         len(singletons),
-        sorted(list(singletons)),
+        sorted(singletons),
     )
 
     multi_indices = [i for i, lbl in enumerate(labels) if lbl not in singletons]

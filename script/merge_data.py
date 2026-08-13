@@ -17,7 +17,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from preprocessing.dataset_builder import DatasetBuilder
+from preprocessing.dataset_builder import DatasetBuilder  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def main() -> None:
 
     label_counts: dict[str, int] = {}
     if index_file.exists():
-        with open(index_file, "r", encoding="utf-8") as f:
+        with open(index_file, encoding="utf-8") as f:
             f.readline()  # ヘッダー読み飛ばし
             for line in f:
                 parts = [p.strip() for p in line.strip().split(",")]

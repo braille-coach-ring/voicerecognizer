@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 from pathlib import Path
 
@@ -11,9 +12,6 @@ from config import (
 from models.cnn.hiragana_cnn import HiraganaCNN
 
 logger = logging.getLogger(__name__)
-
-
-import json
 
 
 def export_torchscript(
@@ -58,9 +56,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_RECOGNITION_CONFIG.torchscript_model_path,
     )
-    parser.add_argument(
-        "--num-classes", type=int, default=len(DEFAULT_RECOGNITION_CONFIG.labels)
-    )
+    parser.add_argument("--num-classes", type=int, default=len(DEFAULT_RECOGNITION_CONFIG.labels))
     parser.add_argument("--n-mels", type=int, default=DEFAULT_PREPROCESS_CONFIG.n_mels)
     parser.add_argument("--time-steps", type=int, default=101)
     return parser

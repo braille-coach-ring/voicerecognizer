@@ -1,21 +1,19 @@
 import csv
-from dataclasses import asdict, dataclass, field
 import json
 import logging
-from pathlib import Path
 import sys
-
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Any
 
-import numpy as np
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from config import DEFAULT_RECOGNITION_CONFIG
-from core.interfaces import RecognitionStrategy
+from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
+from core.interfaces import RecognitionStrategy  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -65,13 +63,11 @@ class EvaluationResult:
 
 
 class Evaluator:
-
     def __init__(
         self,
         model: RecognitionStrategy | None = None,
         labels: tuple[str, ...] = DEFAULT_RECOGNITION_CONFIG.labels,
-        dataset_path: Path
-        | str = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir,
+        dataset_path: Path | str = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir,
     ):
         """Evaluatorの初期化
 
@@ -86,19 +82,11 @@ class Evaluator:
         self.index_file = self.dataset_path / "index.csv"
 
         if not self.dataset_path.exists():
-            logger.warning(
-                f"データセットパス {self.dataset_path} が存在しません"
-            )
-            raise FileNotFoundError(
-                f"データセットパス {self.dataset_path} が存在しません"
-            )
+            logger.warning(f"データセットパス {self.dataset_path} が存在しません")
+            raise FileNotFoundError(f"データセットパス {self.dataset_path} が存在しません")
         if not self.index_file.exists():
-            logger.warning(
-                f"インデックスファイル {self.index_file} が存在しません"
-            )
-            raise FileNotFoundError(
-                f"インデックスファイル {self.index_file} が存在しません"
-            )
+            logger.warning(f"インデックスファイル {self.index_file} が存在しません")
+            raise FileNotFoundError(f"インデックスファイル {self.index_file} が存在しません")
 
         self.y_true: list[str] = []
         self.y_pred: list[str] = []
@@ -146,16 +134,12 @@ class Evaluator:
             raise ValueError("モデルがロードされていません")
 
         if not self.index_file.exists():
-            logger.warning(
-                f"インデックスファイルが存在しません: {self.index_file}"
-            )
-            raise FileNotFoundError(
-                f"インデックスファイルが存在しません: {self.index_file}"
-            )
+            logger.warning(f"インデックスファイルが存在しません: {self.index_file}")
+            raise FileNotFoundError(f"インデックスファイルが存在しません: {self.index_file}")
 
         self.reset()
 
-        with open(self.index_file, "r", encoding="utf-8") as f:
+        with open(self.index_file, encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 rel_path = row["filepath"]
@@ -163,9 +147,7 @@ class Evaluator:
                 audio_path = self._resolve_audio_path(rel_path)
 
                 if not audio_path.exists():
-                    logger.warning(
-                        f"音声ファイルが存在しません: {audio_path}"
-                    )
+                    logger.warning(f"音声ファイルが存在しません: {audio_path}")
                     continue
 
                 pred_label = self.model.recognize(str(audio_path))
@@ -187,7 +169,7 @@ class Evaluator:
             raise ValueError("繝｢繝・Ν縺後Ο繝ｼ繝峨＆繧後※縺・∪縺帙ｓ")
 
         rows: list[dict[str, str]] = []
-        with open(self.index_file, "r", encoding="utf-8", newline="") as f:
+        with open(self.index_file, encoding="utf-8", newline="") as f:
             reader = csv.DictReader(f)
             fieldnames = list(reader.fieldnames or [])
             if "predicted_text" not in fieldnames:
@@ -198,9 +180,7 @@ class Evaluator:
                 audio_path = self._resolve_audio_path(rel_path)
 
                 if not audio_path.exists():
-                    logger.warning(
-                        f"髻ｳ螢ｰ繝輔ぃ繧､繝ｫ縺悟ｭ伜惠縺励∪縺帙ｓ: {audio_path}"
-                    )
+                    logger.warning(f"髻ｳ螢ｰ繝輔ぃ繧､繝ｫ縺悟ｭ伜惠縺励∪縺帙ｓ: {audio_path}")
                     row["predicted_text"] = ""
                 else:
                     row["predicted_text"] = self.model.recognize(str(audio_path))
@@ -214,16 +194,12 @@ class Evaluator:
     def update_from_dataset(self) -> EvaluationResult:
         """データセット(index.csv)内の predicted_text を用いて再推論を行わずに即座に評価・集計する"""
         if not self.index_file.exists():
-            logger.warning(
-                f"インデックスファイルが存在しません: {self.index_file}"
-            )
-            raise FileNotFoundError(
-                f"インデックスファイルが存在しません: {self.index_file}"
-            )
+            logger.warning(f"インデックスファイルが存在しません: {self.index_file}")
+            raise FileNotFoundError(f"インデックスファイルが存在しません: {self.index_file}")
 
         self.reset()
 
-        with open(self.index_file, "r", encoding="utf-8") as f:
+        with open(self.index_file, encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 if "predicted_text" not in row or not row["predicted_text"]:
@@ -271,10 +247,7 @@ class Evaluator:
         )
 
         confusion_breakdown = {
-            true_lbl: {
-                pred_lbl: int(cm[i, j])
-                for j, pred_lbl in enumerate(labels_list)
-            }
+            true_lbl: {pred_lbl: int(cm[i, j]) for j, pred_lbl in enumerate(labels_list)}
             for i, true_lbl in enumerate(labels_list)
         }
 
@@ -292,9 +265,7 @@ class Evaluator:
         overall = OverallMetrics(
             accuracy=round(acc, 4),
             macro_f1=round(float(report_dict["macro avg"]["f1-score"]), 4),
-            weighted_f1=round(
-                float(report_dict["weighted avg"]["f1-score"]), 4
-            ),
+            weighted_f1=round(float(report_dict["weighted avg"]["f1-score"]), 4),
             total_samples=len(self.y_true),
         )
 
@@ -302,9 +273,7 @@ class Evaluator:
         for i in range(len(self.y_true)):
             if self.y_true[i] != self.y_pred[i]:
                 filepath = self.filepaths[i] if i < len(self.filepaths) else ""
-                confidence = (
-                    self.confidences[i] if i < len(self.confidences) else None
-                )
+                confidence = self.confidences[i] if i < len(self.confidences) else None
                 misclassified.append(
                     MisclassifiedSample(
                         true_label=self.y_true[i],
@@ -338,7 +307,9 @@ class Evaluator:
         logger.info(f"評価結果JSONを保存しました: {output_path}")
         return True
 
-    def export_html(self, output_path: Path | str, title: str = "音声認識モデル評価レポート") -> bool:
+    def export_html(
+        self, output_path: Path | str, title: str = "音声認識モデル評価レポート"
+    ) -> bool:
         """評価結果(HTMLレポート)をファイルに出力する"""
         if self.result is None:
             logger.warning(
@@ -355,7 +326,9 @@ class Evaluator:
         return True
 
 
-def generate_html_report(result: EvaluationResult, title: str = "音声認識モデル評価レポート") -> str:
+def generate_html_report(
+    result: EvaluationResult, title: str = "音声認識モデル評価レポート"
+) -> str:
     """
     EvaluationResult から、人間（エンジニア・開発者）が直感的に分析・改善アクションを起こせる
     リッチな HTML インタラクティブ・ダッシュボードレポートを生成する
@@ -369,7 +342,7 @@ def generate_html_report(result: EvaluationResult, title: str = "音声認識モ
 
     # --- 1. 自動診断・要改善ポイントのアクション抽出 (Executive Automated Insights) ---
     insights = []
-    
+
     # 混同対（誤認識ペア）の集計
     confusion_pairs = []
     for true_lbl in labels:
@@ -385,12 +358,14 @@ def generate_html_report(result: EvaluationResult, title: str = "音声認識モ
 
     if confusion_pairs:
         top_pair = confusion_pairs[0]
-        insights.append({
-            "type": "danger",
-            "icon": "🚨",
-            "title": f"最重点ボトルネック: 「{top_pair[0]}」 ➔ 「{top_pair[1]}」 の誤認識",
-            "desc": f"正解が「{top_pair[0]}」のサンプルのうち {top_pair[2]} 件 ({top_pair[3]:.1f}%) が「{top_pair[1]}」と誤認されています。音量歪み（クリッピング）や『{top_pair[0]}』の生声サンプルの追加収集を推奨します。"
-        })
+        insights.append(
+            {
+                "type": "danger",
+                "icon": "🚨",
+                "title": f"最重点ボトルネック: 「{top_pair[0]}」 ➔ 「{top_pair[1]}」 の誤認識",
+                "desc": f"正解が「{top_pair[0]}」のサンプルのうち {top_pair[2]} 件 ({top_pair[3]:.1f}%) が「{top_pair[1]}」と誤認されています。音量歪み（クリッピング）や『{top_pair[0]}』の生声サンプルの追加収集を推奨します。",
+            }
+        )
 
     # サンプル数の偏りチェック
     supports = [m.support for m in per_class.values() if m.support > 0]
@@ -398,31 +373,35 @@ def generate_html_report(result: EvaluationResult, title: str = "音声認識モ
         avg_supp = sum(supports) / len(supports)
         for lbl, m in per_class.items():
             if m.support < avg_supp * 0.3 and m.support > 0:
-                insights.append({
-                    "type": "warning",
-                    "icon": "⚠️",
-                    "title": f"データ偏りの警告: ラベル 「{lbl}」 のサンプル不足",
-                    "desc": f"「{lbl}」のデータ数（{m.support}件）が全平均（{avg_supp:.0f}件）に対して著しく少ないため、誤判定や過学習のリスクがあります。"
-                })
+                insights.append(
+                    {
+                        "type": "warning",
+                        "icon": "⚠️",
+                        "title": f"データ偏りの警告: ラベル 「{lbl}」 のサンプル不足",
+                        "desc": f"「{lbl}」のデータ数（{m.support}件）が全平均（{avg_supp:.0f}件）に対して著しく少ないため、誤判定や過学習のリスクがあります。",
+                    }
+                )
 
     # 高精度達成の称賛
     high_acc_labels = [lbl for lbl, m in per_class.items() if m.f1_score >= 0.95 and m.support >= 5]
     if high_acc_labels:
-        insights.append({
-            "type": "success",
-            "icon": "🎉",
-            "title": f"優秀クラス: 「{', '.join(high_acc_labels)}」 は F1 95% 以上を維持",
-            "desc": "これらの音階・音声特徴表現は安定して正しく学習されています。"
-        })
+        insights.append(
+            {
+                "type": "success",
+                "icon": "🎉",
+                "title": f"優秀クラス: 「{', '.join(high_acc_labels)}」 は F1 95% 以上を維持",
+                "desc": "これらの音階・音声特徴表現は安定して正しく学習されています。",
+            }
+        )
 
     insights_html = ""
     for ins in insights:
         insights_html += f"""
-        <div class="insight-card insight-{ins['type']}">
-            <div class="insight-icon">{ins['icon']}</div>
+        <div class="insight-card insight-{ins["type"]}">
+            <div class="insight-icon">{ins["icon"]}</div>
             <div class="insight-content">
-                <div class="insight-title">{ins['title']}</div>
-                <div class="insight-desc">{ins['desc']}</div>
+                <div class="insight-title">{ins["title"]}</div>
+                <div class="insight-desc">{ins["desc"]}</div>
             </div>
         </div>
         """
@@ -443,10 +422,12 @@ def generate_html_report(result: EvaluationResult, title: str = "音声認識モ
             else:
                 if count > 0:
                     alpha = min(1.0, max(0.2, pct / 40.0))
-                    cell_style = f"background-color: rgba(248, 113, 113, {alpha:.2f}); color: #ffffff;"
+                    cell_style = (
+                        f"background-color: rgba(248, 113, 113, {alpha:.2f}); color: #ffffff;"
+                    )
                 else:
                     cell_style = "color: var(--text-muted); opacity: 0.3;"
-            
+
             row_cells += f"<td style='{cell_style}' class='cm-cell'><strong>{count}</strong><br><span style='font-size:0.75rem;'>({pct:.1f}%)</span></td>"
         cm_rows_html += f"<tr>{row_cells}</tr>"
 
@@ -478,9 +459,9 @@ def generate_html_report(result: EvaluationResult, title: str = "音声認識モ
 
     # --- 4. 誤識別サンプル行 ＆ インライン HTML5 音声再生プレイヤー ---
     filter_buttons_html = f"<button class='btn-filter active' onclick='filterCategory(\"all\")'>全件 ({len(misclassified)})</button>"
-    
+
     # 誤認識のある正解ラベルのユニークリスト
-    mis_labels = sorted(list(set(m.true_label for m in misclassified)))
+    mis_labels = sorted({m.true_label for m in misclassified})
     for ml in mis_labels:
         cnt = sum(1 for m in misclassified if m.true_label == ml)
         filter_buttons_html += f"<button class='btn-filter' onclick='filterCategory(\"{ml}\")'>正解「{ml}」 ({cnt})</button>"
@@ -490,7 +471,7 @@ def generate_html_report(result: EvaluationResult, title: str = "音声認識モ
         for i, sample in enumerate(misclassified[:150], 1):
             conf_str = f"{sample.confidence:.2f}" if sample.confidence is not None else "-"
             rel_audio = sample.filepath.replace("\\", "/")
-            
+
             # ブラウザから相対パスで .wav を直接再生できるインラインプレーヤー
             audio_player_html = f"""
             <audio controls preload="none" style="height: 30px; width: 220px;">
@@ -583,7 +564,7 @@ def generate_html_report(result: EvaluationResult, title: str = "音声認識モ
             margin: 10px 0 0 0;
             color: var(--accent-green);
         }}
-        
+
         /* インサイトカード */
         .insights-section {{
             margin-bottom: 30px;
@@ -810,7 +791,7 @@ def generate_html_report(result: EvaluationResult, title: str = "音声認識モ
         <div class="section-card">
             <h2>🎧 誤識別サンプルの試聴 ＆ 詳細解析 (Misclassified Samples: {len(misclassified)}件)</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: -10px;">ブラウザ上で直接 ▶ ボタンを押すと実際の音声を試聴できます。問題のある文字カテゴリをクリックして絞り込めます。</p>
-            
+
             <div class="filter-container">
                 {filter_buttons_html}
             </div>
@@ -908,7 +889,6 @@ def generate_html_report(result: EvaluationResult, title: str = "音声認識モ
 </html>
 """
     return html
-
 
 
 def compute_evaluation_result(

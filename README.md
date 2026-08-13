@@ -11,9 +11,27 @@
 - Whisper: 今後実装予定の空実装です。
 
 モデルの重み管理および Hugging Face Hub 同期設定については、[モデル管理ガイド (Docs/MODEL_HUB_GUIDE.md)](Docs/MODEL_HUB_GUIDE.md) を参照してください。
+他プロジェクトへの導入およびモジュール利用方法の詳細は、[外部モジュール導入・利用ガイド (Docs/MODULE_USAGE_GUIDE.md)](Docs/MODULE_USAGE_GUIDE.md) を参照してください。
 
-現在のCNNモデルは `a`, `e`, `i`, `o`, `u`, `other` のクラスを認識します。重みファイルは `weights/best_model.pth` を使用します。
-Wav2Vec2は学習後に `weights/wav2vec2_best/` のモデルディレクトリを使用します。
+### 📦 外部プロジェクトでの利用クイックスタート
+
+```bash
+# 1. GitHub から 1 行でインストール
+uv add git+https://github.com/braille-coach-ring/voicerecognizer.git
+```
+
+```python
+# 2. 任意の Python コードから利用
+import voicerecognizer as vr
+
+# ワンライナー認識
+text = vr.recognize("sample.wav")
+
+# リアルタイム非同期マイクストリーミング
+async for character in vr.AudioStreamListener().listen():
+    print(f"認識: {character}")
+```
+
 
 実行時の依存関係は次の形です。
 

@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import librosa
@@ -5,15 +6,14 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-import logging
-logger = logging.getLogger(__name__)
-
 from config import (
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
 )
 from preprocessing.audio_preprocessor import AudioPreprocessor
+
+logger = logging.getLogger(__name__)
 
 
 class HiraganaDataset(Dataset):
@@ -30,7 +30,7 @@ class HiraganaDataset(Dataset):
         n_mels: int = DEFAULT_PREPROCESS_CONFIG.n_mels,
         n_fft: int = DEFAULT_PREPROCESS_CONFIG.n_fft,
         hop_length: int = DEFAULT_PREPROCESS_CONFIG.hop_length,
-        cache_in_memory: bool = True,
+        cache_in_memory: bool = False,
     ):
         self.root = Path(root_dir)
         self.sample_rate = sample_rate
@@ -48,7 +48,7 @@ class HiraganaDataset(Dataset):
         if self.index_file:
             # index.csv からラベル一覧を自動取得
             labels_set = set()
-            with open(self.index_file, "r", encoding="utf-8") as f:
+            with open(self.index_file, encoding="utf-8") as f:
                 f.readline()
                 for line in f:
                     parts = [p.strip() for p in line.strip().split(",")]
@@ -63,14 +63,18 @@ class HiraganaDataset(Dataset):
 
         self.cached_mels: list[tuple[torch.Tensor, torch.Tensor]] | None = None
         if cache_in_memory and self.data:
-            logger.info("オンメモリキャッシュ作成中: %d件のメルスペクトログラムを計算中...", len(self.data))
+            logger.info(
+                "オンメモリキャッシュ作成中: %d件のメルスペクトログラムを計算中...", len(self.data)
+            )
             self.cached_mels = []
             for wav_path, label in self.data:
                 waveform = self.preprocessor.preprocess_waveform(wav_path)
                 mel = self._create_mel(waveform)
                 self.cached_mels.append((mel, torch.tensor(label, dtype=torch.long)))
 
-        logger.info(f"HiraganaDatasetのロード完了: 全 %d件 (クラス数 %d)", len(self.data), len(self.labels))
+        logger.info(
+            "HiraganaDatasetのロード完了: 全 %d件 (クラス数 %d)", len(self.data), len(self.labels)
+        )
 
     def __len__(self) -> int:
         return len(self.data)
@@ -88,7 +92,8 @@ class HiraganaDataset(Dataset):
         data = []
         if self.index_file and self.index_file.exists():
             from config import PROJECT_ROOT
-            with open(self.index_file, "r", encoding="utf-8") as f:
+
+            with open(self.index_file, encoding="utf-8") as f:
                 f.readline()
                 for line in f:
                     parts = [p.strip() for p in line.strip().split(",")]

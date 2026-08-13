@@ -1,16 +1,16 @@
 import unittest
 
+from config import DEFAULT_RECOGNITION_CONFIG, RecognitionConfig
 from config_labels import (
     ALL_HIRAGANA_LABELS,
-    SEION_LABELS,
     DAKUON_LABELS,
     HANDAKUON_LABELS,
-    YOON_LABELS,
-    OTHER_LABELS,
     HIRAGANA_TO_ROMAJI,
+    OTHER_LABELS,
     ROMAJI_TO_HIRAGANA,
+    SEION_LABELS,
+    YOON_LABELS,
 )
-from config import RecognitionConfig, DEFAULT_RECOGNITION_CONFIG
 
 
 class TestLabelsSystem(unittest.TestCase):

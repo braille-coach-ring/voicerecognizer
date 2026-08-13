@@ -1,10 +1,11 @@
-from collections import deque
+import logging
 from threading import Lock
+
 import numpy as np
 import sounddevice as sd
-from config import AudioConfig, DEFAULT_AUDIO_CONFIG
 
-import logging
+from config import DEFAULT_AUDIO_CONFIG, AudioConfig
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,9 +18,7 @@ class AudioCapture:
         self.window_seconds: float = float(getattr(cfg, "window_seconds", 1.0))
 
         self.channels: int = cfg.channels
-        self.blocksize_seconds: float = float(
-            getattr(cfg, "callback_blocksize_seconds", 0.05)
-        )
+        self.blocksize_seconds: float = float(getattr(cfg, "callback_blocksize_seconds", 0.05))
         self.warmup_sleep_ms: int = int(getattr(cfg, "warmup_sleep_ms", 500))
 
         # 直近 N 秒分のサンプル数を保持する NumPy 高速リングバッファ

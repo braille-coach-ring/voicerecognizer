@@ -1,6 +1,6 @@
-import sys
 import argparse
 import logging
+import sys
 from pathlib import Path
 
 # 親ディレクトリを sys.path に追加
@@ -10,8 +10,11 @@ from utils.model_uploader import upload_weights_to_hf
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Upload model weights to Hugging Face Hub smartly (skip if identical)")
+    parser = argparse.ArgumentParser(
+        description="Upload model weights to Hugging Face Hub smartly (skip if identical)"
+    )
     parser.add_argument(
         "--type",
         choices=["cnn", "wav2vec2"],
@@ -24,6 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Force upload even if local file matches remote SHA-256 hash",
     )
     return parser
+
 
 if __name__ == "__main__":
     parser = build_parser()

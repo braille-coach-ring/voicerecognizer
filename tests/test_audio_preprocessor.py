@@ -1,4 +1,5 @@
 import unittest
+
 import numpy as np
 
 from preprocessing.audio_preprocessor import AudioPreprocessor
@@ -72,4 +73,3 @@ class TestAudioPreprocessor(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

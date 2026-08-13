@@ -1,0 +1,212 @@
+[
+  {
+    "filename": "config_labels.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 25,
+    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 30,
+    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 36,
+    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 41,
+    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "core/services/audio_pipeline.py",
+    "code": "SIM102",
+    "line": 87,
+    "column": 17,
+    "message": "Use a single `if` statement instead of nested `if` statements"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 168,
+    "column": 47,
+    "message": "String contains ambiguous `∪` (UNION). Did you mean `U` (LATIN CAPITAL LETTER U)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 169,
+    "column": 49,
+    "message": "String contains ambiguous `∪` (UNION). Did you mean `U` (LATIN CAPITAL LETTER U)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 183,
+    "column": 56,
+    "message": "String contains ambiguous `∪` (UNION). Did you mean `U` (LATIN CAPITAL LETTER U)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 496,
+    "column": 125,
+    "message": "String contains ambiguous `！` (FULLWIDTH EXCLAMATION MARK). Did you mean `!` (EXCLAMATION MARK)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 780,
+    "column": 32,
+    "message": "String contains ambiguous `＼` (FULLWIDTH REVERSE SOLIDUS). Did you mean `\\` (REVERSE SOLIDUS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "N806",
+    "line": 70,
+    "column": 5,
+    "message": "Variable `SHORTCUT_CHOICES` in function should be lowercase"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 162,
+    "column": 47,
+    "message": "String contains ambiguous `！` (FULLWIDTH EXCLAMATION MARK). Did you mean `!` (EXCLAMATION MARK)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 210,
+    "column": 49,
+    "message": "String contains ambiguous `！` (FULLWIDTH EXCLAMATION MARK). Did you mean `!` (EXCLAMATION MARK)?"
+  },
+  {
+    "filename": "models/cnn/hiragana_cnn.py",
+    "code": "B008",
+    "line": 7,
+    "column": 36,
+    "message": "Do not perform function call `len` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable"
+  },
+  {
+    "filename": "models/wav2vec2/export_onnx.py",
+    "code": "E402",
+    "line": 28,
+    "column": 1,
+    "message": "Module level import not at top of file"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "RUF002",
+    "line": 5,
+    "column": 32,
+    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "N806",
+    "line": 788,
+    "column": 9,
+    "message": "Variable `AutoFeatureExtractor` in function should be lowercase"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "N806",
+    "line": 789,
+    "column": 9,
+    "message": "Variable `AutoConfig` in function should be lowercase"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "N806",
+    "line": 790,
+    "column": 9,
+    "message": "Variable `Wav2Vec2ForSequenceClassification` in function should be lowercase"
+  },
+  {
+    "filename": "preprocessing/audio_augmentor.py",
+    "code": "RUF002",
+    "line": 31,
+    "column": 33,
+    "message": "Docstring contains ambiguous `～` (FULLWIDTH TILDE). Did you mean `~` (TILDE)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF001",
+    "line": 46,
+    "column": 54,
+    "message": "String contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "E402",
+    "line": 41,
+    "column": 1,
+    "message": "Module level import not at top of file"
+  },
+  {
+    "filename": "script/benchmark_base_models.py",
+    "code": "E402",
+    "line": 37,
+    "column": 1,
+    "message": "Module level import not at top of file"
+  },
+  {
+    "filename": "script/benchmark_base_models.py",
+    "code": "N803",
+    "line": 134,
+    "column": 27,
+    "message": "Argument name `X` should be lowercase"
+  },
+  {
+    "filename": "script/benchmark_base_models.py",
+    "code": "N806",
+    "line": 136,
+    "column": 5,
+    "message": "Variable `X_train` in function should be lowercase"
+  },
+  {
+    "filename": "script/benchmark_base_models.py",
+    "code": "N806",
+    "line": 136,
+    "column": 14,
+    "message": "Variable `X_test` in function should be lowercase"
+  },
+  {
+    "filename": "utils/model_uploader.py",
+    "code": "RUF001",
+    "line": 79,
+    "column": 14,
+    "message": "String contains ambiguous `ℹ` (INFORMATION SOURCE). Did you mean `i` (LATIN SMALL LETTER I)?"
+  },
+  {
+    "filename": "utils/model_uploader.py",
+    "code": "RUF001",
+    "line": 92,
+    "column": 22,
+    "message": "String contains ambiguous `ℹ` (INFORMATION SOURCE). Did you mean `i` (LATIN SMALL LETTER I)?"
+  },
+  {
+    "filename": "utils/model_uploader.py",
+    "code": "RUF001",
+    "line": 172,
+    "column": 34,
+    "message": "String contains ambiguous `ℹ` (INFORMATION SOURCE). Did you mean `i` (LATIN SMALL LETTER I)?"
+  },
+  {
+    "filename": "utils/model_uploader.py",
+    "code": "RUF001",
+    "line": 234,
+    "column": 34,
+    "message": "String contains ambiguous `ℹ` (INFORMATION SOURCE). Did you mean `i` (LATIN SMALL LETTER I)?"
+  }
+]

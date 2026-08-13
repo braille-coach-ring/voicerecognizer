@@ -50,7 +50,9 @@ def main() -> None:
                 volume = float(np.max(np.abs(y))) if y.size else 0.0
 
                 if volume < THRESHOLD:
-                    logger.info("無音ファイルを削除: %s (音量: %.5f < 閾値: %.4f)", wav, volume, THRESHOLD)
+                    logger.info(
+                        "無音ファイルを削除: %s (音量: %.5f < 閾値: %.4f)", wav, volume, THRESHOLD
+                    )
                     wav.unlink()
                     deleted += 1
             except Exception as e:

@@ -11,17 +11,139 @@ dependencies = [
     "scikit-learn>=1.9.0",
     "sounddevice>=0.5.5",
     "soundfile>=0.14.0",
-    "torch>=2.13.0",
-    "torchvision>=0.28.0",
+    "torch>=2.4.0",
+    "torchvision>=0.19.0",
     "transformers>=4.44.0",
     "tqdm>=4.68.4",
     "python-dotenv>=1.2.2",
     "onnxruntime>=1.19.0",
     "onnx>=1.22.0",
     "onnxscript>=0.7.1",
+    "accelerate>=1.11.0",
 ]
+
+[project.scripts]
+ci = "script.check_quality_gate:main"
+check-quality = "script.check_quality_gate:main"
+fmt = "script.check_quality_gate:fmt_cli"
+lint = "script.check_quality_gate:lint_cli"
+typecheck = "script.check_quality_gate:typecheck_cli"
+test = "script.check_quality_gate:test_cli"
+sync-baseline = "script.check_quality_gate:sync_baseline_cli"
+stats = "script.check_quality_gate:report_cli"
+errors = "script.check_quality_gate:errors_cli"
 
 [dependency-groups]
 dev = [
+    "mypy>=2.3.0",
+    "mypy-baseline>=0.7.4",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
     "ruff>=0.15.21",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu124", marker = "sys_platform != 'darwin'" }
+torchvision = { index = "pytorch-cu124", marker = "sys_platform != 'darwin'" }
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+extraPaths = ["."]
+reportAttributeAccessIssue = false
+reportMissingModuleSource = false
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = ["."]
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "evaluation_results",
+    "log",
+    "plots",
+    "processed_dataset",
+    "merged_dataset",
+    "weights"
+]
+
+[tool.ruff.lint]
+allowed-confusables = ["（", "）", "〜", "・", "“", "”", "’", "＆", "×", "？", "ノ"]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "RUF",    # Ruff-specific rules
+    "SIM",    # flake8-simplify
+    "N",      # pep8-naming
+]
+ignore = [
+    "E501",   # line length (handled by ruff format)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["core", "dataset", "evaluation", "models", "preprocessing", "recognizers", "runtime", "utils"]
+
+[tool.mypy]
+python_version = "3.13"
+mypy_path = "."
+explicit_package_bases = true
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = [
+    "librosa.*",
+    "sounddevice.*",
+    "soundfile.*",
+    "matplotlib.*",
+    "sklearn.*",
+    "scipy.*",
+    "tqdm.*",
+    "torch.*",
+    "torchvision.*",
+    "transformers.*",
+    "onnxruntime.*",
+    "onnx.*",
+    "onnxscript.*",
+    "accelerate.*"
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests", "test"]
+pythonpath = ["."]
+addopts = "-v --strict-markers"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning"
 ]

@@ -10,22 +10,21 @@ Model Evaluation CLI & HTML Report Generator Script
   uv run python script/evaluate.py --model-type wav2vec2
   uv run python script/evaluate.py --from-dataset-only # 過去録音の predicted_text のみで即時評価
 """
+
 import argparse
 import logging
-from pathlib import Path
 import sys
+from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from config import DEFAULT_RECOGNITION_CONFIG
-from core.factory.recognizer_factory import RecognizerFactory
-from evaluation.evaluator import Evaluator
+from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
+from core.factory.recognizer_factory import RecognizerFactory  # noqa: E402
+from evaluation.evaluator import Evaluator  # noqa: E402
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -95,7 +94,9 @@ def main():
         evaluator.export_json(args.output_json)
 
     if args.output_html:
-        evaluator.export_html(args.output_html, title=f"モデル評価レポート ({args.model_type.upper()})")
+        evaluator.export_html(
+            args.output_html, title=f"モデル評価レポート ({args.model_type.upper()})"
+        )
 
 
 if __name__ == "__main__":

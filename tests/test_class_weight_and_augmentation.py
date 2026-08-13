@@ -3,6 +3,7 @@ Unit tests for AudioAugmentor, compute_class_weights, and CLI option defaults us
 """
 
 import unittest
+
 import numpy as np
 import torch
 
@@ -45,7 +46,13 @@ class TestClassWeightAndAugmentation(unittest.TestCase):
         self.assertEqual(args_default.class_weight_power, 0.5)
 
         args_opt_out = parser.parse_args(
-            ["--no-class-weights", "--no-augment", "--no-balanced-sampler", "--class-weight-power", "1.0"]
+            [
+                "--no-class-weights",
+                "--no-augment",
+                "--no-balanced-sampler",
+                "--class-weight-power",
+                "1.0",
+            ]
         )
         self.assertFalse(args_opt_out.use_class_weights)
         self.assertFalse(args_opt_out.augment)
