@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 
 from config import DEFAULT_RECOGNITION_CONFIG
+from core.exceptions import ModelNotFoundError
 from core.interfaces import RecognitionStrategy
 from preprocessing.audio_preprocessor import AudioPreprocessor
 
@@ -100,7 +101,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
             "onset_ms": prep_stats.get("onset_ms", 0.0),
             "offset_ms": prep_stats.get("offset_ms", 0.0),
             "speech_duration_ms": prep_stats.get("speech_duration_ms", 0.0),
-            "preprocess_latency_ms": (t_prep_end - t_prep_start) * 1000.0,
+            "prep_latency_ms": (t_prep_end - t_prep_start) * 1000.0,
             "inference_latency_ms": (t_inf_end - t_inf_start) * 1000.0,
             "total_latency_ms": (t_inf_end - t_start) * 1000.0,
             "confidence": self.last_confidence,
@@ -109,14 +110,38 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         logger.debug("Wav2Vec2 ONNX 確率: %s", probabilities)
         return self._label_for_index(predicted_index)
 
+    def recognize_with_candidates(self, audio: Any, top_k: int = 3) -> list[tuple[str, float]]:
+        """上位 top_k 個の認識候補ラベルと確信度スコアのリストを返します"""
+        self._ensure_model_loaded()
+        waveform = self.audio_preprocessor.preprocess_waveform(
+            audio,
+            pad_to_target=not self.dynamic_trimming,
+        )
+        inputs = self.feature_extractor(
+            waveform,
+            sampling_rate=self.sample_rate,
+            return_tensors="np",
+            padding=True,
+        )
+        input_values = inputs["input_values"].astype(np.float32)
+        outputs = self.session.run(None, {self.input_name: input_values})
+        logits = outputs[0][0]
+        exp_logits = np.exp(logits - np.max(logits))
+        probabilities = exp_logits / np.sum(exp_logits)
+
+        top_indices = np.argsort(probabilities)[::-1][:top_k]
+        candidates = [(self._label_for_index(int(idx)), float(probabilities[idx])) for idx in top_indices]
+        self.last_confidence = candidates[0][1] if candidates else 0.0
+        return candidates
+
     def _ensure_model_loaded(self) -> None:
         if self.session is not None and self.feature_extractor is not None:
             return
 
         if self.onnx_model_path is None or not self.onnx_model_path.exists():
-            raise FileNotFoundError(
+            raise ModelNotFoundError(
                 f"Wav2Vec2 ONNX モデルが見つかりません: {self.model_path}\n"
-                "以下のエクスポートコマンドを実行してください:\n"
+                "以下のエクスポートコマンドを実行して ONNX ファイルを生成してください:\n"
                 "  uv run python models/wav2vec2/export_onnx.py"
             )
 
