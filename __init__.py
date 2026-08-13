@@ -25,15 +25,15 @@ PACKAGE_ROOT = Path(__file__).resolve().parent
 if str(PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_ROOT))
 
-from core.exceptions import (
+from core.exceptions import (  # noqa: E402
     AudioPreprocessingError,
     DeviceNotFoundError,
     ModelNotFoundError,
     VoiceRecognizerError,
 )
-from core.interfaces import RecognitionStrategy
-from recognizers import CNNRecognizer, Wav2Vec2Recognizer, WhisperRecognizer
-from runtime.stream_listener import AudioStreamListener, RecognitionResult
+from core.interfaces import RecognitionStrategy  # noqa: E402
+from recognizers import CNNRecognizer, Wav2Vec2Recognizer, WhisperRecognizer  # noqa: E402
+from runtime.stream_listener import AudioStreamListener, RecognitionResult  # noqa: E402
 
 __version__ = "0.1.0"
 

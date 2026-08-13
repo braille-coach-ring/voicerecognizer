@@ -1,4 +1,5 @@
 from collections import Counter
+from collections.abc import Sequence
 import logging
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
@@ -7,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 def safe_stratified_split(
-    labels: list[int | str], val_rate: float, seed: int
+    labels: Sequence[int | str], val_rate: float, seed: int
 ) -> tuple[list[int], list[int]]:
     """
     データセットのラベル分布に基づき、サンプル数が少ないクラス（1件のみ等）が存在する場合にも

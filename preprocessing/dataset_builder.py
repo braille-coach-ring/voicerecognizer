@@ -1,7 +1,6 @@
 from pathlib import Path
 import shutil
 import logging
-logger = logging.getLogger(__name__)
 
 import soundfile as sf
 
@@ -13,6 +12,8 @@ from config import (
 )
 from preprocessing.audio_preprocessor import AudioPreprocessor
 
+logger = logging.getLogger(__name__)
+
 
 def _to_rel_path(path: Path) -> str:
     """PROJECT_ROOTからの相対パス (POSIX形式) に変換する"""
@@ -21,6 +22,7 @@ def _to_rel_path(path: Path) -> str:
         return rel.as_posix()
     except ValueError:
         return str(path)
+
 
 """
 DatasetBuilder: 学習用データセット (merged_dataset / processed_dataset) を構築・集約するクラス。
@@ -99,10 +101,14 @@ class DatasetBuilder:
                             ground_truth = parts[2]
                             predicted_text = ""
 
-                        if ground_truth and (ground_truth in self.labels or ground_truth == "other"):
+                        if ground_truth and (
+                            ground_truth in self.labels or ground_truth == "other"
+                        ):
                             wav_path = folder / filename
                             if wav_path.exists():
-                                entries.append((_to_rel_path(wav_path), ground_truth, predicted_text))
+                                entries.append(
+                                    (_to_rel_path(wav_path), ground_truth, predicted_text)
+                                )
 
         # 3. index.csv の書き出し
         with open(index_file, "w", encoding="utf-8") as f:
@@ -144,7 +150,7 @@ class DatasetBuilder:
             # インデックス CSV ファイルから直接読み込んで前処理
             counts: dict[str, int] = {}
             with open(index_file, "r", encoding="utf-8") as f:
-                header = f.readline()
+                _ = f.readline()
                 for line in f:
                     parts = [p.strip() for p in line.strip().split(",")]
                     if len(parts) < 2 or not parts[0]:
@@ -169,7 +175,11 @@ class DatasetBuilder:
                     )
                     counts[label] = count + 1
 
-            logger.info("index.csv から全 %d 件の音声データを前処理して %s に出力しました", sum(counts.values()), output_root)
+            logger.info(
+                "index.csv から全 %d 件の音声データを前処理して %s に出力しました",
+                sum(counts.values()),
+                output_root,
+            )
             return
 
         # 従来のディレクトリベース処理（後方互換用）
@@ -198,7 +208,9 @@ def ensure_merged_and_preprocessed(skip_prep: bool = False) -> None:
     skip_prep=True (--skip-prep 指定時) の場合は明示的に自動処理をスキップします。
     """
     if skip_prep:
-        logger.info("=== [--skip-prep が指定されたため、自動データ統合・前処理をスキップします] ===")
+        logger.info(
+            "=== [--skip-prep が指定されたため、自動データ統合・前処理をスキップします] ==="
+        )
         return
 
     logger.info("=== [学習前自動処理] データ統合 (index.csv 生成) ＆ 音声前処理を開始します ===")
@@ -207,4 +219,3 @@ def ensure_merged_and_preprocessed(skip_prep: bool = False) -> None:
     logger.info("  [1/2] 統合インデックス作成完了: %s", index_file)
     builder.preprocess_dataset()
     logger.info("  [2/2] 音声前処理完了: processed_dataset/")
-

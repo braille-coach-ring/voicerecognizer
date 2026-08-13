@@ -1,0 +1,9 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": [
+    "."
+  ],
+  "reportAttributeAccessIssue": false,
+  "reportMissingModuleSource": false
+}

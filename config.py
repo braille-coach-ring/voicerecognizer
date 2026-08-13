@@ -6,13 +6,6 @@ from dotenv import load_dotenv
 
 from config_labels import (
     ALL_HIRAGANA_LABELS,
-    SEION_LABELS,
-    DAKUON_LABELS,
-    HANDAKUON_LABELS,
-    YOON_LABELS,
-    OTHER_LABELS,
-    HIRAGANA_TO_ROMAJI,
-    ROMAJI_TO_HIRAGANA,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent

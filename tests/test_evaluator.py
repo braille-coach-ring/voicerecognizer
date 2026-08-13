@@ -18,7 +18,6 @@ class MockRecognizer(RecognitionStrategy):
 
 
 class TestEvaluator(unittest.TestCase):
-
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.dataset_dir = Path(self.temp_dir.name)
@@ -81,7 +80,6 @@ class TestEvaluator(unittest.TestCase):
             self.assertEqual(len(rows), 3)
             self.assertIn("predicted_text", rows[0])
             self.assertEqual(rows[0]["predicted_text"], "a")
-
 
     def test_export_json(self):
         evaluator = Evaluator(

@@ -41,7 +41,9 @@ class TestVoiceActivityDetector(unittest.TestCase):
         self.assertTrue(self.vad.is_speech(speech))
 
     def test_requires_consecutive_chunks_before_speech(self):
-        cfg = PreprocessConfig(vad_silence_threshold=0.005, vad_min_speech_chunks=2, vad_rms_threshold=0.001)
+        cfg = PreprocessConfig(
+            vad_silence_threshold=0.005, vad_min_speech_chunks=2, vad_rms_threshold=0.001
+        )
         vad = VoiceActivityDetector(config=cfg)
 
         speech_like = np.full(1600, 0.006, dtype=np.float32)
@@ -50,7 +52,9 @@ class TestVoiceActivityDetector(unittest.TestCase):
         self.assertTrue(vad.is_speech(speech_like))
 
     def test_streak_resets_on_silence(self):
-        cfg = PreprocessConfig(vad_silence_threshold=0.005, vad_min_speech_chunks=2, vad_rms_threshold=0.001)
+        cfg = PreprocessConfig(
+            vad_silence_threshold=0.005, vad_min_speech_chunks=2, vad_rms_threshold=0.001
+        )
         vad = VoiceActivityDetector(config=cfg)
 
         speech_like = np.full(1600, 0.006, dtype=np.float32)

@@ -137,7 +137,9 @@ class TestWav2Vec2LazyDataset(unittest.TestCase):
     def test_pagefile_error_detection(self):
         self.assertTrue(
             is_pagefile_or_memory_error(
-                OSError("ページング ファイルが小さすぎるため、この操作を完了できません。 (os error 1455)")
+                OSError(
+                    "ページング ファイルが小さすぎるため、この操作を完了できません。 (os error 1455)"
+                )
             )
         )
         self.assertTrue(is_pagefile_or_memory_error(MemoryError()))

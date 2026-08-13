@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
-import numpy as np
 import logging
-logger = logging.getLogger(__name__)
+import numpy as np
 
 from config import DEFAULT_PREPROCESS_CONFIG, PreprocessConfig
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractSilenceThresholdCalculator(ABC):
@@ -45,7 +46,9 @@ class AdaptiveSilenceThresholdCalculator(AbstractSilenceThresholdCalculator):
         self._alpha: float = cfg.noise_update_rate
         self._min_top_db: float = float(cfg.min_top_db)
         self._max_top_db: float = float(cfg.max_top_db)
-        logger.info(f"適応値モード: ノイズ床の初期値: {self._estimated_noise_db} dB, ノイズアップデートレート: {self._alpha} , デシベル下限値上限値: {self._min_top_db}-{self._max_top_db}")
+        logger.info(
+            f"適応値モード: ノイズ床の初期値: {self._estimated_noise_db} dB, ノイズアップデートレート: {self._alpha} , デシベル下限値上限値: {self._min_top_db}-{self._max_top_db}"
+        )
 
     def update(self, audio_chunk: np.ndarray) -> None:
         if audio_chunk is None or audio_chunk.size == 0:
@@ -65,11 +68,11 @@ class AdaptiveSilenceThresholdCalculator(AbstractSilenceThresholdCalculator):
         calculated_top_db = 30.0 + (self._estimated_noise_db + 50.0) * 0.5
 
         # クランプ処理（指定された最小・最大範囲内に収める）
-        self._current_top_db = float(
-            np.clip(calculated_top_db, self._min_top_db, self._max_top_db)
-        )
+        self._current_top_db = float(np.clip(calculated_top_db, self._min_top_db, self._max_top_db))
 
-        logger.info(f"現在のノイズ床: {self._estimated_noise_db} dB, 現在の適応閾値 (top_db): {self._current_top_db:.2f} dB")
+        logger.info(
+            f"現在のノイズ床: {self._estimated_noise_db} dB, 現在の適応閾値 (top_db): {self._current_top_db:.2f} dB"
+        )
 
     def get_silence_threshold(self) -> float:
         return self._current_top_db

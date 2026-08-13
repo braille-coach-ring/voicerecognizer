@@ -15,9 +15,7 @@ ONNX Model Benchmark & Evaluation Comparison Script (script/benchmark_onnx.py)
 
 import json
 import logging
-import os
 import sys
-import time
 from pathlib import Path
 from typing import Any
 
@@ -28,15 +26,13 @@ if str(PROJECT_ROOT) not in sys.path:
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-import numpy as np
+import numpy as np  # noqa: E402
 
-from config import DEFAULT_RECOGNITION_CONFIG
-from evaluation.evaluator import Evaluator
-from recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
+from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
+from evaluation.evaluator import Evaluator  # noqa: E402
+from recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer  # noqa: E402
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -124,7 +120,9 @@ def main() -> None:
     print("\n" + "=" * 70)
     print(" 🚀 Wav2Vec2 ONNX モデル比較ベンチマーク評価レポート")
     print("=" * 70)
-    print(f"{'モデルファイル':<22} | {'入力形式':<10} | {'容量(MB)':<8} | {'Accuracy':<8} | {'Macro-F1':<8} | {'推論時間(ms)':<10} | {'前処理(ms)':<8}")
+    print(
+        f"{'モデルファイル':<22} | {'入力形式':<10} | {'容量(MB)':<8} | {'Accuracy':<8} | {'Macro-F1':<8} | {'推論時間(ms)':<10} | {'前処理(ms)':<8}"
+    )
     print("-" * 70)
     for var, data in results.items():
         print(

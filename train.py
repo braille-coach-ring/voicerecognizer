@@ -19,7 +19,6 @@ from collections.abc import Sequence
 TRAINABLE_MODELS = ("cnn", "wav2vec2")
 
 
-
 def build_dispatch_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Train a voice recognition model.",

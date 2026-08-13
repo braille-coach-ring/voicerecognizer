@@ -165,8 +165,7 @@ def save_audio(path: Path, audio: np.ndarray, sample_rate: int) -> None:
         import soundfile as sf
     except ImportError as exc:
         raise ImportError(
-            "soundfile is required to save measured_audio.wav. "
-            "Install dependencies with: uv sync"
+            "soundfile is required to save measured_audio.wav. Install dependencies with: uv sync"
         ) from exc
 
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -248,9 +247,7 @@ def calculate_calibration(
 
     speech_gate_rms = max(noise_rms_p95 * 3.0, 1e-6)
     speech_gate_peak = max(noise_peak_p95 * 3.0, 1e-5)
-    active_mask = (speech_levels.rms >= speech_gate_rms) | (
-        speech_levels.peak >= speech_gate_peak
-    )
+    active_mask = (speech_levels.rms >= speech_gate_rms) | (speech_levels.peak >= speech_gate_peak)
 
     min_active_frames = max(3, int(np.ceil(speech_levels.rms.size * 0.2)))
     if int(np.sum(active_mask)) < min_active_frames:
@@ -314,9 +311,7 @@ def calculate_calibration(
         percentile(speech_levels.peak, 100),
     )
     if max_peak > 0.98:
-        warnings.append(
-            "The recording is close to clipping. Lower the microphone gain."
-        )
+        warnings.append("The recording is close to clipping. Lower the microphone gain.")
 
     return CalibrationResult(
         top_db=round(top_db, 1),
@@ -418,10 +413,7 @@ def update_config_file(config_path: Path, result: CalibrationResult) -> None:
 def print_phase_summary(label: str, levels: FrameLevels) -> None:
     print(f"\n{label}")
     print(f"  RMS  mean={np.mean(levels.rms):.6f} p95={percentile(levels.rms, 95):.6f}")
-    print(
-        f"  Peak mean={np.mean(levels.peak):.6f} "
-        f"p99={percentile(levels.peak, 99):.6f}"
-    )
+    print(f"  Peak mean={np.mean(levels.peak):.6f} p99={percentile(levels.peak, 99):.6f}")
     print(f"  dB   mean={np.mean(levels.db):.2f} max={np.max(levels.db):.2f}")
 
 
@@ -545,10 +537,7 @@ def main() -> None:
         "  PreprocessConfig.vad_silence_threshold: "
         f"{DEFAULT_PREPROCESS_CONFIG.vad_silence_threshold}"
     )
-    print(
-        "  PreprocessConfig.vad_rms_threshold: "
-        f"{DEFAULT_PREPROCESS_CONFIG.vad_rms_threshold}"
-    )
+    print(f"  PreprocessConfig.vad_rms_threshold: {DEFAULT_PREPROCESS_CONFIG.vad_rms_threshold}")
     print(f"  RecognitionConfig.top_db: {DEFAULT_RECOGNITION_CONFIG.top_db}")
 
     if args.dry_run:

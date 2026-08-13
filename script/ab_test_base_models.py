@@ -24,9 +24,7 @@ import argparse
 import gc
 import json
 import logging
-import os
 import random
-import shutil
 import sys
 import time
 from pathlib import Path
@@ -34,17 +32,15 @@ from typing import Any
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from config import DEFAULT_RECOGNITION_CONFIG
+from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 # A/B テスト条件の定義
@@ -91,7 +87,6 @@ def run_single_condition(
         Wav2Vec2ForSequenceClassification,
         get_linear_schedule_with_warmup,
     )
-    from dataset.hiragana_dataset import HiraganaDataset
     from models.wav2vec2.train import (
         Wav2Vec2ClassificationDataset,
         split_dataset,
@@ -115,8 +110,13 @@ def run_single_condition(
 
     logger.info("=" * 70)
     logger.info("  [%s]", cond_name)
-    logger.info("  Model: %s | Freeze: %d layers | LR: %s | Epochs: %d",
-                model_name, freeze_layers, learning_rate, epochs)
+    logger.info(
+        "  Model: %s | Freeze: %d layers | LR: %s | Epochs: %d",
+        model_name,
+        freeze_layers,
+        learning_rate,
+        epochs,
+    )
     logger.info("=" * 70)
 
     # Dataset
@@ -167,29 +167,43 @@ def run_single_condition(
     # Count trainable params
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     total_params = sum(p.numel() for p in model.parameters())
-    logger.info("Trainable params: %s / %s (%.1f%%)",
-                f"{trainable_params:,}", f"{total_params:,}",
-                trainable_params / total_params * 100)
+    logger.info(
+        "Trainable params: %s / %s (%.1f%%)",
+        f"{trainable_params:,}",
+        f"{total_params:,}",
+        trainable_params / total_params * 100,
+    )
 
     # DataLoaders & Hardware Optimization (CUDA vs CPU dynamic settings)
     num_workers = determine_optimal_num_workers() if device.type == "cuda" else 0
-    pin_memory = (device.type == "cuda")
-    persistent_workers = (num_workers > 0)
+    pin_memory = device.type == "cuda"
+    persistent_workers = num_workers > 0
 
     logger.info(
         "Hardware Optimization: device=%s | num_workers=%d | pin_memory=%s | AMP=%s",
-        device, num_workers, pin_memory, (device.type == "cuda")
+        device,
+        num_workers,
+        pin_memory,
+        (device.type == "cuda"),
     )
 
     train_loader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True,
-        num_workers=num_workers, pin_memory=pin_memory,
-        persistent_workers=persistent_workers, collate_fn=collate_fn,
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        persistent_workers=persistent_workers,
+        collate_fn=collate_fn,
     )
     val_loader = DataLoader(
-        val_subset, batch_size=batch_size, shuffle=False,
-        num_workers=num_workers, pin_memory=pin_memory,
-        persistent_workers=persistent_workers, collate_fn=collate_fn,
+        val_subset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+        persistent_workers=persistent_workers,
+        collate_fn=collate_fn,
     )
 
     # Optimizer & Scheduler
@@ -197,7 +211,9 @@ def run_single_condition(
     training_steps = max(len(train_loader) * epochs, 1)
     warmup_steps = int(training_steps * 0.1)
     scheduler = get_linear_schedule_with_warmup(
-        optimizer, num_warmup_steps=warmup_steps, num_training_steps=training_steps,
+        optimizer,
+        num_warmup_steps=warmup_steps,
+        num_training_steps=training_steps,
     )
     scaler = torch.amp.GradScaler("cuda") if device.type == "cuda" else None
 
@@ -208,12 +224,23 @@ def run_single_condition(
 
     for epoch in range(epochs):
         train_loss, train_acc = train_epoch(
-            model, train_loader, optimizer, scheduler, device,
-            epoch, epochs, max_grad_norm=1.0, loss_fct=loss_fct, scaler=scaler,
+            model,
+            train_loader,
+            optimizer,
+            scheduler,
+            device,
+            epoch,
+            epochs,
+            max_grad_norm=1.0,
+            loss_fct=loss_fct,
+            scaler=scaler,
         )
 
         val_loss, val_acc, val_true, val_pred = validate(
-            model, val_loader, device, labels=dataset.labels,
+            model,
+            val_loader,
+            device,
+            labels=dataset.labels,
         )
         eval_result = compute_evaluation_result(val_true, val_pred, labels=dataset.labels)
         macro_f1 = eval_result.overall.macro_f1
@@ -233,7 +260,12 @@ def run_single_condition(
 
         logger.info(
             "[%s] Epoch %d/%d - Train Acc: %.4f | Val Acc: %.4f | Val F1: %.4f",
-            cond_name, epoch + 1, epochs, train_acc, val_acc, macro_f1,
+            cond_name,
+            epoch + 1,
+            epochs,
+            train_acc,
+            val_acc,
+            macro_f1,
         )
 
     elapsed = time.time() - start_time
@@ -266,11 +298,14 @@ def main():
         description="A/B test for Wav2Vec2 base model and freeze layer selection"
     )
     parser.add_argument("--epochs", type=int, default=5, help="Epochs per condition (default: 5)")
-    parser.add_argument("--learning-rate", type=float, default=2e-5, help="Learning rate (default: 2e-5)")
+    parser.add_argument(
+        "--learning-rate", type=float, default=2e-5, help="Learning rate (default: 2e-5)"
+    )
     parser.add_argument("--batch-size", type=int, default=8, help="Batch size (default: 8)")
     parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
     parser.add_argument(
-        "--output-json", type=Path,
+        "--output-json",
+        type=Path,
         default=PROJECT_ROOT / "evaluation_results" / "ab_test_results.json",
         help="Output path for A/B test results",
     )
@@ -328,8 +363,12 @@ def main():
             args.output_json.write_text(
                 json.dumps(all_results, indent=2, ensure_ascii=False), encoding="utf-8"
             )
-            logger.info("Result saved to %s (%d/%d conditions done)",
-                        args.output_json, len(all_results), len(DEFAULT_CONDITIONS))
+            logger.info(
+                "Result saved to %s (%d/%d conditions done)",
+                args.output_json,
+                len(all_results),
+                len(DEFAULT_CONDITIONS),
+            )
 
         except KeyboardInterrupt:
             logger.warning("Ctrl+C detected. Saving completed results and exiting.")
@@ -351,7 +390,9 @@ def main():
     print(header)
     print("-" * 90)
     for rank, r in enumerate(successful, 1):
-        print(f"{rank:<5} {r['condition']:<55} {r['best_val_macro_f1']:<10.4f} {r['final_val_acc']*100:<9.2f}% {r['elapsed_seconds']:<8.1f}s")
+        print(
+            f"{rank:<5} {r['condition']:<55} {r['best_val_macro_f1']:<10.4f} {r['final_val_acc'] * 100:<9.2f}% {r['elapsed_seconds']:<8.1f}s"
+        )
 
     # Epoch-by-epoch comparison
     print("\n" + "-" * 90)
@@ -365,7 +406,7 @@ def main():
     print("".join(header_parts))
 
     for ep in range(max_epochs):
-        parts = [f"  {ep+1:<5}"]
+        parts = [f"  {ep + 1:<5}"]
         for r in successful:
             hist = r.get("history", [])
             if ep < len(hist):

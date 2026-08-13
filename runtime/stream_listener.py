@@ -153,7 +153,9 @@ class AudioStreamListener:
 
                 # 候補リストの取得
                 if hasattr(self.recognizer, "recognize_with_candidates"):
-                    candidates = await asyncio.to_thread(self.recognizer.recognize_with_candidates, waveform, 3)
+                    candidates = await asyncio.to_thread(
+                        self.recognizer.recognize_with_candidates, waveform, 3
+                    )
                     result_text = candidates[0][0] if candidates else ""
                     confidence = candidates[0][1] if candidates else 0.0
                 else:

@@ -6,7 +6,9 @@ from recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
 from recognizers.whisper_recognizer import WhisperRecognizer
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 class RecognizerFactory:
     @staticmethod

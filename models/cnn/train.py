@@ -21,27 +21,24 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import numpy as np
-import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader, Subset
-from tqdm import tqdm
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+import torch.nn as nn  # noqa: E402
+from torch.utils.data import DataLoader, Subset  # noqa: E402
+from tqdm import tqdm  # noqa: E402
 
-from config import (
+from config import (  # noqa: E402
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
-    DEFAULT_HUGGINGFACE_CONFIG,
 )
-from dataset.hiragana_dataset import HiraganaDataset
-from evaluation.evaluator import compute_evaluation_result
-from preprocessing.dataset_builder import ensure_merged_and_preprocessed
-from models.cnn.hiragana_cnn import HiraganaCNN
-from utils.plot_saver import save_history_plots
+from dataset.hiragana_dataset import HiraganaDataset  # noqa: E402
+from evaluation.evaluator import compute_evaluation_result  # noqa: E402
+from preprocessing.dataset_builder import ensure_merged_and_preprocessed  # noqa: E402
+from models.cnn.hiragana_cnn import HiraganaCNN  # noqa: E402
+from utils.plot_saver import save_history_plots  # noqa: E402
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -57,6 +54,7 @@ def split_dataset(
     dataset: HiraganaDataset, val_rate: float = 0.2, seed: int = 42
 ) -> tuple[Subset, Subset]:
     from utils.split_helper import safe_stratified_split
+
     labels = [label for _, label in dataset.data]
     train_idx, val_idx = safe_stratified_split(labels, val_rate=val_rate, seed=seed)
     return Subset(dataset, train_idx), Subset(dataset, val_idx)
@@ -90,9 +88,7 @@ def train_epoch(
         correct += pred.eq(labels).sum().item()
         total += labels.size(0)
 
-        progress.set_postfix(
-            loss=f"{loss.item():.4f}", acc=f"{correct / total:.4f}"
-        )
+        progress.set_postfix(loss=f"{loss.item():.4f}", acc=f"{correct / total:.4f}")
 
     return total_loss / max(total, 1), correct / max(total, 1)
 
@@ -149,6 +145,7 @@ def train(args: argparse.Namespace) -> None:
     # チーム共有の最新モデルを手元と比較し、必要に応じて自動ダウンロード (SHA256事前判定)
     if resume:
         from utils.model_uploader import download_latest_team_weights_if_needed
+
         download_latest_team_weights_if_needed(model_type="cnn")
 
     fix_seed(seed)
@@ -177,7 +174,8 @@ def train(args: argparse.Namespace) -> None:
             state_dict = torch.load(best_model_path, map_location=device, weights_only=True)
             model_dict = model.state_dict()
             matched_dict = {
-                k: v for k, v in state_dict.items()
+                k: v
+                for k, v in state_dict.items()
                 if k in model_dict and model_dict[k].shape == v.shape
             }
             model_dict.update(matched_dict)
@@ -190,14 +188,24 @@ def train(args: argparse.Namespace) -> None:
                 _, val_acc_init, val_true_init, val_pred_init = validate(
                     eval_model, val_loader, criterion, device, labels=dataset.labels
                 )
-                init_result = compute_evaluation_result(val_true_init, val_pred_init, labels=dataset.labels)
+                init_result = compute_evaluation_result(
+                    val_true_init, val_pred_init, labels=dataset.labels
+                )
                 best_macro_f1 = init_result.overall.macro_f1
-                logger.info("既存のチェックポイント (%s) を再利用して継続学習を行います。", best_model_path)
-                logger.info("保存済みベストモデルの評価スコア - Val Acc: %.4f, Val Macro-F1: %.4f", val_acc_init, best_macro_f1)
+                logger.info(
+                    "既存のチェックポイント (%s) を再利用して継続学習を行います。", best_model_path
+                )
+                logger.info(
+                    "保存済みベストモデルの評価スコア - Val Acc: %.4f, Val Macro-F1: %.4f",
+                    val_acc_init,
+                    best_macro_f1,
+                )
         except Exception as e:
             logger.warning("既存チェックポイントの読み込み/評価に失敗しました: %s", e)
     elif not resume:
-        logger.info("=== [--from-scratch が指定されたため、既存重みを破棄して 0 から新規学習を開始します] ===")
+        logger.info(
+            "=== [--from-scratch が指定されたため、既存重みを破棄して 0 から新規学習を開始します] ==="
+        )
 
     patience = getattr(args, "patience", 10)
     patience_counter = 0
@@ -275,16 +283,23 @@ def train(args: argparse.Namespace) -> None:
     # Hugging Face 自動アップロード判定 (チーム最高精度を更新した場合のみ)
     if is_best_updated:
         from utils.model_uploader import upload_weights_to_hf
+
         upload_weights_to_hf(model_type="cnn")
     else:
-        logger.info("チーム最高精度が更新されなかったため、Hugging Face へのアップロードをスキップします。")
+        logger.info(
+            "チーム最高精度が更新されなかったため、Hugging Face へのアップロードをスキップします。"
+        )
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Train the Hiragana CNN recognizer.")
-    parser.add_argument("--epochs", type=int, default=150, help="Number of training epochs (default: 150)")
+    parser.add_argument(
+        "--epochs", type=int, default=150, help="Number of training epochs (default: 150)"
+    )
     parser.add_argument("--batch-size", type=int, default=8, help="Batch size (default: 8)")
-    parser.add_argument("--learning-rate", type=float, default=0.001, help="Learning rate (default: 0.001)")
+    parser.add_argument(
+        "--learning-rate", type=float, default=0.001, help="Learning rate (default: 0.001)"
+    )
     parser.add_argument(
         "--patience",
         type=int,

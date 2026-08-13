@@ -20,26 +20,28 @@ import os
 import random
 import sys
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import numpy as np
-import soundfile as sf
-import torch
-from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
-from tqdm import tqdm
+import numpy as np  # noqa: E402
+import soundfile as sf  # noqa: E402
+import torch  # noqa: E402
+import torch.amp  # noqa: E402
+import torch.cuda  # noqa: E402
+import torch.nn  # noqa: E402
+import torch.optim  # noqa: E402
+from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler  # noqa: E402
+from tqdm import tqdm  # noqa: E402
 
-from config import DEFAULT_RECOGNITION_CONFIG
-from dataset.hiragana_dataset import HiraganaDataset
-from evaluation.evaluator import compute_evaluation_result
-from preprocessing.audio_augmentor import AudioAugmentor
+from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
+from dataset.hiragana_dataset import HiraganaDataset  # noqa: E402
+from evaluation.evaluator import compute_evaluation_result  # noqa: E402
+from preprocessing.audio_augmentor import AudioAugmentor  # noqa: E402
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -130,7 +132,7 @@ def fix_seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
-from utils.split_helper import safe_stratified_split
+from utils.split_helper import safe_stratified_split  # noqa: E402
 
 
 def split_dataset(
@@ -215,9 +217,7 @@ def build_collate_fn(feature_extractor: Any, sample_rate: int) -> Wav2Vec2Collat
     return Wav2Vec2CollateFn(feature_extractor, sample_rate)
 
 
-def move_batch(
-    batch: dict[str, torch.Tensor], device: torch.device
-) -> dict[str, torch.Tensor]:
+def move_batch(batch: dict[str, torch.Tensor], device: torch.device) -> dict[str, torch.Tensor]:
     return {key: value.to(device) for key, value in batch.items()}
 
 
@@ -239,13 +239,13 @@ def train_epoch(
     total = 0
     progress = tqdm(loader)
 
-    use_amp = (scaler is not None and device.type == "cuda")
+    use_amp = scaler is not None and device.type == "cuda"
 
     for batch in progress:
         batch = move_batch(batch, device)
 
         optimizer.zero_grad()
-        if use_amp:
+        if use_amp and scaler is not None:
             with torch.amp.autocast("cuda"):
                 outputs = model(**batch)
                 if loss_fct is not None:
@@ -295,7 +295,7 @@ def validate(
     all_true: list[str] = []
     all_pred: list[str] = []
 
-    use_amp = (device.type == "cuda")
+    use_amp = device.type == "cuda"
 
     with torch.no_grad():
         for batch in loader:
@@ -314,22 +314,17 @@ def validate(
             correct += (pred == batch_labels).sum().item()
             total += batch_labels.size(0)
 
-            for true_index, pred_index in zip(
-                batch_labels.cpu().numpy(), pred.cpu().numpy()
-            ):
+            for true_index, pred_index in zip(batch_labels.cpu().numpy(), pred.cpu().numpy()):
                 all_true.append(labels[int(true_index)])
                 all_pred.append(labels[int(pred_index)])
 
     return total_loss / max(len(loader), 1), correct / max(total, 1), all_true, all_pred
 
 
+from utils.plot_saver import save_history_plots  # noqa: E402
 
-from utils.plot_saver import save_history_plots
 
-
-def save_plots(
-    history: dict[str, list[float]], loss_path: Path, accuracy_path: Path
-) -> None:
+def save_plots(history: dict[str, list[float]], loss_path: Path, accuracy_path: Path) -> None:
     save_history_plots(
         history=history,
         model_name="wav2vec2",
@@ -452,7 +447,7 @@ def ensure_sharded_safetensors(
             "Sharding Wav2Vec2 checkpoints requires the 'safetensors' package."
         ) from exc
 
-    max_shard_bytes = max(1, int(max_shard_size_mb)) * 1024 * 1024
+    max_shard_bytes = max(1, max_shard_size_mb) * 1024 * 1024
     if source_path.stat().st_size <= max_shard_bytes:
         return [source_path]
 
@@ -524,9 +519,7 @@ def load_local_safetensors_streaming(
     try:
         from safetensors import safe_open
     except ImportError as exc:
-        raise ImportError(
-            "Streaming Wav2Vec2 loading requires the 'safetensors' package."
-        ) from exc
+        raise ImportError("Streaming Wav2Vec2 loading requires the 'safetensors' package.") from exc
 
     tensor_files = get_local_safetensor_files(model_source)
     if len(tensor_files) == 1 and tensor_files[0].name == "model.safetensors":
@@ -561,8 +554,7 @@ def load_local_safetensors_streaming(
     loaded_set = set(loaded)
     missing = [key for key in state_dict if key not in loaded_set]
     logger.info(
-        "Streaming safetensors load finished: loaded=%d, missing=%d, "
-        "mismatched=%d, unexpected=%d",
+        "Streaming safetensors load finished: loaded=%d, missing=%d, mismatched=%d, unexpected=%d",
         len(loaded),
         len(missing),
         len(mismatched),
@@ -582,9 +574,7 @@ def instantiate_model_for_streaming(model_class: Any, config: Any) -> torch.nn.M
             with torch.device("meta"):
                 model = model_class(config)
             model = model.to_empty(device=torch.device("cpu"))
-            logger.info(
-                "Instantiated Wav2Vec2 model with meta tensors for low-memory loading."
-            )
+            logger.info("Instantiated Wav2Vec2 model with meta tensors for low-memory loading.")
             return model
         except Exception as exc:
             if is_pagefile_or_memory_error(exc):
@@ -607,8 +597,7 @@ def initialize_unloaded_classification_head(
 
     for module_name in ("projector", "classifier"):
         if not any(
-            name == module_name or name.startswith(f"{module_name}.")
-            for name in unloaded_names
+            name == module_name or name.startswith(f"{module_name}.") for name in unloaded_names
         ):
             continue
 
@@ -701,7 +690,11 @@ def freeze_wav2vec2_layers(
         model.freeze_feature_encoder()
         logger.info("Wav2Vec2 feature encoder (7-layer CNN) is frozen.")
 
-    if freeze_transformer_layers > 0 and hasattr(model, "wav2vec2") and hasattr(model.wav2vec2, "encoder"):
+    if (
+        freeze_transformer_layers > 0
+        and hasattr(model, "wav2vec2")
+        and hasattr(model.wav2vec2, "encoder")
+    ):
         layers = model.wav2vec2.encoder.layers
         num_total_layers = len(layers)
         num_frozen = min(freeze_transformer_layers, num_total_layers)
@@ -716,15 +709,19 @@ def freeze_wav2vec2_layers(
         )
 
 
-from preprocessing.dataset_builder import ensure_merged_and_preprocessed
+from preprocessing.dataset_builder import ensure_merged_and_preprocessed  # noqa: E402
 
 
 def train(args: argparse.Namespace) -> None:
     ensure_merged_and_preprocessed(skip_prep=getattr(args, "skip_prep", False))
 
     resume_from_arg = getattr(args, "resume_from", None)
-    best_model_path = getattr(args, "best_model_path", DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir)
-    last_model_path = getattr(args, "last_model_path", DEFAULT_RECOGNITION_CONFIG.wav2vec2_last_model_dir)
+    best_model_path = getattr(
+        args, "best_model_path", DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir
+    )
+    last_model_path = getattr(
+        args, "last_model_path", DEFAULT_RECOGNITION_CONFIG.wav2vec2_last_model_dir
+    )
     resume = getattr(args, "resume", True)
 
     target_resume_path: Path | None = None
@@ -733,16 +730,28 @@ def train(args: argparse.Namespace) -> None:
         # 1. --resume-from で明示的にパスが指定された場合: HFダウンロードをスキップし、指定パスを直接ロード
         target_resume_path = Path(resume_from_arg)
         if not target_resume_path.exists():
-            raise FileNotFoundError(f"指定されたチェックポイントが見つかりません: {target_resume_path}")
-        logger.info("📌 指定されたローカルチェックポイント (%s) から学習を再開します。(HFダウンロード送信なし)", target_resume_path)
+            raise FileNotFoundError(
+                f"指定されたチェックポイントが見つかりません: {target_resume_path}"
+            )
+        logger.info(
+            "📌 指定されたローカルチェックポイント (%s) から学習を再開します。(HFダウンロード送信なし)",
+            target_resume_path,
+        )
     elif resume:
         # 2. 通常の実行: HFからチーム共有最新モデルを自動ダウンロードして同期
         from utils.model_uploader import download_latest_team_weights_if_needed
+
         download_latest_team_weights_if_needed(model_type="wav2vec2")
 
-        if best_model_path.exists() and ((best_model_path / "model.safetensors").exists() or (best_model_path / "pytorch_model.bin").exists()):
+        if best_model_path.exists() and (
+            (best_model_path / "model.safetensors").exists()
+            or (best_model_path / "pytorch_model.bin").exists()
+        ):
             target_resume_path = best_model_path
-        elif last_model_path.exists() and ((last_model_path / "model.safetensors").exists() or (last_model_path / "pytorch_model.bin").exists()):
+        elif last_model_path.exists() and (
+            (last_model_path / "model.safetensors").exists()
+            or (last_model_path / "pytorch_model.bin").exists()
+        ):
             target_resume_path = last_model_path
 
     seed = getattr(args, "seed", 42)
@@ -752,7 +761,9 @@ def train(args: argparse.Namespace) -> None:
         else DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir
     )
     sample_rate = getattr(args, "sample_rate", DEFAULT_RECOGNITION_CONFIG.sample_rate)
-    target_length_seconds = getattr(args, "target_length_seconds", DEFAULT_RECOGNITION_CONFIG.target_length_seconds)
+    target_length_seconds = getattr(
+        args, "target_length_seconds", DEFAULT_RECOGNITION_CONFIG.target_length_seconds
+    )
     top_db = getattr(args, "top_db", DEFAULT_RECOGNITION_CONFIG.top_db)
     val_rate = getattr(args, "val_rate", 0.2)
     target_acc = getattr(args, "target_acc", 0.97)
@@ -763,13 +774,13 @@ def train(args: argparse.Namespace) -> None:
         num_workers,
         os.cpu_count() or 1,
     )
-    pretrained_model_name = getattr(args, "pretrained_model_name", DEFAULT_RECOGNITION_CONFIG.wav2vec2_pretrained_model_name)
+    pretrained_model_name = getattr(
+        args, "pretrained_model_name", DEFAULT_RECOGNITION_CONFIG.wav2vec2_pretrained_model_name
+    )
     weight_decay = getattr(args, "weight_decay", 0.01)
     warmup_ratio = getattr(args, "warmup_ratio", 0.1)
     max_grad_norm = getattr(args, "max_grad_norm", 1.0)
     freeze_feature_encoder = True
-    loss_plot_path = None
-    accuracy_plot_path = None
 
     fix_seed(seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -793,13 +804,17 @@ def train(args: argparse.Namespace) -> None:
     class_weight_power = getattr(args, "class_weight_power", 0.5)
 
     if augment:
-        logger.info("Audio Data Augmentation (ノイズ加算・音量変調・タイムシフト) を訓練データセットに有効化しました。")
+        logger.info(
+            "Audio Data Augmentation (ノイズ加算・音量変調・タイムシフト) を訓練データセットに有効化しました。"
+        )
         train_augmentor = AudioAugmentor()
         train_dataset = AugmentedSubset(train_dataset, train_augmentor)
     else:
         train_dataset = AugmentedSubset(train_dataset, augmentor=None)
 
-    raw_train_subset = train_dataset.subset if isinstance(train_dataset, AugmentedSubset) else train_dataset
+    raw_train_subset = (
+        train_dataset.subset if isinstance(train_dataset, AugmentedSubset) else train_dataset
+    )
     train_labels = [dataset.data[i][1] for i in raw_train_subset.indices]
 
     loss_fct: torch.nn.Module | None = None
@@ -815,13 +830,19 @@ def train(args: argparse.Namespace) -> None:
         )
 
     has_weights = target_resume_path is not None
-    labels_matched = is_labels_compatible(target_resume_path, dataset.labels) if target_resume_path else False
+    labels_matched = (
+        is_labels_compatible(target_resume_path, dataset.labels) if target_resume_path else False
+    )
     model_source = pretrained_model_name
 
     if target_resume_path and has_weights:
         model_source = str(target_resume_path)
         if labels_matched:
-            logger.info("チーム共有/ローカルチェックポイント (%s) から学習を開始します。(全 %d クラス)", model_source, len(dataset.labels))
+            logger.info(
+                "チーム共有/ローカルチェックポイント (%s) から学習を開始します。(全 %d クラス)",
+                model_source,
+                len(dataset.labels),
+            )
         else:
             logger.info(
                 "💡 旧モデル (%s) の音声特徴表現 (CNN+Transformer) を引き継ぎつつ、分類層を新しいクラス数 (%dクラス) に自動拡張してファインチューニングを開始します。",
@@ -856,7 +877,7 @@ def train(args: argparse.Namespace) -> None:
     train_sampler = None
     if use_balanced_sampler:
         label_counts = Counter(train_labels)
-        class_weights_dict = {lbl: 1.0 / (count ** 0.5) for lbl, count in label_counts.items()}
+        class_weights_dict = {lbl: 1.0 / (count**0.5) for lbl, count in label_counts.items()}
         sample_weights = [class_weights_dict[lbl] for lbl in train_labels]
         sample_weights_tensor = torch.tensor(sample_weights, dtype=torch.float)
         train_sampler = WeightedRandomSampler(
@@ -864,7 +885,9 @@ def train(args: argparse.Namespace) -> None:
             num_samples=len(sample_weights_tensor),
             replacement=True,
         )
-        logger.info("⚖️ マイルド全クラスサンプラー (WeightedRandomSampler: power=0.5) を有効化しました。aiueo の正解率を維持しつつマイナー音もバランスよく学習します。")
+        logger.info(
+            "⚖️ マイルド全クラスサンプラー (WeightedRandomSampler: power=0.5) を有効化しました。aiueo の正解率を維持しつつマイナー音もバランスよく学習します。"
+        )
 
     pin_memory = device.type == "cuda"
     persistent_workers = num_workers > 0
@@ -933,9 +956,7 @@ def train(args: argparse.Namespace) -> None:
             _, val_acc, val_true, val_pred = validate(
                 baseline_model, val_loader, device, labels=dataset.labels
             )
-            init_result = compute_evaluation_result(
-                val_true, val_pred, labels=dataset.labels
-            )
+            init_result = compute_evaluation_result(val_true, val_pred, labels=dataset.labels)
             best_macro_f1 = init_result.overall.macro_f1
             logger.info(
                 "🏆 チーム最高精度モデル (%s) のベースラインスコア - Val Acc: %.4f, Val Macro-F1: %.4f",
@@ -948,7 +969,6 @@ def train(args: argparse.Namespace) -> None:
                 torch.cuda.empty_cache()
         except Exception as e:
             logger.warning("既存ベストモデルの事前評価に失敗しました: %s", e)
-
 
     history = {
         "train_loss": [],
@@ -981,9 +1001,7 @@ def train(args: argparse.Namespace) -> None:
             val_loss, val_acc, val_true, val_pred = validate(
                 model, val_loader, device, labels=dataset.labels
             )
-            eval_result = compute_evaluation_result(
-                val_true, val_pred, labels=dataset.labels
-            )
+            eval_result = compute_evaluation_result(val_true, val_pred, labels=dataset.labels)
             macro_f1 = eval_result.overall.macro_f1
 
             history["train_loss"].append(train_loss)
@@ -1039,9 +1057,7 @@ def train(args: argparse.Namespace) -> None:
 
     except KeyboardInterrupt:
         interrupted = True
-        logger.warning(
-            "⚠️ ユーザー操作 (Ctrl+C / SIGINT) により学習が途中で中断されました。"
-        )
+        logger.warning("⚠️ ユーザー操作 (Ctrl+C / SIGINT) により学習が途中で中断されました。")
 
     logger.info("💾 チェックポイント保存中: 最新のモデル状態を %s に保存します...", last_model_path)
     save_pretrained_model(
@@ -1077,6 +1093,7 @@ def train(args: argparse.Namespace) -> None:
         try:
             logger.info("学習完了後の Wav2Vec2 ONNX エクスポート ＆ INT8 量子化を開始します...")
             from models.wav2vec2.export_onnx import export_and_benchmark
+
             export_and_benchmark(model_dir=best_model_path)
         except Exception as e:
             logger.error("ONNX 自動エクスポート中にエラーが発生しました: %s", e)
@@ -1084,9 +1101,12 @@ def train(args: argparse.Namespace) -> None:
     # Hugging Face 自動アップロード判定 (チーム最高精度を更新した場合のみ)
     if is_best_updated:
         from utils.model_uploader import upload_weights_to_hf
+
         upload_weights_to_hf(model_type="wav2vec2")
     else:
-        logger.info("チーム最高精度が更新されなかったため、Hugging Face へのアップロードをスキップします。")
+        logger.info(
+            "チーム最高精度が更新されなかったため、Hugging Face へのアップロードをスキップします。"
+        )
 
 
 def build_parser() -> argparse.ArgumentParser:

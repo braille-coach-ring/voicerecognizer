@@ -11,14 +11,9 @@ Mel / Waveform Prepended Wav2Vec2 ONNX Export & Quantization Script
   uv run python models/wav2vec2/export_mel_prepended_onnx.py
 """
 
-import argparse
-import json
 import logging
-import os
 import sys
-import time
 from pathlib import Path
-from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
@@ -27,16 +22,13 @@ if str(PROJECT_ROOT) not in sys.path:
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-import numpy as np
-import torch
-import torch.nn as nn
-from transformers import AutoConfig, Wav2Vec2ForSequenceClassification
+import torch  # noqa: E402
+import torch.nn as nn  # noqa: E402
+from transformers import AutoConfig, Wav2Vec2ForSequenceClassification  # noqa: E402
 
-from config import DEFAULT_RECOGNITION_CONFIG
+from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -73,15 +65,12 @@ def export_mel_prepended_onnx(
 ) -> None:
     """前処理内包型 Wav2Vec2 モデルを ONNX フォーマットへエクスポートします。"""
     config_path = model_dir / "config.json"
-    labels_path = model_dir / "labels.json"
 
     if not config_path.exists():
         raise FileNotFoundError(f"Model config.json not found: {config_path}")
 
     config = AutoConfig.from_pretrained(model_dir)
-    base_model = Wav2Vec2ForSequenceClassification.from_pretrained(
-        model_dir, config=config
-    )
+    base_model = Wav2Vec2ForSequenceClassification.from_pretrained(model_dir, config=config)
     base_model.eval()
 
     prepended_model = WaveformPrependedWav2Vec2(base_model)

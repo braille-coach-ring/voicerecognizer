@@ -30,7 +30,6 @@ def migrate_collected_dataset() -> None:
 
     metadata_file = target_dir / "metadata.csv"
     old_log_file = collected_dir / "predicted_text.txt"
-    old_metadata_file = collected_dir / "metadata.csv"
 
     # 旧 predicted_text.txt の読み込み
     records: dict[str, str] = {}
@@ -48,6 +47,7 @@ def migrate_collected_dataset() -> None:
     app_log = DEFAULT_RECOGNITION_CONFIG.log_path
     if app_log.exists():
         import re
+
         with open(app_log, "r", encoding="utf-8", errors="ignore") as f:
             log_lines = f.readlines()
         for i, line in enumerate(log_lines):

@@ -8,6 +8,7 @@ import numpy as np
 import time
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,7 +25,9 @@ class AudioPipeline:
         self.vad = vad or VoiceActivityDetector()
         self.output_worker = output_worker or OutputWorker()
         self.datetime = datetime
-        logger.info(f"AudioPipelineの初期化が完了: {self.recognizer} / {self.audio_capture} / {self.vad} / {self.output_worker}")
+        logger.info(
+            f"AudioPipelineの初期化が完了: {self.recognizer} / {self.audio_capture} / {self.vad} / {self.output_worker}"
+        )
 
     def run(self, audio=None):
         if audio is None:
@@ -32,16 +35,8 @@ class AudioPipeline:
             audio = self.audio_capture.capture_once()
             logger.info("録音終了: %s", time.perf_counter())
 
-            max_vol = (
-                float(np.max(np.abs(audio)))
-                if audio is not None and audio.size
-                else 0.0
-            )
-            rms_vol = (
-                float(np.sqrt(np.mean(audio**2)))
-                if audio is not None and audio.size
-                else 0.0
-            )
+            max_vol = float(np.max(np.abs(audio))) if audio is not None and audio.size else 0.0
+            rms_vol = float(np.sqrt(np.mean(audio**2))) if audio is not None and audio.size else 0.0
             is_sp = self.vad.is_speech(audio)
             logger.info(
                 f"VAD判定中 (録音最大音量: {max_vol:.4f}/閾値: {self.vad.silence_threshold:.4f}, RMS音量: {rms_vol:.4f}/閾値: {getattr(self.vad, 'rms_threshold', 0.0):.4f}) -> 発話検知: {is_sp}"
@@ -83,6 +78,7 @@ class AudioPipeline:
         生の録音波形 (np.ndarray)、推論予測テキスト (str)、および計測統計情報 (dict) のタプルを返します。
         """
         from datetime import timedelta
+
         logger.info("音声を待機中... マイクに向かってお話しください（Ctrl+Cで終了）")
         while True:
             try:

@@ -104,7 +104,7 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
 
             confidence_str = ""
             if "confidence" in stats:
-                confidence_str = f" (確信度: {stats['confidence']*100:.1f}%)"
+                confidence_str = f" (確信度: {stats['confidence'] * 100:.1f}%)"
 
             print("\n" + "─" * 60)
             print(f"🤖 予測結果: 【 {disp_pred} 】{confidence_str}")
@@ -131,7 +131,7 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
             print("⏱️  詳細タイムライン & 処理時間計測内訳:")
             print(f"  ・話し始め時刻   : {start_dt_str} (録音波形内: {onset_ms:.1f} ms)")
             print(f"  ・話し終わり時刻 : {end_dt_str} (録音波形内: {offset_ms:.1f} ms)")
-            print(f"  ・発声持続時間   : {speech_dur_ms:.1f} ms ({speech_dur_ms/1000.0:.2f}秒)")
+            print(f"  ・発声持続時間   : {speech_dur_ms:.1f} ms ({speech_dur_ms / 1000.0:.2f}秒)")
             print(f"  ・前処理時間     : {prep_ms:5.1f} ms (VADトリミング・特徴量抽出)")
             print(f"  ・推論時間       : {inf_ms:5.1f} ms (モデル推論)")
             print(f"  ・合計処理時間   : {total_ms:5.1f} ms (前処理 + 推論)")
@@ -184,13 +184,13 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
                     ground_truth = HIRAGANA_TO_ROMAJI.get(h_char, user_input)
                     break
                 else:
-                    print("⚠️ 無効な入力です。ひらがな（例: 「か」「きゃ」）またはローマ字（例: 「ka」「kya」）を入力してください。")
+                    print(
+                        "⚠️ 無効な入力です。ひらがな（例: 「か」「きゃ」）またはローマ字（例: 「ka」「kya」）を入力してください。"
+                    )
 
             gt_hiragana = ROMAJI_TO_HIRAGANA.get(ground_truth, ground_truth)
             disp_gt = (
-                f"{ground_truth} ({gt_hiragana})"
-                if gt_hiragana != ground_truth
-                else ground_truth
+                f"{ground_truth} ({gt_hiragana})" if gt_hiragana != ground_truth else ground_truth
             )
 
             # データ保存 (metadata.csv と .wav)
@@ -201,7 +201,9 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
                 timestamp=datetime.datetime.now().timestamp(),
                 sample_rate=pipeline.audio_capture.sample_rate,
             )
-            print(f"✅ 保存完了: 予測=「{disp_pred}」, 正解=「{disp_gt}」 (データセットに蓄積されました)")
+            print(
+                f"✅ 保存完了: 予測=「{disp_pred}」, 正解=「{disp_gt}」 (データセットに蓄積されました)"
+            )
 
     except KeyboardInterrupt:
         print("\n\nユーザー操作によりセッションを停止しました。お疲れ様でした！")

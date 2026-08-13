@@ -11,8 +11,7 @@ from preprocessing.audio_preprocessor import AudioPreprocessor
 class Wav2Vec2Processor:
     def __init__(
         self,
-        model_name_or_path: str
-        | Path = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir,
+        model_name_or_path: str | Path = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir,
         sample_rate: int = DEFAULT_RECOGNITION_CONFIG.sample_rate,
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
         top_db: float = DEFAULT_RECOGNITION_CONFIG.top_db,
@@ -51,6 +50,4 @@ class Wav2Vec2Processor:
                 "Install project dependencies with: uv sync"
             ) from exc
 
-        self.feature_extractor = AutoFeatureExtractor.from_pretrained(
-            self.model_name_or_path
-        )
+        self.feature_extractor = AutoFeatureExtractor.from_pretrained(self.model_name_or_path)

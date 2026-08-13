@@ -12,4 +12,3 @@ class RecognitionStrategy(ABC):
         import asyncio
 
         return await asyncio.to_thread(self.recognize, audio)
-

@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 
 from config import DEFAULT_RECOGNITION_CONFIG

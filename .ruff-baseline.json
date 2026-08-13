@@ -1,0 +1,2011 @@
+[
+  {
+    "filename": "__init__.py",
+    "code": "RUF022",
+    "line": 40,
+    "column": 11,
+    "message": "`__all__` is not sorted"
+  },
+  {
+    "filename": "config.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 20,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 25,
+    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 30,
+    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 36,
+    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 41,
+    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 57,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "UP035",
+    "line": 13,
+    "column": 1,
+    "message": "`typing.Dict` is deprecated, use `dict` instead"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "UP035",
+    "line": 13,
+    "column": 1,
+    "message": "`typing.Tuple` is deprecated, use `tuple` instead"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "UP006",
+    "line": 16,
+    "column": 15,
+    "message": "Use `tuple` instead of `Tuple` for type annotation"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "UP006",
+    "line": 66,
+    "column": 16,
+    "message": "Use `tuple` instead of `Tuple` for type annotation"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "UP006",
+    "line": 90,
+    "column": 19,
+    "message": "Use `tuple` instead of `Tuple` for type annotation"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "UP006",
+    "line": 99,
+    "column": 14,
+    "message": "Use `tuple` instead of `Tuple` for type annotation"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "UP006",
+    "line": 136,
+    "column": 15,
+    "message": "Use `tuple` instead of `Tuple` for type annotation"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "UP006",
+    "line": 139,
+    "column": 22,
+    "message": "Use `tuple` instead of `Tuple` for type annotation"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "RUF003",
+    "line": 143,
+    "column": 14,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "RUF003",
+    "line": 143,
+    "column": 22,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "UP006",
+    "line": 144,
+    "column": 21,
+    "message": "Use `dict` instead of `Dict` for type annotation"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "RUF003",
+    "line": 258,
+    "column": 7,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "RUF003",
+    "line": 258,
+    "column": 25,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "config_labels.py",
+    "code": "UP006",
+    "line": 259,
+    "column": 21,
+    "message": "Use `dict` instead of `Dict` for type annotation"
+  },
+  {
+    "filename": "core/async_pipeline.py",
+    "code": "I001",
+    "line": 9,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "core/async_pipeline.py",
+    "code": "UP035",
+    "line": 11,
+    "column": 1,
+    "message": "Import from `collections.abc` instead: `AsyncGenerator`, `Callable`"
+  },
+  {
+    "filename": "core/async_pipeline.py",
+    "code": "UP043",
+    "line": 26,
+    "column": 23,
+    "message": "Unnecessary default type arguments"
+  },
+  {
+    "filename": "core/factory/recognizer_factory.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "core/services/audio_pipeline.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "core/services/audio_pipeline.py",
+    "code": "RUF001",
+    "line": 63,
+    "column": 47,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "core/services/audio_pipeline.py",
+    "code": "RUF001",
+    "line": 63,
+    "column": 61,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "core/services/audio_pipeline.py",
+    "code": "RUF001",
+    "line": 82,
+    "column": 47,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "core/services/audio_pipeline.py",
+    "code": "RUF001",
+    "line": 82,
+    "column": 57,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "core/services/audio_pipeline.py",
+    "code": "SIM102",
+    "line": 86,
+    "column": 17,
+    "message": "Use a single `if` statement instead of nested `if` statements"
+  },
+  {
+    "filename": "core/services/voice_recognizer.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "dataset/hiragana_dataset.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "dataset/hiragana_dataset.py",
+    "code": "UP015",
+    "line": 51,
+    "column": 40,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "dataset/hiragana_dataset.py",
+    "code": "UP015",
+    "line": 96,
+    "column": 40,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF002",
+    "line": 24,
+    "column": 10,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF002",
+    "line": 24,
+    "column": 14,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF002",
+    "line": 76,
+    "column": 45,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF002",
+    "line": 76,
+    "column": 59,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "UP015",
+    "line": 143,
+    "column": 36,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 169,
+    "column": 41,
+    "message": "String contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 169,
+    "column": 47,
+    "message": "String contains ambiguous `∪` (UNION). Did you mean `U` (LATIN CAPITAL LETTER U)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 170,
+    "column": 43,
+    "message": "String contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 170,
+    "column": 49,
+    "message": "String contains ambiguous `∪` (UNION). Did you mean `U` (LATIN CAPITAL LETTER U)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "UP015",
+    "line": 173,
+    "column": 36,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 184,
+    "column": 56,
+    "message": "String contains ambiguous `∪` (UNION). Did you mean `U` (LATIN CAPITAL LETTER U)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "UP015",
+    "line": 203,
+    "column": 36,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF002",
+    "line": 334,
+    "column": 27,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF002",
+    "line": 334,
+    "column": 37,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF003",
+    "line": 347,
+    "column": 10,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF003",
+    "line": 347,
+    "column": 16,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 367,
+    "column": 121,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 367,
+    "column": 128,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 382,
+    "column": 47,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 382,
+    "column": 60,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 382,
+    "column": 65,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 382,
+    "column": 81,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF003",
+    "line": 410,
+    "column": 26,
+    "message": "Comment contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF003",
+    "line": 435,
+    "column": 25,
+    "message": "Comment contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF003",
+    "line": 461,
+    "column": 23,
+    "message": "Comment contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "C414",
+    "line": 465,
+    "column": 18,
+    "message": "Unnecessary `list()` call within `sorted()`"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "C401",
+    "line": 465,
+    "column": 30,
+    "message": "Unnecessary generator (rewrite as a set comprehension)"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 497,
+    "column": 117,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 497,
+    "column": 124,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 497,
+    "column": 125,
+    "message": "String contains ambiguous `！` (FULLWIDTH EXCLAMATION MARK). Did you mean `!` (EXCLAMATION MARK)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "W293",
+    "line": 568,
+    "column": 1,
+    "message": "Blank line contains whitespace"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 743,
+    "column": 66,
+    "message": "String contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 781,
+    "column": 32,
+    "message": "String contains ambiguous `＼` (FULLWIDTH REVERSE SOLIDUS). Did you mean `\\` (REVERSE SOLIDUS)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "RUF001",
+    "line": 793,
+    "column": 30,
+    "message": "String contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "evaluation/evaluator.py",
+    "code": "W293",
+    "line": 795,
+    "column": 1,
+    "message": "Blank line contains whitespace"
+  },
+  {
+    "filename": "main.py",
+    "code": "I001",
+    "line": 9,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF002",
+    "line": 65,
+    "column": 15,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF002",
+    "line": 65,
+    "column": 18,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "N806",
+    "line": 69,
+    "column": 5,
+    "message": "Variable `SHORTCUT_CHOICES` in function should be lowercase"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 79,
+    "column": 26,
+    "message": "String contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 79,
+    "column": 35,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 79,
+    "column": 46,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 82,
+    "column": 25,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 82,
+    "column": 43,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 83,
+    "column": 34,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 83,
+    "column": 45,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF003",
+    "line": 147,
+    "column": 23,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF003",
+    "line": 147,
+    "column": 26,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 152,
+    "column": 38,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 152,
+    "column": 49,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 152,
+    "column": 57,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 152,
+    "column": 70,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 161,
+    "column": 47,
+    "message": "String contains ambiguous `！` (FULLWIDTH EXCLAMATION MARK). Did you mean `!` (EXCLAMATION MARK)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 188,
+    "column": 41,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 188,
+    "column": 52,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 188,
+    "column": 60,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 188,
+    "column": 73,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "main.py",
+    "code": "RUF001",
+    "line": 209,
+    "column": 49,
+    "message": "String contains ambiguous `！` (FULLWIDTH EXCLAMATION MARK). Did you mean `!` (EXCLAMATION MARK)?"
+  },
+  {
+    "filename": "models/cnn/evaluate.py",
+    "code": "C420",
+    "line": 41,
+    "column": 19,
+    "message": "Unnecessary dict comprehension for iterable; use `dict.fromkeys` instead"
+  },
+  {
+    "filename": "models/cnn/evaluate.py",
+    "code": "C420",
+    "line": 42,
+    "column": 21,
+    "message": "Unnecessary dict comprehension for iterable; use `dict.fromkeys` instead"
+  },
+  {
+    "filename": "models/cnn/evaluate.py",
+    "code": "RUF001",
+    "line": 55,
+    "column": 26,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "models/cnn/evaluate.py",
+    "code": "RUF001",
+    "line": 55,
+    "column": 31,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "models/cnn/hiragana_cnn.py",
+    "code": "B008",
+    "line": 7,
+    "column": 36,
+    "message": "Do not perform function call `len` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable"
+  },
+  {
+    "filename": "models/cnn/train.py",
+    "code": "I001",
+    "line": 24,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "models/cnn/train.py",
+    "code": "B905",
+    "line": 121,
+    "column": 33,
+    "message": "`zip()` without an explicit `strict=` parameter"
+  },
+  {
+    "filename": "models/wav2vec2/export_onnx.py",
+    "code": "UP015",
+    "line": 164,
+    "column": 36,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "models/wav2vec2/export_onnx.py",
+    "code": "SIM105",
+    "line": 193,
+    "column": 9,
+    "message": "Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "RUF002",
+    "line": 5,
+    "column": 32,
+    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "I001",
+    "line": 13,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "RUF002",
+    "line": 148,
+    "column": 10,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "RUF002",
+    "line": 148,
+    "column": 25,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "RUF002",
+    "line": 171,
+    "column": 16,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "RUF002",
+    "line": 171,
+    "column": 41,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "B905",
+    "line": 317,
+    "column": 43,
+    "message": "`zip()` without an explicit `strict=` parameter"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "I001",
+    "line": 364,
+    "column": 9,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "SIM118",
+    "line": 485,
+    "column": 13,
+    "message": "Use `key in dict` instead of `key in dict.keys()`"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "SIM118",
+    "line": 540,
+    "column": 21,
+    "message": "Use `key in dict` instead of `key in dict.keys()`"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "RUF002",
+    "line": 683,
+    "column": 26,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "RUF002",
+    "line": 683,
+    "column": 35,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "N806",
+    "line": 788,
+    "column": 9,
+    "message": "Variable `AutoFeatureExtractor` in function should be lowercase"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "N806",
+    "line": 789,
+    "column": 9,
+    "message": "Variable `AutoConfig` in function should be lowercase"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "N806",
+    "line": 790,
+    "column": 9,
+    "message": "Variable `Wav2Vec2ForSequenceClassification` in function should be lowercase"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "RUF003",
+    "line": 1090,
+    "column": 21,
+    "message": "Comment contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "models/wav2vec2/train.py",
+    "code": "RUF001",
+    "line": 1094,
+    "column": 54,
+    "message": "String contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "preprocessing/audio_augmentor.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 39,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_augmentor.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 57,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_augmentor.py",
+    "code": "RUF002",
+    "line": 31,
+    "column": 33,
+    "message": "Docstring contains ambiguous `～` (FULLWIDTH TILDE). Did you mean `~` (TILDE)?"
+  },
+  {
+    "filename": "preprocessing/audio_augmentor.py",
+    "code": "RUF002",
+    "line": 55,
+    "column": 25,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_augmentor.py",
+    "code": "RUF002",
+    "line": 55,
+    "column": 34,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF002",
+    "line": 25,
+    "column": 11,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF002",
+    "line": 25,
+    "column": 15,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF002",
+    "line": 25,
+    "column": 32,
+    "message": "Docstring contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF002",
+    "line": 25,
+    "column": 48,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF002",
+    "line": 25,
+    "column": 67,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF002",
+    "line": 27,
+    "column": 19,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF002",
+    "line": 27,
+    "column": 31,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF002",
+    "line": 28,
+    "column": 14,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF002",
+    "line": 28,
+    "column": 20,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF002",
+    "line": 29,
+    "column": 14,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF002",
+    "line": 29,
+    "column": 32,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF001",
+    "line": 46,
+    "column": 54,
+    "message": "String contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF003",
+    "line": 97,
+    "column": 41,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF003",
+    "line": 97,
+    "column": 46,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF003",
+    "line": 109,
+    "column": 33,
+    "message": "Comment contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF002",
+    "line": 129,
+    "column": 14,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF002",
+    "line": 129,
+    "column": 18,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/audio_preprocessor.py",
+    "code": "RUF002",
+    "line": 129,
+    "column": 35,
+    "message": "Docstring contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "preprocessing/dataset_builder.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "preprocessing/dataset_builder.py",
+    "code": "UP015",
+    "line": 90,
+    "column": 42,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "preprocessing/dataset_builder.py",
+    "code": "UP015",
+    "line": 152,
+    "column": 35,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "preprocessing/dataset_builder.py",
+    "code": "RUF003",
+    "line": 185,
+    "column": 25,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/dataset_builder.py",
+    "code": "RUF003",
+    "line": 185,
+    "column": 31,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/dataset_builder.py",
+    "code": "RUF001",
+    "line": 216,
+    "column": 53,
+    "message": "String contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF002",
+    "line": 11,
+    "column": 17,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF002",
+    "line": 11,
+    "column": 26,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF002",
+    "line": 15,
+    "column": 21,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF002",
+    "line": 15,
+    "column": 27,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF002",
+    "line": 20,
+    "column": 21,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF002",
+    "line": 20,
+    "column": 30,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF002",
+    "line": 25,
+    "column": 27,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF002",
+    "line": 25,
+    "column": 34,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF002",
+    "line": 40,
+    "column": 49,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF002",
+    "line": 40,
+    "column": 57,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF003",
+    "line": 57,
+    "column": 19,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF003",
+    "line": 57,
+    "column": 23,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF003",
+    "line": 61,
+    "column": 19,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF003",
+    "line": 61,
+    "column": 42,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF003",
+    "line": 70,
+    "column": 17,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "preprocessing/threshold_calculator.py",
+    "code": "RUF003",
+    "line": 70,
+    "column": 35,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "recognizers/cnn_recognizer.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "recognizers/cnn_recognizer.py",
+    "code": "UP015",
+    "line": 41,
+    "column": 41,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "recognizers/wav2vec2_recognizer.py",
+    "code": "UP015",
+    "line": 57,
+    "column": 40,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "runtime/audio_capture.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "runtime/audio_capture.py",
+    "code": "RUF003",
+    "line": 55,
+    "column": 23,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/audio_capture.py",
+    "code": "RUF003",
+    "line": 55,
+    "column": 28,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/audio_capture.py",
+    "code": "RUF002",
+    "line": 79,
+    "column": 35,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/audio_capture.py",
+    "code": "RUF002",
+    "line": 79,
+    "column": 41,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/output_worker.py",
+    "code": "I001",
+    "line": 5,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "runtime/output_worker.py",
+    "code": "RUF003",
+    "line": 86,
+    "column": 18,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/output_worker.py",
+    "code": "RUF003",
+    "line": 86,
+    "column": 23,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF002",
+    "line": 8,
+    "column": 19,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF002",
+    "line": 8,
+    "column": 41,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF002",
+    "line": 9,
+    "column": 42,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF002",
+    "line": 9,
+    "column": 50,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "I001",
+    "line": 13,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "UP035",
+    "line": 16,
+    "column": 1,
+    "message": "Import from `collections.abc` instead: `AsyncGenerator`"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF002",
+    "line": 64,
+    "column": 17,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF002",
+    "line": 64,
+    "column": 34,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF002",
+    "line": 72,
+    "column": 35,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF002",
+    "line": 72,
+    "column": 43,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF001",
+    "line": 74,
+    "column": 48,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF001",
+    "line": 74,
+    "column": 59,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF002",
+    "line": 77,
+    "column": 33,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF002",
+    "line": 77,
+    "column": 52,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "UP043",
+    "line": 98,
+    "column": 31,
+    "message": "Unnecessary default type arguments"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF003",
+    "line": 115,
+    "column": 22,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF003",
+    "line": 115,
+    "column": 29,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF003",
+    "line": 117,
+    "column": 43,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF003",
+    "line": 117,
+    "column": 57,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF003",
+    "line": 121,
+    "column": 32,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "RUF003",
+    "line": 121,
+    "column": 52,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "SIM102",
+    "line": 126,
+    "column": 17,
+    "message": "Use a single `if` statement instead of nested `if` statements"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "UP043",
+    "line": 133,
+    "column": 39,
+    "message": "Unnecessary default type arguments"
+  },
+  {
+    "filename": "runtime/stream_listener.py",
+    "code": "SIM102",
+    "line": 168,
+    "column": 17,
+    "message": "Use a single `if` statement instead of nested `if` statements"
+  },
+  {
+    "filename": "runtime/vad.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "runtime/vad.py",
+    "code": "RUF001",
+    "line": 63,
+    "column": 85,
+    "message": "String contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "runtime/vad.py",
+    "code": "RUF001",
+    "line": 63,
+    "column": 96,
+    "message": "String contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "RUF002",
+    "line": 5,
+    "column": 13,
+    "message": "Docstring contains ambiguous `×` (MULTIPLICATION SIGN). Did you mean `x` (LATIN SMALL LETTER X)?"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "RUF002",
+    "line": 14,
+    "column": 20,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "RUF002",
+    "line": 14,
+    "column": 34,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "RUF002",
+    "line": 15,
+    "column": 28,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "RUF002",
+    "line": 15,
+    "column": 41,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "RUF002",
+    "line": 16,
+    "column": 19,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "RUF002",
+    "line": 16,
+    "column": 31,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "RUF002",
+    "line": 83,
+    "column": 13,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "RUF002",
+    "line": 83,
+    "column": 29,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "I001",
+    "line": 84,
+    "column": 5,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "SIM105",
+    "line": 315,
+    "column": 9,
+    "message": "Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "RUF003",
+    "line": 326,
+    "column": 21,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "RUF003",
+    "line": 326,
+    "column": 29,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "B007",
+    "line": 345,
+    "column": 9,
+    "message": "Loop control variable `i` not used within loop body"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "RUF003",
+    "line": 362,
+    "column": 28,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/ab_test_base_models.py",
+    "code": "RUF003",
+    "line": 362,
+    "column": 41,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/benchmark_base_models.py",
+    "code": "RUF002",
+    "line": 9,
+    "column": 15,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/benchmark_base_models.py",
+    "code": "RUF002",
+    "line": 9,
+    "column": 24,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/benchmark_base_models.py",
+    "code": "I001",
+    "line": 18,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "script/benchmark_base_models.py",
+    "code": "N803",
+    "line": 132,
+    "column": 27,
+    "message": "Argument name `X` should be lowercase"
+  },
+  {
+    "filename": "script/benchmark_base_models.py",
+    "code": "N806",
+    "line": 134,
+    "column": 5,
+    "message": "Variable `X_train` in function should be lowercase"
+  },
+  {
+    "filename": "script/benchmark_base_models.py",
+    "code": "N806",
+    "line": 134,
+    "column": 14,
+    "message": "Variable `X_test` in function should be lowercase"
+  },
+  {
+    "filename": "script/benchmark_base_models.py",
+    "code": "SIM105",
+    "line": 182,
+    "column": 9,
+    "message": "Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`"
+  },
+  {
+    "filename": "script/benchmark_dynamic_trimming.py",
+    "code": "I001",
+    "line": 8,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "script/benchmark_dynamic_trimming.py",
+    "code": "RUF003",
+    "line": 20,
+    "column": 27,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/benchmark_dynamic_trimming.py",
+    "code": "RUF003",
+    "line": 20,
+    "column": 36,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/benchmark_onnx.py",
+    "code": "B007",
+    "line": 127,
+    "column": 9,
+    "message": "Loop control variable `var` not used within loop body"
+  },
+  {
+    "filename": "script/check_quality_gate.py",
+    "code": "F401",
+    "line": 13,
+    "column": 8,
+    "message": "`os` imported but unused"
+  },
+  {
+    "filename": "script/check_quality_gate.py",
+    "code": "UP015",
+    "line": 103,
+    "column": 35,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "script/collect.py",
+    "code": "RUF001",
+    "line": 499,
+    "column": 44,
+    "message": "String contains ambiguous `？` (FULLWIDTH QUESTION MARK). Did you mean `?` (QUESTION MARK)?"
+  },
+  {
+    "filename": "script/delete_silence_file.py",
+    "code": "RUF003",
+    "line": 26,
+    "column": 5,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/delete_silence_file.py",
+    "code": "RUF003",
+    "line": 26,
+    "column": 20,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/evaluate.py",
+    "code": "RUF002",
+    "line": 9,
+    "column": 71,
+    "message": "Docstring contains ambiguous `＆` (FULLWIDTH AMPERSAND). Did you mean `&` (AMPERSAND)?"
+  },
+  {
+    "filename": "script/evaluate.py",
+    "code": "I001",
+    "line": 14,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "script/measure_audio_level.py",
+    "code": "I001",
+    "line": 11,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "script/measure_audio_level.py",
+    "code": "SIM108",
+    "line": 333,
+    "column": 5,
+    "message": "Use ternary operator `text = f\"{value:.6f}\" if abs(value) < 1.0 else f\"{value:.1f}\"` instead of `if`-`else`-block"
+  },
+  {
+    "filename": "script/merge_data.py",
+    "code": "UP015",
+    "line": 34,
+    "column": 31,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "script/migrate_collected_dataset.py",
+    "code": "UP015",
+    "line": 37,
+    "column": 33,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "script/migrate_collected_dataset.py",
+    "code": "UP015",
+    "line": 51,
+    "column": 28,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "script/migrate_collected_dataset.py",
+    "code": "UP015",
+    "line": 67,
+    "column": 34,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "script/rename.py",
+    "code": "RUF003",
+    "line": 29,
+    "column": 24,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/rename.py",
+    "code": "RUF003",
+    "line": 29,
+    "column": 29,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "script/upload_to_hf.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "test/test_threshold_calculator.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "test/test_threshold_calculator.py",
+    "code": "RUF003",
+    "line": 34,
+    "column": 16,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "test/test_threshold_calculator.py",
+    "code": "RUF003",
+    "line": 34,
+    "column": 23,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "test/test_threshold_calculator.py",
+    "code": "RUF003",
+    "line": 40,
+    "column": 17,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "test/test_threshold_calculator.py",
+    "code": "RUF003",
+    "line": 40,
+    "column": 23,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "tests/test_audio_preprocessor.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "tests/test_auto_prep_training.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "tests/test_class_weight_and_augmentation.py",
+    "code": "I001",
+    "line": 5,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "tests/test_dataset_builder.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "tests/test_evaluator.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "tests/test_evaluator.py",
+    "code": "UP015",
+    "line": 77,
+    "column": 36,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "tests/test_labels.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "tests/test_machine_id.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "tests/test_model_uploader.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "tests/test_model_uploader.py",
+    "code": "RUF003",
+    "line": 151,
+    "column": 26,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "tests/test_model_uploader.py",
+    "code": "RUF003",
+    "line": 151,
+    "column": 29,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "tests/test_vad.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "tests/test_vad.py",
+    "code": "RUF003",
+    "line": 31,
+    "column": 21,
+    "message": "Comment contains ambiguous `ノ` (KATAKANA LETTER NO). Did you mean `/` (SOLIDUS)?"
+  },
+  {
+    "filename": "tests/test_wav2vec2_lazy_dataset.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "utils/model_uploader.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "utils/model_uploader.py",
+    "code": "RUF001",
+    "line": 78,
+    "column": 14,
+    "message": "String contains ambiguous `ℹ` (INFORMATION SOURCE). Did you mean `i` (LATIN SMALL LETTER I)?"
+  },
+  {
+    "filename": "utils/model_uploader.py",
+    "code": "RUF001",
+    "line": 91,
+    "column": 22,
+    "message": "String contains ambiguous `ℹ` (INFORMATION SOURCE). Did you mean `i` (LATIN SMALL LETTER I)?"
+  },
+  {
+    "filename": "utils/model_uploader.py",
+    "code": "RUF002",
+    "line": 123,
+    "column": 15,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "utils/model_uploader.py",
+    "code": "RUF002",
+    "line": 123,
+    "column": 43,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "utils/model_uploader.py",
+    "code": "RUF003",
+    "line": 158,
+    "column": 21,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "utils/model_uploader.py",
+    "code": "RUF003",
+    "line": 158,
+    "column": 39,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "utils/model_uploader.py",
+    "code": "RUF001",
+    "line": 171,
+    "column": 34,
+    "message": "String contains ambiguous `ℹ` (INFORMATION SOURCE). Did you mean `i` (LATIN SMALL LETTER I)?"
+  },
+  {
+    "filename": "utils/model_uploader.py",
+    "code": "RUF001",
+    "line": 233,
+    "column": 34,
+    "message": "String contains ambiguous `ℹ` (INFORMATION SOURCE). Did you mean `i` (LATIN SMALL LETTER I)?"
+  },
+  {
+    "filename": "utils/plot_saver.py",
+    "code": "I001",
+    "line": 10,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "utils/plot_saver.py",
+    "code": "UP015",
+    "line": 47,
+    "column": 42,
+    "message": "Unnecessary mode argument"
+  },
+  {
+    "filename": "utils/plot_saver.py",
+    "code": "RUF059",
+    "line": 75,
+    "column": 5,
+    "message": "Unpacked variable `fig` is never used"
+  },
+  {
+    "filename": "utils/plot_saver.py",
+    "code": "C408",
+    "line": 146,
+    "column": 22,
+    "message": "Unnecessary `dict()` call (rewrite as a literal)"
+  },
+  {
+    "filename": "utils/plot_saver.py",
+    "code": "RUF003",
+    "line": 156,
+    "column": 9,
+    "message": "Comment contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "utils/plot_saver.py",
+    "code": "RUF003",
+    "line": 156,
+    "column": 13,
+    "message": "Comment contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "utils/split_helper.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "utils/split_helper.py",
+    "code": "RUF002",
+    "line": 14,
+    "column": 34,
+    "message": "Docstring contains ambiguous `（` (FULLWIDTH LEFT PARENTHESIS). Did you mean `(` (LEFT PARENTHESIS)?"
+  },
+  {
+    "filename": "utils/split_helper.py",
+    "code": "RUF002",
+    "line": 14,
+    "column": 40,
+    "message": "Docstring contains ambiguous `）` (FULLWIDTH RIGHT PARENTHESIS). Did you mean `)` (RIGHT PARENTHESIS)?"
+  },
+  {
+    "filename": "utils/split_helper.py",
+    "code": "C414",
+    "line": 34,
+    "column": 9,
+    "message": "Unnecessary `list()` call within `sorted()`"
+  }
+]

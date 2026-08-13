@@ -1,11 +1,10 @@
 from pathlib import Path
 from typing import Any
+import logging
 
 import librosa
 import numpy as np
 import torch
-import logging
-logger = logging.getLogger(__name__)
 
 from config import (
     DEFAULT_AUDIO_CONFIG,
@@ -16,6 +15,8 @@ from core.interfaces import RecognitionStrategy
 from models.cnn.hiragana_cnn import HiraganaCNN
 from preprocessing.audio_preprocessor import AudioPreprocessor
 from preprocessing.threshold_calculator import AbstractSilenceThresholdCalculator
+
+logger = logging.getLogger(__name__)
 
 
 class CNNRecognizer(RecognitionStrategy):
@@ -36,13 +37,12 @@ class CNNRecognizer(RecognitionStrategy):
         labels_json_path = self.model_path.parent / "labels.json"
         if labels_json_path.exists():
             import json
+
             with open(labels_json_path, "r", encoding="utf-8") as f:
                 self.labels = tuple(json.load(f))
         else:
             self.labels = tuple(labels)
-        self.device = device or torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu"
-        )
+        self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.audio_preprocessor = AudioPreprocessor(
             sample_rate=sample_rate,
             target_length_seconds=target_length_seconds,
@@ -58,6 +58,7 @@ class CNNRecognizer(RecognitionStrategy):
 
     def recognize(self, audio: Any) -> str:
         import time
+
         t_start = time.perf_counter()
 
         t_prep_start = time.perf_counter()
@@ -110,12 +111,7 @@ class CNNRecognizer(RecognitionStrategy):
         )
         mel = librosa.power_to_db(mel, ref=np.max)
         mel = (mel - mel.mean()) / (mel.std() + 1e-8)
-        return (
-            torch.tensor(mel, dtype=torch.float32)
-            .unsqueeze(0)
-            .unsqueeze(0)
-            .to(self.device)
-        )
+        return torch.tensor(mel, dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(self.device)
 
     def _predict(self, mel_tensor: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():

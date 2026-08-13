@@ -72,7 +72,11 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         self.input_name: str | None = None
         self.last_confidence: float | None = None
         self.last_timing_stats: dict[str, float] = {}
-        logger.info("Wav2Vec2Recognizer (ONNX) 初期化完了 (動的トリミング=%s): %s", self.dynamic_trimming, self.onnx_model_path)
+        logger.info(
+            "Wav2Vec2Recognizer (ONNX) 初期化完了 (動的トリミング=%s): %s",
+            self.dynamic_trimming,
+            self.onnx_model_path,
+        )
 
     def _prepare_input_values(self, audio: Any) -> tuple[np.ndarray, float, float]:
         """波形前処理を行い ONNX に渡す input_values とタイミング計測値を返します。"""
@@ -140,12 +144,16 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         probabilities = exp_logits / np.sum(exp_logits)
 
         top_indices = np.argsort(probabilities)[::-1][:top_k]
-        candidates = [(self._label_for_index(int(idx)), float(probabilities[idx])) for idx in top_indices]
+        candidates = [
+            (self._label_for_index(int(idx)), float(probabilities[idx])) for idx in top_indices
+        ]
         self.last_confidence = candidates[0][1] if candidates else 0.0
         return candidates
 
     def _ensure_model_loaded(self) -> None:
-        if self.session is not None and (self.input_name == "waveform" or self.feature_extractor is not None):
+        if self.session is not None and (
+            self.input_name == "waveform" or self.feature_extractor is not None
+        ):
             return
 
         if self.onnx_model_path is None or not self.onnx_model_path.exists():
@@ -159,7 +167,9 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
             import onnxruntime as ort
             from transformers import AutoFeatureExtractor
         except ImportError as exc:
-            raise ImportError("Wav2Vec2 ONNX サポートには 'onnxruntime' と 'transformers' が必要です。") from exc
+            raise ImportError(
+                "Wav2Vec2 ONNX サポートには 'onnxruntime' と 'transformers' が必要です。"
+            ) from exc
 
         # ONNX Runtime セッション初期化 (CPU 最適化)
         sess_options = ort.SessionOptions()
@@ -182,7 +192,11 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
                 self.feature_extractor = AutoFeatureExtractor.from_pretrained(
                     DEFAULT_RECOGNITION_CONFIG.wav2vec2_pretrained_model_name
                 )
-        logger.info("ONNX モデルを正常ロードしました (input_name=%s): %s", self.input_name, self.onnx_model_path)
+        logger.info(
+            "ONNX モデルを正常ロードしました (input_name=%s): %s",
+            self.input_name,
+            self.onnx_model_path,
+        )
 
     def _label_for_index(self, index: int) -> str:
         if 0 <= index < len(self.labels):

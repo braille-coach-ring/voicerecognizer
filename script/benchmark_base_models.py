@@ -34,12 +34,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from config import DEFAULT_RECOGNITION_CONFIG
-from dataset.hiragana_dataset import HiraganaDataset
+from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
+from dataset.hiragana_dataset import HiraganaDataset  # noqa: E402
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 # 比較対象のデフォルト Wav2Vec2 ベースモデル候補一覧
@@ -57,9 +55,7 @@ def load_dataset_audio_and_labels(
     dataset_dir: Path, sample_rate: int = 16000, target_length_seconds: float = 0.6
 ) -> tuple[list[np.ndarray], list[int], list[str]]:
     """データセットから全音声データとラベルインデックスを読み込む"""
-    dataset = HiraganaDataset(
-        root_dir=dataset_dir, sample_rate=sample_rate, cache_in_memory=False
-    )
+    dataset = HiraganaDataset(root_dir=dataset_dir, sample_rate=sample_rate, cache_in_memory=False)
     target_samples = int(target_length_seconds * sample_rate)
 
     waveforms = []
@@ -76,9 +72,9 @@ def load_dataset_audio_and_labels(
         if sr != sample_rate:
             import librosa
 
-            waveform = librosa.resample(
-                waveform, orig_sr=sr, target_sr=sample_rate
-            ).astype(np.float32)
+            waveform = librosa.resample(waveform, orig_sr=sr, target_sr=sample_rate).astype(
+                np.float32
+            )
 
         if target_samples > 0:
             if len(waveform) > target_samples:
@@ -133,9 +129,7 @@ def extract_features_for_model(
     return np.concatenate(all_embeddings, axis=0)
 
 
-def evaluate_linear_probe(
-    X: np.ndarray, y: list[int], seed: int = 42
-) -> dict[str, float]:
+def evaluate_linear_probe(X: np.ndarray, y: list[int], seed: int = 42) -> dict[str, float]:
     """抽出した特徴量に対して線形分類器 (Logistic Regression) を学習・評価する"""
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=seed, stratify=y
@@ -194,12 +188,8 @@ def main():
     logger.info("Using device: %s", device)
 
     logger.info("Loading audio files from %s ...", args.dataset_dir)
-    waveforms, labels, label_names = load_dataset_audio_and_labels(
-        dataset_dir=args.dataset_dir
-    )
-    logger.info(
-        "Loaded %d audio samples across %d classes.", len(waveforms), len(label_names)
-    )
+    waveforms, labels, label_names = load_dataset_audio_and_labels(dataset_dir=args.dataset_dir)
+    logger.info("Loaded %d audio samples across %d classes.", len(waveforms), len(label_names))
 
     results: list[dict[str, Any]] = []
 
@@ -259,7 +249,7 @@ def main():
     print("-" * 85)
     for rank, res in enumerate(successful_results, 1):
         print(
-            f"{rank:<5} {res['model_name']:<50} {res['accuracy']*100:<9.2f}% {res['macro_f1']:<10.4f} {res['embedding_dim']:<6} {res['elapsed_seconds']:<8.1f}"
+            f"{rank:<5} {res['model_name']:<50} {res['accuracy'] * 100:<9.2f}% {res['macro_f1']:<10.4f} {res['embedding_dim']:<6} {res['elapsed_seconds']:<8.1f}"
         )
     print("=" * 85 + "\n")
 

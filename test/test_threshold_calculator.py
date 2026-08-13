@@ -29,6 +29,7 @@ class TestThresholdCalculator(unittest.TestCase):
         )
         calc = AdaptiveSilenceThresholdCalculator(config=config)
         initial_threshold = calc.get_silence_threshold()
+        self.assertGreaterEqual(initial_threshold, 15.0)
 
         # 静かな音声（小さなノイズ）を流し込む
         quiet_audio = np.random.normal(0, 0.001, 16000)

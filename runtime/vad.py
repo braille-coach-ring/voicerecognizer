@@ -5,6 +5,7 @@ import numpy as np
 from config import DEFAULT_PREPROCESS_CONFIG, PreprocessConfig
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,14 +18,10 @@ class VoiceActivityDetector:
     ):
         cfg = config or DEFAULT_PREPROCESS_CONFIG
         self.silence_threshold = (
-            silence_threshold
-            if silence_threshold is not None
-            else cfg.vad_silence_threshold
+            silence_threshold if silence_threshold is not None else cfg.vad_silence_threshold
         )
         self.rms_threshold = (
-            rms_threshold
-            if rms_threshold is not None
-            else getattr(cfg, "vad_rms_threshold", 0.008)
+            rms_threshold if rms_threshold is not None else getattr(cfg, "vad_rms_threshold", 0.008)
         )
         self.min_speech_chunks = max(1, int(cfg.vad_min_speech_chunks))
         self.min_active_ratio = min(1.0, max(0.0, float(cfg.vad_min_active_ratio)))

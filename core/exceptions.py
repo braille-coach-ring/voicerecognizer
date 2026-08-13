@@ -18,7 +18,7 @@ class DeviceNotFoundError(VoiceRecognizerError):
     pass
 
 
-class ModelNotFoundError(VoiceRecognizerError):
+class ModelNotFoundError(VoiceRecognizerError, FileNotFoundError):
     """指定されたモデルファイルが存在しない場合に発生する例外"""
 
     pass

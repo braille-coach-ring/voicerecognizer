@@ -13,6 +13,7 @@ from config import DEFAULT_AUDIO_CONFIG, DEFAULT_RECOGNITION_CONFIG
 from utils.machine_id import get_machine_id
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -78,7 +79,9 @@ class OutputWorker:
                 f.write(f"{time_str},{file_name},{predicted_text},{ground_truth}\n")
             logger.info("テキストログを保存しました: %s", log_file.name)
         except Exception:
-            logger.error("テキストログファイルの書き込みに失敗しました: %s", log_file, exc_info=True)
+            logger.error(
+                "テキストログファイルの書き込みに失敗しました: %s", log_file, exc_info=True
+            )
 
         # 2. 音声波形（.wav）の保存
         if audio_data is not None and isinstance(audio_data, np.ndarray) and audio_data.size > 0:
@@ -87,4 +90,6 @@ class OutputWorker:
                 sf.write(wav_path, audio_data, sample_rate)
                 logger.info("音声波形ファイルを保存しました: %s", file_name)
             except Exception:
-                logger.error("音声波形ファイル(.wav)の保存に失敗しました: %s", wav_path, exc_info=True)
+                logger.error(
+                    "音声波形ファイル(.wav)の保存に失敗しました: %s", wav_path, exc_info=True
+                )

@@ -28,7 +28,11 @@ def get_remote_file_sha256_map(api: HfApi, repo_id: str, paths: list[str]) -> di
         for info in paths_info:
             rpath = info.path
             # LFS ファイルの場合は lfs.sha256、通常ファイルの場合は sha256
-            sha = getattr(info.lfs, "sha256", None) if hasattr(info, "lfs") and info.lfs else getattr(info, "sha256", None)
+            sha = (
+                getattr(info.lfs, "sha256", None)
+                if hasattr(info, "lfs") and info.lfs
+                else getattr(info, "sha256", None)
+            )
             if sha:
                 remote_map[rpath] = sha
     except Exception as e:
@@ -56,19 +60,24 @@ def download_latest_team_weights_if_needed(
     if model_type == "cnn":
         files_to_sync.extend(["best_model.pth", "labels.json"])
     elif model_type == "wav2vec2":
-        files_to_sync.extend([
-            "wav2vec2_best/config.json",
-            "wav2vec2_best/labels.json",
-            "wav2vec2_best/model.safetensors",
-            "wav2vec2_best/preprocessor_config.json",
-        ])
+        files_to_sync.extend(
+            [
+                "wav2vec2_best/config.json",
+                "wav2vec2_best/labels.json",
+                "wav2vec2_best/model.safetensors",
+                "wav2vec2_best/preprocessor_config.json",
+            ]
+        )
 
     if not files_to_sync:
         return True
 
     remote_sha_map = get_remote_file_sha256_map(api, cfg.repo_id, files_to_sync)
     if not remote_sha_map:
-        logger.info("ℹ️ リモートリポジトリ %s に事前モデルが見つからないため、ローカルのまま続行します。", cfg.repo_id)
+        logger.info(
+            "ℹ️ リモートリポジトリ %s に事前モデルが見つからないため、ローカルのまま続行します。",
+            cfg.repo_id,
+        )
         return True
 
     for rel_path in files_to_sync:
@@ -78,7 +87,10 @@ def download_latest_team_weights_if_needed(
         if local_file.exists() and remote_sha:
             local_sha = calculate_file_sha256(local_file)
             if local_sha.lower() == remote_sha.lower():
-                logger.info("ℹ️ 手元の %s はチーム共有の最新モデルと一致しています。(ダウンロード不要)", rel_path)
+                logger.info(
+                    "ℹ️ 手元の %s はチーム共有の最新モデルと一致しています。(ダウンロード不要)",
+                    rel_path,
+                )
                 continue
 
         # リモートからダウンロード
@@ -144,7 +156,11 @@ def upload_weights_to_hf(
                 return True
 
             # 事前差分判定（リモートの SHA-256 と比較）
-            remote_sha_map = {} if force_upload else get_remote_file_sha256_map(api, cfg.repo_id, [r for r, _ in files_to_check])
+            remote_sha_map = (
+                {}
+                if force_upload
+                else get_remote_file_sha256_map(api, cfg.repo_id, [r for r, _ in files_to_check])
+            )
             uploaded_any = False
 
             for rel_path, local_file in files_to_check:
@@ -155,7 +171,9 @@ def upload_weights_to_hf(
                     logger.info("ℹ️ %s はリモートと一致しているため送信をスキップします。", rel_path)
                     continue
 
-                logger.info("🚀 Hugging Face Hub (%s) へ %s をアップロード中...", cfg.repo_id, rel_path)
+                logger.info(
+                    "🚀 Hugging Face Hub (%s) へ %s をアップロード中...", cfg.repo_id, rel_path
+                )
                 api.upload_file(
                     path_or_fileobj=str(local_file),
                     path_in_repo=rel_path,
@@ -165,14 +183,21 @@ def upload_weights_to_hf(
                 uploaded_any = True
 
             if not uploaded_any:
-                logger.info("✨ すべての CNN ベストモデルファイルは既にリモートと最新同期されています。")
+                logger.info(
+                    "✨ すべての CNN ベストモデルファイルは既にリモートと最新同期されています。"
+                )
             else:
-                logger.info("✨ CNN ベストモデルのアップロードが完了しました: https://huggingface.co/%s", cfg.repo_id)
+                logger.info(
+                    "✨ CNN ベストモデルのアップロードが完了しました: https://huggingface.co/%s",
+                    cfg.repo_id,
+                )
 
         elif model_type == "wav2vec2":
             wav2vec2_best_dir = target_dir / "wav2vec2_best"
             if not wav2vec2_best_dir.exists():
-                logger.warning("Wav2Vec2 ベストモデルディレクトリ (%s) が存在しません。", wav2vec2_best_dir)
+                logger.warning(
+                    "Wav2Vec2 ベストモデルディレクトリ (%s) が存在しません。", wav2vec2_best_dir
+                )
                 return True
 
             essential_filenames = [
@@ -193,7 +218,11 @@ def upload_weights_to_hf(
                 logger.warning("Wav2Vec2 モデルのアップロード対象ファイルが見つかりません。")
                 return True
 
-            remote_sha_map = {} if force_upload else get_remote_file_sha256_map(api, cfg.repo_id, [r for r, _ in files_to_check])
+            remote_sha_map = (
+                {}
+                if force_upload
+                else get_remote_file_sha256_map(api, cfg.repo_id, [r for r, _ in files_to_check])
+            )
             uploaded_any = False
 
             for rel_path, local_file in files_to_check:
@@ -204,7 +233,9 @@ def upload_weights_to_hf(
                     logger.info("ℹ️ %s はリモートと一致しているため送信をスキップします。", rel_path)
                     continue
 
-                logger.info("🚀 Hugging Face Hub (%s) へ %s をアップロード中...", cfg.repo_id, rel_path)
+                logger.info(
+                    "🚀 Hugging Face Hub (%s) へ %s をアップロード中...", cfg.repo_id, rel_path
+                )
                 api.upload_file(
                     path_or_fileobj=str(local_file),
                     path_in_repo=rel_path,
@@ -214,12 +245,19 @@ def upload_weights_to_hf(
                 uploaded_any = True
 
             if not uploaded_any:
-                logger.info("✨ すべての Wav2Vec2 ベストモデルファイルは既にリモートと最新同期されています。")
+                logger.info(
+                    "✨ すべての Wav2Vec2 ベストモデルファイルは既にリモートと最新同期されています。"
+                )
             else:
-                logger.info("✨ Wav2Vec2 ベストモデルのアップロードが完了しました: https://huggingface.co/%s", cfg.repo_id)
+                logger.info(
+                    "✨ Wav2Vec2 ベストモデルのアップロードが完了しました: https://huggingface.co/%s",
+                    cfg.repo_id,
+                )
 
         else:
-            logger.warning("未対応の model_type: %s (cnn または wav2vec2 を指定してください)", model_type)
+            logger.warning(
+                "未対応の model_type: %s (cnn または wav2vec2 を指定してください)", model_type
+            )
 
         return True
 

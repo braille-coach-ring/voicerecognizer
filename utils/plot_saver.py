@@ -83,12 +83,39 @@ def record_and_plot_cumulative_progress(
 
     # 過去最高スコアのステップ曲線 (Cumulative Peak Curve)
     running_peak_f1 = np.maximum.accumulate(f1s)
-    ax1.step(run_ids, running_peak_f1, where="post", color="gold", linewidth=2.5, label="Cumulative Best Macro-F1 Peak", zorder=2)
+    ax1.step(
+        run_ids,
+        running_peak_f1,
+        where="post",
+        color="gold",
+        linewidth=2.5,
+        label="Cumulative Best Macro-F1 Peak",
+        zorder=2,
+    )
 
     # 上段: 4指標の長期的推移 (Acc, Macro-F1, Weighted-F1, Val Loss)
-    ax1.plot(run_ids, accs, marker="o", color="navy", linewidth=1.5, alpha=0.7, label="Val Accuracy")
-    ax1.plot(run_ids, f1s, marker="s", color="darkorange", linewidth=2.0, linestyle="--", label="Val Macro-F1")
-    ax1.plot(run_ids, wf1s, marker="^", color="forestgreen", linewidth=1.5, linestyle=":", alpha=0.7, label="Val Weighted-F1")
+    ax1.plot(
+        run_ids, accs, marker="o", color="navy", linewidth=1.5, alpha=0.7, label="Val Accuracy"
+    )
+    ax1.plot(
+        run_ids,
+        f1s,
+        marker="s",
+        color="darkorange",
+        linewidth=2.0,
+        linestyle="--",
+        label="Val Macro-F1",
+    )
+    ax1.plot(
+        run_ids,
+        wf1s,
+        marker="^",
+        color="forestgreen",
+        linewidth=1.5,
+        linestyle=":",
+        alpha=0.7,
+        label="Val Weighted-F1",
+    )
 
     # Best Model 更新ランのゴールドスター (★) ハイライト
     best_runs = [r for r in records if r.get("is_best_updated", False)]
@@ -116,7 +143,9 @@ def record_and_plot_cumulative_progress(
                 fontsize=8,
                 fontweight="bold",
                 color="darkred",
-                bbox=dict(boxstyle="round,pad=0.2", facecolor="yellow", alpha=0.3, edgecolor="goldenrod"),
+                bbox=dict(
+                    boxstyle="round,pad=0.2", facecolor="yellow", alpha=0.3, edgecolor="goldenrod"
+                ),
             )
 
     ax1.set_ylabel("Metric Score (0.0 - 1.0)", color="navy")
@@ -126,7 +155,16 @@ def record_and_plot_cumulative_progress(
 
     # ロス（右Y軸）
     ax1_loss = ax1.twinx()
-    ax1_loss.plot(run_ids, losses, marker="d", color="crimson", linewidth=1.2, linestyle="-.", alpha=0.6, label="Val Loss")
+    ax1_loss.plot(
+        run_ids,
+        losses,
+        marker="d",
+        color="crimson",
+        linewidth=1.2,
+        linestyle="-.",
+        alpha=0.6,
+        label="Val Loss",
+    )
     ax1_loss.set_ylabel("Validation Loss", color="crimson")
 
     # 凡例統合
@@ -145,7 +183,9 @@ def record_and_plot_cumulative_progress(
     plt.savefig(trend_plot_path, bbox_inches="tight")
     plt.close()
 
-    logger.info("自己改善ベストモデル更新ハイライト付きトレンドグラフを保存しました: %s", trend_plot_path)
+    logger.info(
+        "自己改善ベストモデル更新ハイライト付きトレンドグラフを保存しました: %s", trend_plot_path
+    )
     return trend_plot_path
 
 
@@ -203,9 +243,21 @@ def save_history_plots(
     if "val_acc" in history:
         plt.plot(history["val_acc"], label="Val Acc", color="navy", linewidth=2.0)
     if "val_macro_f1" in history:
-        plt.plot(history["val_macro_f1"], label="Val Macro-F1", color="darkorange", linestyle="--", linewidth=2.0)
+        plt.plot(
+            history["val_macro_f1"],
+            label="Val Macro-F1",
+            color="darkorange",
+            linestyle="--",
+            linewidth=2.0,
+        )
     if "val_weighted_f1" in history:
-        plt.plot(history["val_weighted_f1"], label="Val Weighted-F1", color="forestgreen", linestyle=":", linewidth=2.0)
+        plt.plot(
+            history["val_weighted_f1"],
+            label="Val Weighted-F1",
+            color="forestgreen",
+            linestyle=":",
+            linewidth=2.0,
+        )
     plt.xlabel("Epoch")
     plt.ylabel("Score (0.0 - 1.0)")
     plt.title(f"{model_name.upper()} Training & Validation Metrics ({timestamp})")
@@ -226,7 +278,9 @@ def save_history_plots(
     # 累積トータル progress の記録・更新
     last_val_acc = history.get("val_acc", [0.0])[-1] if history.get("val_acc") else 0.0
     last_val_f1 = history.get("val_macro_f1", [0.0])[-1] if history.get("val_macro_f1") else 0.0
-    last_val_wf1 = history.get("val_weighted_f1", [0.0])[-1] if history.get("val_weighted_f1") else 0.0
+    last_val_wf1 = (
+        history.get("val_weighted_f1", [0.0])[-1] if history.get("val_weighted_f1") else 0.0
+    )
     last_val_loss = history.get("val_loss", [0.0])[-1] if history.get("val_loss") else 0.0
     epochs_count = len(history.get("train_loss", []))
 
