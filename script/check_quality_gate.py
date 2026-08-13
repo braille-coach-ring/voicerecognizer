@@ -10,9 +10,11 @@ Usage:
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 if sys.platform == "win32":
     if hasattr(sys.stdout, "reconfigure"):
@@ -148,9 +150,10 @@ def check_ruff_baseline() -> int:
 
 def sync_mypy_baseline() -> None:
     print_status("Syncing Mypy baseline...", "MYPY-SYNC")
+    env = dict(os.environ, PYTHONIOENCODING="utf-8")
     mypy_cmd = [sys.executable, "-m", "mypy", "."]
     mypy_res = subprocess.run(
-        mypy_cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8"
+        mypy_cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8", env=env
     )
     normalized_stdout = mypy_res.stdout.replace("\\", "/")
 
@@ -162,6 +165,7 @@ def sync_mypy_baseline() -> None:
         text=True,
         capture_output=True,
         encoding="utf-8",
+        env=env,
     )
 
     if sync_res.returncode == 0:
@@ -181,9 +185,10 @@ def check_mypy_baseline() -> int:
         sync_mypy_baseline()
         return 0
 
+    env = dict(os.environ, PYTHONIOENCODING="utf-8")
     mypy_cmd = [sys.executable, "-m", "mypy", "."]
     mypy_res = subprocess.run(
-        mypy_cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8"
+        mypy_cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8", env=env
     )
     normalized_stdout = mypy_res.stdout.replace("\\", "/")
 
@@ -195,6 +200,7 @@ def check_mypy_baseline() -> int:
         text=True,
         capture_output=True,
         encoding="utf-8",
+        env=env,
     )
 
     if filter_res.stdout.strip():
@@ -210,6 +216,104 @@ def check_mypy_baseline() -> int:
     else:
         print_status("Mypy baseline check FAILED! New type errors detected.", "FAILURE", COLOR_RED)
         return filter_res.returncode
+
+
+def get_current_mypy_errors() -> list[dict[str, Any]]:
+    env = dict(os.environ, PYTHONIOENCODING="utf-8")
+    mypy_cmd = [sys.executable, "-m", "mypy", "."]
+    res = subprocess.run(
+        mypy_cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8", env=env
+    )
+    lines = res.stdout.replace("\\", "/").splitlines()
+    errors = []
+    for line in lines:
+        line_str = line.strip()
+        if ": error:" in line_str:
+            parts = line_str.split(": error:", 1)
+            file_loc = parts[0].strip()
+            msg = parts[1].strip()
+            code = "mypy"
+            if "[" in msg and msg.endswith("]"):
+                msg_body, code_part = msg.rsplit("[", 1)
+                msg = msg_body.strip()
+                code = code_part[:-1].strip()
+            file_path = file_loc.split(":")[0] if ":" in file_loc else file_loc
+            line_num = file_loc.split(":")[1] if ":" in file_loc else "1"
+            errors.append(
+                {
+                    "filename": file_path,
+                    "line": line_num,
+                    "code": code,
+                    "message": msg,
+                    "tool": "mypy",
+                }
+            )
+    return errors
+
+
+def report_cli() -> None:
+    print_status("Generating Incremental Refactoring & Baseline Error Report...", "STATS", COLOR_BLUE)
+    ruff_errs = get_current_ruff_errors()
+    mypy_errs = get_current_mypy_errors()
+
+    print(f"\n{COLOR_BLUE}=== ACTIVE BASELINE ERROR SUMMARY ==={COLOR_RESET}")
+    print(f"  Ruff Lint Errors:  {len(ruff_errs)}")
+    print(f"  Mypy Type Errors:  {len(mypy_errs)}")
+    print(f"  Total Baseline:    {len(ruff_errs) + len(mypy_errs)} remaining issues\n")
+
+    file_counts: dict[str, int] = {}
+    for err in ruff_errs:
+        fn = (
+            Path(err["filename"]).relative_to(ROOT_DIR).as_posix()
+            if Path(err["filename"]).is_absolute()
+            else err["filename"].replace("\\", "/")
+        )
+        file_counts[fn] = file_counts.get(fn, 0) + 1
+    for err in mypy_errs:
+        fn = err["filename"]
+        file_counts[fn] = file_counts.get(fn, 0) + 1
+
+    print(f"{COLOR_YELLOW}Top Files with Remaining Baseline Errors:{COLOR_RESET}")
+    sorted_files = sorted(file_counts.items(), key=lambda x: x[1], reverse=True)
+    for fn, count in sorted_files[:15]:
+        print(f"  {count:>4} errors  ->  {fn}")
+
+    print(
+        f"\n{COLOR_GREEN}Tip: Run `uv run errors` to list line numbers for step-by-step refactoring!{COLOR_RESET}\n"
+    )
+
+
+def errors_cli() -> None:
+    parser = argparse.ArgumentParser(description="List active baseline errors line-by-line")
+    parser.add_argument("--file", help="Filter errors by specific filename substring")
+    args = parser.parse_args()
+
+    print_status("Listing Active Baseline Errors for Incremental Refactoring...", "ERRORS", COLOR_BLUE)
+    ruff_errs = get_current_ruff_errors()
+    mypy_errs = get_current_mypy_errors()
+
+    print(f"\n{COLOR_YELLOW}--- Ruff Lint Errors ({len(ruff_errs)}) ---{COLOR_RESET}")
+    for err in ruff_errs:
+        fn = (
+            Path(err["filename"]).relative_to(ROOT_DIR).as_posix()
+            if Path(err["filename"]).is_absolute()
+            else err["filename"].replace("\\", "/")
+        )
+        if args.file and args.file not in fn:
+            continue
+        line = err.get("location", {}).get("row", 1)
+        code = err.get("code", "")
+        msg = err.get("message", "")
+        print(f"  {fn}:{line} [{code}] {msg}")
+
+    print(f"\n{COLOR_YELLOW}--- Mypy Type Errors ({len(mypy_errs)}) ---{COLOR_RESET}")
+    for err in mypy_errs:
+        fn = err["filename"]
+        if args.file and args.file not in fn:
+            continue
+        print(f"  {fn}:{err['line']} [{err['code']}] {err['message']}")
+
+    print()
 
 
 def fmt_cli() -> None:

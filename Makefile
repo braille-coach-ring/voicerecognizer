@@ -1,4 +1,4 @@
-.PHONY: install fmt lint check type test ci check-quality sync-baseline clean
+.PHONY: install fmt lint check type test ci check-quality sync-baseline stats errors clean
 
 install:
 	uv sync
@@ -26,6 +26,12 @@ check-quality:
 
 sync-baseline:
 	uv run python script/check_quality_gate.py --sync
+
+stats:
+	uv run stats
+
+errors:
+	uv run errors
 
 clean:
 	rm -rf .venv

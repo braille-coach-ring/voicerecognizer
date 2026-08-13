@@ -30,6 +30,8 @@ lint = "script.check_quality_gate:lint_cli"
 typecheck = "script.check_quality_gate:typecheck_cli"
 test = "script.check_quality_gate:test_cli"
 sync-baseline = "script.check_quality_gate:sync_baseline_cli"
+stats = "script.check_quality_gate:report_cli"
+errors = "script.check_quality_gate:errors_cli"
 
 [dependency-groups]
 dev = [
