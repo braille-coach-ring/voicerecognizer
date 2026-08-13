@@ -1,6 +1,6 @@
+import logging
 from pathlib import Path
 from typing import Any
-import logging
 
 import librosa
 import numpy as np
@@ -38,7 +38,7 @@ class CNNRecognizer(RecognitionStrategy):
         if labels_json_path.exists():
             import json
 
-            with open(labels_json_path, "r", encoding="utf-8") as f:
+            with open(labels_json_path, encoding="utf-8") as f:
                 self.labels = tuple(json.load(f))
         else:
             self.labels = tuple(labels)

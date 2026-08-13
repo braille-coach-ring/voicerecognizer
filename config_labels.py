@@ -10,10 +10,9 @@ Issue #20: ラベル体系の拡大（50音 ＋ 濁音 ＋ 半濁音 ＋ 拗音 
 計 105 ラベル
 """
 
-from typing import Dict, Tuple
 
 # 1. 清音 (Seion: 46 labels)
-SEION_LABELS: Tuple[str, ...] = (
+SEION_LABELS: tuple[str, ...] = (
     "a",
     "i",
     "u",
@@ -63,7 +62,7 @@ SEION_LABELS: Tuple[str, ...] = (
 )
 
 # 2. 濁音 (Dakuon: 20 labels)
-DAKUON_LABELS: Tuple[str, ...] = (
+DAKUON_LABELS: tuple[str, ...] = (
     "ga",
     "gi",
     "gu",
@@ -87,7 +86,7 @@ DAKUON_LABELS: Tuple[str, ...] = (
 )
 
 # 3. 半濁音 (Handakuon: 5 labels)
-HANDAKUON_LABELS: Tuple[str, ...] = (
+HANDAKUON_LABELS: tuple[str, ...] = (
     "pa",
     "pi",
     "pu",
@@ -96,7 +95,7 @@ HANDAKUON_LABELS: Tuple[str, ...] = (
 )
 
 # 4. 拗音 (Yoon: 33 labels)
-YOON_LABELS: Tuple[str, ...] = (
+YOON_LABELS: tuple[str, ...] = (
     "kya",
     "kyu",
     "kyo",
@@ -133,15 +132,15 @@ YOON_LABELS: Tuple[str, ...] = (
 )
 
 # 5. その他 (Other: 1 label)
-OTHER_LABELS: Tuple[str, ...] = ("other",)
+OTHER_LABELS: tuple[str, ...] = ("other",)
 
 # 全ラベル統合法則 (105 labels)
-ALL_HIRAGANA_LABELS: Tuple[str, ...] = (
+ALL_HIRAGANA_LABELS: tuple[str, ...] = (
     SEION_LABELS + DAKUON_LABELS + HANDAKUON_LABELS + YOON_LABELS + OTHER_LABELS
 )
 
 # ひらがな ➔ ローマ字（標準一意識別子）
-HIRAGANA_TO_ROMAJI: Dict[str, str] = {
+HIRAGANA_TO_ROMAJI: dict[str, str] = {
     # 清音
     "あ": "a",
     "い": "i",
@@ -256,7 +255,7 @@ HIRAGANA_TO_ROMAJI: Dict[str, str] = {
 }
 
 # ローマ字（標準一意識別子および主要エイリアス） ➔ ひらがな
-ROMAJI_TO_HIRAGANA: Dict[str, str] = {
+ROMAJI_TO_HIRAGANA: dict[str, str] = {
     # 清音
     "a": "あ",
     "i": "い",

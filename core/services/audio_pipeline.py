@@ -1,13 +1,14 @@
+import logging
+import time
+from datetime import datetime
+
+import numpy as np
+
+from config import DEFAULT_AUDIO_CONFIG
 from core.services.voice_recognizer import VoiceRecognizer
 from runtime.audio_capture import AudioCapture
 from runtime.output_worker import OutputWorker
 from runtime.vad import VoiceActivityDetector
-from config import DEFAULT_AUDIO_CONFIG
-from datetime import datetime
-import numpy as np
-import time
-
-import logging
 
 logger = logging.getLogger(__name__)
 

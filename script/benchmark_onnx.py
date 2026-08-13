@@ -124,7 +124,7 @@ def main() -> None:
         f"{'モデルファイル':<22} | {'入力形式':<10} | {'容量(MB)':<8} | {'Accuracy':<8} | {'Macro-F1':<8} | {'推論時間(ms)':<10} | {'前処理(ms)':<8}"
     )
     print("-" * 70)
-    for var, data in results.items():
+    for data in results.values():
         print(
             f"{data['filename']:<22} | "
             f"{data['input_type']:<10} | "

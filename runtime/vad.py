@@ -1,10 +1,10 @@
+import logging
 from queue import Empty, Queue
 from threading import Event
+
 import numpy as np
 
 from config import DEFAULT_PREPROCESS_CONFIG, PreprocessConfig
-
-import logging
 
 logger = logging.getLogger(__name__)
 

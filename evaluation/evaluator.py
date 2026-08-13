@@ -1,10 +1,9 @@
 import csv
-from dataclasses import asdict, dataclass, field
 import json
 import logging
-from pathlib import Path
 import sys
-
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Any
 
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
@@ -140,7 +139,7 @@ class Evaluator:
 
         self.reset()
 
-        with open(self.index_file, "r", encoding="utf-8") as f:
+        with open(self.index_file, encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 rel_path = row["filepath"]
@@ -170,7 +169,7 @@ class Evaluator:
             raise ValueError("繝｢繝・Ν縺後Ο繝ｼ繝峨＆繧後※縺・∪縺帙ｓ")
 
         rows: list[dict[str, str]] = []
-        with open(self.index_file, "r", encoding="utf-8", newline="") as f:
+        with open(self.index_file, encoding="utf-8", newline="") as f:
             reader = csv.DictReader(f)
             fieldnames = list(reader.fieldnames or [])
             if "predicted_text" not in fieldnames:
@@ -200,7 +199,7 @@ class Evaluator:
 
         self.reset()
 
-        with open(self.index_file, "r", encoding="utf-8") as f:
+        with open(self.index_file, encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 if "predicted_text" not in row or not row["predicted_text"]:
@@ -462,7 +461,7 @@ def generate_html_report(
     filter_buttons_html = f"<button class='btn-filter active' onclick='filterCategory(\"all\")'>全件 ({len(misclassified)})</button>"
 
     # 誤認識のある正解ラベルのユニークリスト
-    mis_labels = sorted(list(set(m.true_label for m in misclassified)))
+    mis_labels = sorted({m.true_label for m in misclassified})
     for ml in mis_labels:
         cnt = sum(1 for m in misclassified if m.true_label == ml)
         filter_buttons_html += f"<button class='btn-filter' onclick='filterCategory(\"{ml}\")'>正解「{ml}」 ({cnt})</button>"
@@ -565,7 +564,7 @@ def generate_html_report(
             margin: 10px 0 0 0;
             color: var(--accent-green);
         }}
-        
+
         /* インサイトカード */
         .insights-section {{
             margin-bottom: 30px;
@@ -792,7 +791,7 @@ def generate_html_report(
         <div class="section-card">
             <h2>🎧 誤識別サンプルの試聴 ＆ 詳細解析 (Misclassified Samples: {len(misclassified)}件)</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: -10px;">ブラウザ上で直接 ▶ ボタンを押すと実際の音声を試聴できます。問題のある文字カテゴリをクリックして絞り込めます。</p>
-            
+
             <div class="filter-container">
                 {filter_buttons_html}
             </div>

@@ -10,6 +10,7 @@ import argparse
 import datetime
 import logging
 from pathlib import Path
+
 import sounddevice as sd
 
 from config import DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG

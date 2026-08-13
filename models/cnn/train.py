@@ -34,8 +34,8 @@ from config import (  # noqa: E402
 )
 from dataset.hiragana_dataset import HiraganaDataset  # noqa: E402
 from evaluation.evaluator import compute_evaluation_result  # noqa: E402
-from preprocessing.dataset_builder import ensure_merged_and_preprocessed  # noqa: E402
 from models.cnn.hiragana_cnn import HiraganaCNN  # noqa: E402
+from preprocessing.dataset_builder import ensure_merged_and_preprocessed  # noqa: E402
 from utils.plot_saver import save_history_plots  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -118,7 +118,7 @@ def validate(
             correct += pred.eq(target_labels).sum().item()
             total += target_labels.size(0)
 
-            for t_idx, p_idx in zip(target_labels.cpu().numpy(), pred.cpu().numpy()):
+            for t_idx, p_idx in zip(target_labels.cpu().numpy(), pred.cpu().numpy(), strict=False):
                 all_true.append(labels[int(t_idx)])
                 all_pred.append(labels[int(p_idx)])
 

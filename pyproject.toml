@@ -80,6 +80,7 @@ exclude = [
 ]
 
 [tool.ruff.lint]
+allowed-confusables = ["（", "）", "〜", "・", "“", "”", "’", "＆", "×", "？"]
 select = [
     "E",      # pycodestyle errors
     "W",      # pycodestyle warnings
@@ -102,6 +103,7 @@ known-first-party = ["core", "dataset", "evaluation", "models", "preprocessing",
 [tool.mypy]
 python_version = "3.13"
 mypy_path = "."
+explicit_package_bases = true
 strict = true
 warn_return_any = true
 warn_unused_configs = true

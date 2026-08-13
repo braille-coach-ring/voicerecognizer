@@ -34,7 +34,7 @@ def migrate_collected_dataset() -> None:
     # 旧 predicted_text.txt の読み込み
     records: dict[str, str] = {}
     if old_log_file.exists():
-        with open(old_log_file, "r", encoding="utf-8") as f:
+        with open(old_log_file, encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if line and "," in line:
@@ -48,7 +48,7 @@ def migrate_collected_dataset() -> None:
     if app_log.exists():
         import re
 
-        with open(app_log, "r", encoding="utf-8", errors="ignore") as f:
+        with open(app_log, encoding="utf-8", errors="ignore") as f:
             log_lines = f.readlines()
         for i, line in enumerate(log_lines):
             m = re.search(r"([0-9]+_[0-9]+)(?:_\w+)?\.wav", line)
@@ -64,7 +64,7 @@ def migrate_collected_dataset() -> None:
     # 既存 metadata.csv の読み込み・更新
     existing_entries: dict[str, list[str]] = {}
     if metadata_file.exists():
-        with open(metadata_file, "r", encoding="utf-8") as f:
+        with open(metadata_file, encoding="utf-8") as f:
             for line in f:
                 parts = [p.strip() for p in line.strip().split(",")]
                 if len(parts) >= 2 and parts[0]:

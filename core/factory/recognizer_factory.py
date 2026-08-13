@@ -1,11 +1,10 @@
-from config import RecognizerType
-from config import DEFAULT_RECOGNITION_CONFIG, RecognitionConfig
+import logging
+
+from config import DEFAULT_RECOGNITION_CONFIG, RecognitionConfig, RecognizerType
 from core.interfaces import RecognitionStrategy
 from recognizers.cnn_recognizer import CNNRecognizer
 from recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
 from recognizers.whisper_recognizer import WhisperRecognizer
-
-import logging
 
 logger = logging.getLogger(__name__)
 

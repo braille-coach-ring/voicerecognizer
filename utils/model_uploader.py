@@ -2,6 +2,7 @@ import hashlib
 import logging
 from pathlib import Path
 from typing import Literal
+
 from huggingface_hub import HfApi, hf_hub_download, login
 
 from config import DEFAULT_HUGGINGFACE_CONFIG, DEFAULT_RECOGNITION_CONFIG, HuggingFaceConfig

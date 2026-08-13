@@ -10,8 +10,9 @@ Plot Saving Utility with Versioning and Timestamped History
 import datetime
 import json
 import logging
-from pathlib import Path
 import shutil
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -44,7 +45,7 @@ def record_and_plot_cumulative_progress(
     records = []
     if history_json_path.exists():
         try:
-            with open(history_json_path, "r", encoding="utf-8") as f:
+            with open(history_json_path, encoding="utf-8") as f:
                 records = json.load(f)
         except Exception:
             records = []
@@ -72,7 +73,7 @@ def record_and_plot_cumulative_progress(
     with open(history_json_path, "w", encoding="utf-8") as f:
         json.dump(records, f, ensure_ascii=False, indent=2)
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    _fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
 
     run_ids = [r["run_id"] for r in records]
     accs = [r["val_acc"] for r in records]
@@ -143,9 +144,9 @@ def record_and_plot_cumulative_progress(
                 fontsize=8,
                 fontweight="bold",
                 color="darkred",
-                bbox=dict(
-                    boxstyle="round,pad=0.2", facecolor="yellow", alpha=0.3, edgecolor="goldenrod"
-                ),
+                bbox={
+                    "boxstyle": "round,pad=0.2", "facecolor": "yellow", "alpha": 0.3, "edgecolor": "goldenrod"
+                },
             )
 
     ax1.set_ylabel("Metric Score (0.0 - 1.0)", color="navy")

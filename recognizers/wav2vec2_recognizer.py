@@ -54,7 +54,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         labels_json = self.model_path / "labels.json"
         if labels_json.exists():
             try:
-                with open(labels_json, "r", encoding="utf-8") as f:
+                with open(labels_json, encoding="utf-8") as f:
                     loaded_labels = json.load(f)
                     if isinstance(loaded_labels, list) and len(loaded_labels) > 0:
                         self.labels = loaded_labels

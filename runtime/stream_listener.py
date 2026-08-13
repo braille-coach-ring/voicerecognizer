@@ -11,9 +11,10 @@ Audio Stream Listener (Issue #9)
 """
 
 import asyncio
-from dataclasses import dataclass, field
 import logging
-from typing import Any, AsyncGenerator
+from collections.abc import AsyncGenerator
+from dataclasses import dataclass, field
+from typing import Any
 
 from config import DEFAULT_AUDIO_CONFIG, DEFAULT_PREPROCESS_CONFIG, AudioConfig, PreprocessConfig
 from core.exceptions import DeviceNotFoundError
@@ -95,7 +96,7 @@ class AudioStreamListener:
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close()
 
-    async def listen(self) -> AsyncGenerator[str, None]:
+    async def listen(self) -> AsyncGenerator[str]:
         """
         マイクからの録音ストリームを非同期監視し、
         文字が認識されたタイミングでのみ「ひらがな文字」を yield 返却します。
@@ -123,14 +124,17 @@ class AudioStreamListener:
                 confidence = getattr(self.recognizer, "last_confidence", 1.0)
 
                 # 確信度が閾値を超えている場合のみ emit
-                if result_text and (confidence is None or confidence >= self.min_confidence):
-                    if result_text != self._last_emitted_text:
-                        self._last_emitted_text = result_text
-                        yield result_text
+                if (
+                    result_text
+                    and (confidence is None or confidence >= self.min_confidence)
+                    and result_text != self._last_emitted_text
+                ):
+                    self._last_emitted_text = result_text
+                    yield result_text
         finally:
             pass
 
-    async def listen_details(self) -> AsyncGenerator[RecognitionResult, None]:
+    async def listen_details(self) -> AsyncGenerator[RecognitionResult]:
         """
         確信度スコア、Top-3 候補、タイミング指標を含む
         詳細な RecognitionResult オブジェクトを yield 返却する高度な非同期ジェネレータ
@@ -165,10 +169,13 @@ class AudioStreamListener:
 
                 timing_stats = getattr(self.recognizer, "last_timing_stats", {})
 
-                if result_text and (confidence is None or confidence >= self.min_confidence):
-                    if result_text != self._last_emitted_text:
-                        self._last_emitted_text = result_text
-                        yield RecognitionResult(
+                if (
+                    result_text
+                    and (confidence is None or confidence >= self.min_confidence)
+                    and result_text != self._last_emitted_text
+                ):
+                    self._last_emitted_text = result_text
+                    yield RecognitionResult(
                             text=result_text,
                             confidence=float(confidence),
                             top3_candidates=candidates,

@@ -2,17 +2,17 @@
 認識結果の出力通知および音声データ・認識ログ (metadata.csv) の保存を管理するモジュール。
 """
 
+import logging
 from collections.abc import Callable
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event
+
 import numpy as np
 import soundfile as sf
 
 from config import DEFAULT_AUDIO_CONFIG, DEFAULT_RECOGNITION_CONFIG
 from utils.machine_id import get_machine_id
-
-import logging
 
 logger = logging.getLogger(__name__)
 

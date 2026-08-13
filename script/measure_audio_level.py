@@ -9,11 +9,11 @@ It then writes the measured thresholds back to config.py by default.
 """
 
 import argparse
-from dataclasses import dataclass
 import logging
-from pathlib import Path
 import re
 import sys
+from dataclasses import dataclass
+from pathlib import Path
 from time import sleep
 
 import numpy as np
@@ -330,10 +330,7 @@ def calculate_calibration(
 
 
 def format_config_float(value: float) -> str:
-    if abs(value) < 1.0:
-        text = f"{value:.6f}"
-    else:
-        text = f"{value:.1f}"
+    text = f"{value:.6f}" if abs(value) < 1.0 else f"{value:.1f}"
     text = text.rstrip("0").rstrip(".")
     if text in {"", "-0"}:
         return "0.0"

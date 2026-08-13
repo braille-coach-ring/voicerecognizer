@@ -1,5 +1,5 @@
-from pathlib import Path
 import logging
+from pathlib import Path
 
 import librosa
 import numpy as np
@@ -48,7 +48,7 @@ class HiraganaDataset(Dataset):
         if self.index_file:
             # index.csv からラベル一覧を自動取得
             labels_set = set()
-            with open(self.index_file, "r", encoding="utf-8") as f:
+            with open(self.index_file, encoding="utf-8") as f:
                 f.readline()
                 for line in f:
                     parts = [p.strip() for p in line.strip().split(",")]
@@ -93,7 +93,7 @@ class HiraganaDataset(Dataset):
         if self.index_file and self.index_file.exists():
             from config import PROJECT_ROOT
 
-            with open(self.index_file, "r", encoding="utf-8") as f:
+            with open(self.index_file, encoding="utf-8") as f:
                 f.readline()
                 for line in f:
                     parts = [p.strip() for p in line.strip().split(",")]

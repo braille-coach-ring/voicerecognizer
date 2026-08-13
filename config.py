@@ -1,7 +1,8 @@
 import os
 from dataclasses import dataclass, field
-from typing import Literal
 from pathlib import Path
+from typing import Literal
+
 from dotenv import load_dotenv
 
 from config_labels import (

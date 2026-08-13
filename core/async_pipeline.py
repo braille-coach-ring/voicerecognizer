@@ -8,7 +8,9 @@ Async & Non-blocking Recognition Pipeline Runner (Issue #9)
 
 import asyncio
 import logging
-from typing import Any, AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Callable
+from typing import Any
+
 from core.interfaces import RecognitionStrategy
 
 logger = logging.getLogger(__name__)
@@ -23,7 +25,7 @@ class AsyncRecognitionPipeline:
 
     async def process_stream(
         self,
-        audio_stream: AsyncGenerator[Any, None],
+        audio_stream: AsyncGenerator[Any],
         on_result: Callable[[str], None] | None = None,
     ) -> None:
         """非同期音声ストリームを読み込み、ノンブロッキングで認識結果を順次呼び出す"""

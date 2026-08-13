@@ -38,16 +38,16 @@ from runtime.stream_listener import AudioStreamListener, RecognitionResult  # no
 __version__ = "0.1.0"
 
 __all__ = [
-    "Wav2Vec2Recognizer",
-    "CNNRecognizer",
-    "WhisperRecognizer",
-    "RecognitionStrategy",
+    "AudioPreprocessingError",
     "AudioStreamListener",
-    "RecognitionResult",
-    "VoiceRecognizerError",
+    "CNNRecognizer",
     "DeviceNotFoundError",
     "ModelNotFoundError",
-    "AudioPreprocessingError",
+    "RecognitionResult",
+    "RecognitionStrategy",
+    "VoiceRecognizerError",
+    "Wav2Vec2Recognizer",
+    "WhisperRecognizer",
     "recognize",
     "recognize_async",
 ]

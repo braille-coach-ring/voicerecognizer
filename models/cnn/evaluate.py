@@ -38,8 +38,8 @@ def evaluate(args: argparse.Namespace) -> None:
 
     total = 0
     correct = 0
-    class_total = {label: 0 for label in dataset.labels}
-    class_correct = {label: 0 for label in dataset.labels}
+    class_total = dict.fromkeys(dataset.labels, 0)
+    class_correct = dict.fromkeys(dataset.labels, 0)
 
     for label in dataset.labels:
         folder = Path(args.root_dir) / label

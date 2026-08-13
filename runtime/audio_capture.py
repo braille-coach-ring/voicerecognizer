@@ -1,9 +1,10 @@
+import logging
 from threading import Lock
+
 import numpy as np
 import sounddevice as sd
-from config import AudioConfig, DEFAULT_AUDIO_CONFIG
 
-import logging
+from config import DEFAULT_AUDIO_CONFIG, AudioConfig
 
 logger = logging.getLogger(__name__)
 

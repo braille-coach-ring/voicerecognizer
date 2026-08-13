@@ -1,10 +1,10 @@
-import unittest
-from unittest.mock import patch, MagicMock
-from pathlib import Path
 import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from config import HuggingFaceConfig
-from utils.model_uploader import upload_weights_to_hf, download_latest_team_weights_if_needed
+from utils.model_uploader import download_latest_team_weights_if_needed, upload_weights_to_hf
 
 
 class TestModelUploader(unittest.TestCase):

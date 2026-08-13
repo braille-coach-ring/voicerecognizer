@@ -1,6 +1,6 @@
-from pathlib import Path
-import shutil
 import logging
+import shutil
+from pathlib import Path
 
 import soundfile as sf
 
@@ -87,7 +87,7 @@ class DatasetBuilder:
         if collected_dir.exists():
             for metadata_file in collected_dir.rglob("metadata.csv"):
                 folder = metadata_file.parent
-                with open(metadata_file, "r", encoding="utf-8") as f:
+                with open(metadata_file, encoding="utf-8") as f:
                     for line in f:
                         parts = [p.strip() for p in line.strip().split(",")]
                         if len(parts) < 3 or not parts[0]:
@@ -149,7 +149,7 @@ class DatasetBuilder:
         if index_file.exists() and index_file.is_file():
             # インデックス CSV ファイルから直接読み込んで前処理
             counts: dict[str, int] = {}
-            with open(index_file, "r", encoding="utf-8") as f:
+            with open(index_file, encoding="utf-8") as f:
                 _ = f.readline()
                 for line in f:
                     parts = [p.strip() for p in line.strip().split(",")]

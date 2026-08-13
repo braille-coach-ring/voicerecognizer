@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from core.interfaces import RecognitionStrategy
-from evaluation.evaluator import Evaluator, EvaluationResult
+from evaluation.evaluator import EvaluationResult, Evaluator
 
 
 class MockRecognizer(RecognitionStrategy):
@@ -74,7 +74,7 @@ class TestEvaluator(unittest.TestCase):
         )
         evaluator.update_index_with_predictions()
 
-        with open(self.index_path, "r", encoding="utf-8") as f:
+        with open(self.index_path, encoding="utf-8") as f:
             reader = csv.DictReader(f)
             rows = list(reader)
             self.assertEqual(len(rows), 3)

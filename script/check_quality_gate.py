@@ -10,7 +10,6 @@ Usage:
 
 import argparse
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -100,7 +99,7 @@ def check_ruff_baseline() -> int:
         sync_ruff_baseline()
         return 0
 
-    with open(RUFF_BASELINE_PATH, "r", encoding="utf-8") as f:
+    with open(RUFF_BASELINE_PATH, encoding="utf-8") as f:
         baseline_errors = json.load(f)
 
     # Build lookup set of baseline error keys

@@ -18,9 +18,9 @@ Wav2Vec2 Pre-trained Base Model Benchmark Script
 import argparse
 import json
 import logging
-from pathlib import Path
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -33,6 +33,8 @@ from sklearn.model_selection import train_test_split
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+import contextlib
 
 from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
 from dataset.hiragana_dataset import HiraganaDataset  # noqa: E402
@@ -179,10 +181,8 @@ def main():
     args = parser.parse_args()
 
     if hasattr(sys.stdout, "reconfigure"):
-        try:
+        with contextlib.suppress(Exception):
             sys.stdout.reconfigure(encoding="utf-8")
-        except Exception:
-            pass
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info("Using device: %s", device)

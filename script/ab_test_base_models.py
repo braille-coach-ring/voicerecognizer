@@ -38,6 +38,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+import contextlib
+
 from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -82,25 +84,26 @@ def run_single_condition(
 ) -> dict[str, Any]:
     """1つの条件（ベースモデル + フリーズ設定）でファインチューニングを実行する"""
     from transformers import (
-        AutoFeatureExtractor,
         AutoConfig,
+        AutoFeatureExtractor,
         Wav2Vec2ForSequenceClassification,
         get_linear_schedule_with_warmup,
     )
+
+    from evaluation.evaluator import compute_evaluation_result
     from models.wav2vec2.train import (
-        Wav2Vec2ClassificationDataset,
-        split_dataset,
         AugmentedSubset,
+        Wav2Vec2ClassificationDataset,
         build_collate_fn,
-        freeze_wav2vec2_layers,
-        load_wav2vec2_classifier,
-        train_epoch,
-        validate,
         compute_class_weights,
         determine_optimal_num_workers,
+        freeze_wav2vec2_layers,
+        load_wav2vec2_classifier,
+        split_dataset,
+        train_epoch,
+        validate,
     )
     from preprocessing.audio_augmentor import AudioAugmentor
-    from evaluation.evaluator import compute_evaluation_result
 
     fix_seed(seed)
 
@@ -312,10 +315,8 @@ def main():
     args = parser.parse_args()
 
     if hasattr(sys.stdout, "reconfigure"):
-        try:
+        with contextlib.suppress(Exception):
             sys.stdout.reconfigure(encoding="utf-8")
-        except Exception:
-            pass
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info("Device: %s", device)
@@ -342,7 +343,7 @@ def main():
     print("  Press Ctrl+C to safely interrupt (completed conditions are saved)")
     print("=" * 70 + "\n")
 
-    for i, condition in enumerate(DEFAULT_CONDITIONS):
+    for _i, condition in enumerate(DEFAULT_CONDITIONS):
         if condition["name"] in completed_names:
             logger.info("Skipping already completed: %s", condition["name"])
             continue

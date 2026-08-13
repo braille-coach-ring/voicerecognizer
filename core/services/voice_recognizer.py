@@ -1,9 +1,8 @@
+import logging
+import time
 from typing import Any
 
 from core.interfaces import RecognitionStrategy
-
-import time
-import logging
 
 logger = logging.getLogger(__name__)
 

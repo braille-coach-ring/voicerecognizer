@@ -10,12 +10,12 @@ from torch.utils.data import DataLoader
 
 from models.wav2vec2.train import (
     Wav2Vec2ClassificationDataset,
-    build_parser,
     build_collate_fn,
+    build_parser,
     determine_optimal_num_workers,
     is_pagefile_or_memory_error,
-    load_wav2vec2_classifier,
     load_local_safetensors_streaming,
+    load_wav2vec2_classifier,
 )
 
 

@@ -25,6 +25,8 @@ if str(PROJECT_ROOT) not in sys.path:
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
+import contextlib
+
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
@@ -161,7 +163,7 @@ def export_and_benchmark(
 
     if labels_file.exists():
         try:
-            with open(labels_file, "r", encoding="utf-8") as f:
+            with open(labels_file, encoding="utf-8") as f:
                 labels = json.load(f)
         except Exception:
             pass
@@ -190,10 +192,8 @@ def export_and_benchmark(
         feature_extractor = AutoFeatureExtractor.from_pretrained(
             DEFAULT_RECOGNITION_CONFIG.wav2vec2_pretrained_model_name
         )
-        try:
+        with contextlib.suppress(Exception):
             feature_extractor.save_pretrained(model_path)
-        except Exception:
-            pass
 
     model = Wav2Vec2ForSequenceClassification.from_pretrained(
         model_path,

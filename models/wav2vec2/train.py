@@ -11,7 +11,6 @@ Wav2Vec2 Fine-Tuning Script with Layer Freezing and Lazy Disk Loading
 """
 
 import argparse
-from collections import Counter
 import gc
 import importlib.util
 import json
@@ -19,6 +18,7 @@ import logging
 import os
 import random
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -314,7 +314,7 @@ def validate(
             correct += (pred == batch_labels).sum().item()
             total += batch_labels.size(0)
 
-            for true_index, pred_index in zip(batch_labels.cpu().numpy(), pred.cpu().numpy()):
+            for true_index, pred_index in zip(batch_labels.cpu().numpy(), pred.cpu().numpy(), strict=False):
                 all_true.append(labels[int(true_index)])
                 all_pred.append(labels[int(pred_index)])
 
@@ -362,8 +362,8 @@ def save_pretrained_model(
 def import_transformers() -> tuple[Any, Any, Any, Any]:
     try:
         from transformers import (
-            AutoFeatureExtractor,
             AutoConfig,
+            AutoFeatureExtractor,
             Wav2Vec2ForSequenceClassification,
             get_linear_schedule_with_warmup,
         )
@@ -482,7 +482,7 @@ def ensure_sharded_safetensors(
         gc.collect()
 
     with safe_open(str(source_path), framework="numpy") as tensors:
-        for key in tensors.keys():
+        for key in tensors.keys():  # noqa: SIM118
             tensor = tensors.get_tensor(key)
             tensor_size = tensor.nbytes
             if current_tensors and current_size + tensor_size > max_shard_bytes:
@@ -537,7 +537,7 @@ def load_local_safetensors_streaming(
     with torch.no_grad():
         for tensor_file in tensor_files:
             with safe_open(str(tensor_file), framework="pt", device="cpu") as tensors:
-                for key in tensors.keys():
+                for key in tensors.keys():  # noqa: SIM118
                     if key not in state_dict:
                         unexpected.append(key)
                         continue

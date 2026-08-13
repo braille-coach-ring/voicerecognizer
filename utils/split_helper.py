@@ -1,6 +1,7 @@
+import logging
 from collections import Counter
 from collections.abc import Sequence
-import logging
+
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
 
@@ -31,7 +32,7 @@ def safe_stratified_split(
     logger.warning(
         "⚠️ 以下の %d クラスはデータセット内のサンプル数が1件のため、学習セット(train)へ優先割り当てします: %s",
         len(singletons),
-        sorted(list(singletons)),
+        sorted(singletons),
     )
 
     multi_indices = [i for i, lbl in enumerate(labels) if lbl not in singletons]
