@@ -11,6 +11,7 @@ from config import (
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
 )
+from core.exceptions import ModelNotFoundError
 from core.interfaces import RecognitionStrategy
 from models.cnn.hiragana_cnn import HiraganaCNN
 from preprocessing.audio_preprocessor import AudioPreprocessor
@@ -92,11 +93,12 @@ class CNNRecognizer(RecognitionStrategy):
             model = HiraganaCNN(num_classes=len(self.labels))
             state_dict = torch.load(self.model_path, map_location=self.device)
             model.load_state_dict(state_dict)
+            model.to(self.device)
+            model.eval()
+            return model
         except Exception as e:
-            logger.error(e)
-        model.to(self.device)
-        model.eval()
-        return model
+            logger.error("CNN モデルのロードに失敗しました: %s", e)
+            raise ModelNotFoundError(f"CNN モデルのロードに失敗しました ({self.model_path}): {e}") from e
 
     def _preprocess(self, audio: Any) -> np.ndarray:
         return self.audio_preprocessor.preprocess_waveform(audio)

@@ -20,7 +20,7 @@ import random
 import sys
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import soundfile as sf
@@ -154,7 +154,8 @@ class AugmentedSubset(Dataset):
         return len(self.subset)
 
     def __getitem__(self, index: int) -> tuple[np.ndarray, int]:
-        waveform, label = self.subset[index]
+        item = cast(tuple[np.ndarray, int], self.subset[index])
+        waveform, label = item
         if self.augmentor is not None:
             waveform = self.augmentor.augment(waveform)
         return waveform, label

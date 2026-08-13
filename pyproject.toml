@@ -35,8 +35,7 @@ errors = "script.check_quality_gate:errors_cli"
 
 [dependency-groups]
 dev = [
-    "mypy>=2.3.0",
-    "mypy-baseline>=0.7.4",
+    "pyrefly>=1.2.0",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
     "ruff>=0.15.21",
@@ -103,42 +102,6 @@ ignore = [
 [tool.ruff.lint.isort]
 known-first-party = ["core", "dataset", "evaluation", "models", "preprocessing", "recognizers", "runtime", "utils"]
 
-[tool.mypy]
-python_version = "3.13"
-mypy_path = "."
-explicit_package_bases = true
-strict = true
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-
-[[tool.mypy.overrides]]
-module = [
-    "librosa.*",
-    "sounddevice.*",
-    "soundfile.*",
-    "matplotlib.*",
-    "sklearn.*",
-    "scipy.*",
-    "tqdm.*",
-    "torch.*",
-    "torchvision.*",
-    "transformers.*",
-    "onnxruntime.*",
-    "onnx.*",
-    "onnxscript.*",
-    "accelerate.*"
-]
-ignore_missing_imports = true
-
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests", "test"]
@@ -148,3 +111,7 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::UserWarning"
 ]
+
+[tool.pyrefly]
+preset = "strict"
+baseline = "pyrefly-baseline.json"

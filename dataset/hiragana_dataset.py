@@ -78,11 +78,11 @@ class HiraganaDataset(Dataset):
     def __len__(self) -> int:
         return len(self.data)
 
-    def __getitem__(self, idx: int):
+    def __getitem__(self, index: int):
         if self.cached_mels is not None:
-            return self.cached_mels[idx]
+            return self.cached_mels[index]
 
-        wav_path, label = self.data[idx]
+        wav_path, label = self.data[index]
         waveform = self.preprocessor.preprocess_waveform(wav_path)
         mel = self._create_mel(waveform)
         return mel, torch.tensor(label, dtype=torch.long)

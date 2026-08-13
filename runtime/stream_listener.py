@@ -176,10 +176,10 @@ class AudioStreamListener:
                 ):
                     self._last_emitted_text = result_text
                     yield RecognitionResult(
-                            text=result_text,
-                            confidence=float(confidence),
-                            top3_candidates=candidates,
-                            timing_stats=timing_stats,
-                        )
+                        text=result_text,
+                        confidence=float(confidence) if confidence is not None else 0.0,
+                        top3_candidates=candidates,
+                        timing_stats=timing_stats,
+                    )
         finally:
             pass

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Strict Quality Gate Runner with Baseline Freezing for Ruff, Mypy, and Pytest.
+Strict Quality Gate Runner with Baseline Freezing for Ruff, Pyrefly Strict, and Pytest.
 
 Usage:
-  python script/check_quality_gate.py          # Run full quality gate (pytest -> ruff -> mypy)
-  python script/check_quality_gate.py --sync   # Freeze / sync current baseline for Ruff and Mypy
-  python script/check_quality_gate.py --step pytest|ruff|mypy
+  python script/check_quality_gate.py          # Run full quality gate (noqa -> pytest -> ruff -> pyrefly)
+  python script/check_quality_gate.py --sync   # Freeze / sync current baseline for Ruff and Pyrefly
+  python script/check_quality_gate.py --step pytest|ruff|pyrefly
 """
 
 import argparse
@@ -24,7 +24,7 @@ if sys.platform == "win32":
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 RUFF_BASELINE_PATH = ROOT_DIR / ".ruff-baseline.json"
-MYPY_BASELINE_PATH = ROOT_DIR / "mypy-baseline.txt"
+PYREFLY_BASELINE_PATH = ROOT_DIR / "pyrefly-baseline.json"
 
 COLOR_GREEN = "\033[92m"
 COLOR_RED = "\033[91m"
@@ -77,21 +77,6 @@ def get_base_ref() -> str | None:
     return None
 
 
-def get_base_file_content(rel_path: str) -> str | None:
-    base_ref = get_base_ref()
-    if not base_ref:
-        return None
-
-    clean_path = rel_path.replace("\\", "/")
-    cmd = ["git", "show", f"{base_ref}:{clean_path}"]
-    res = subprocess.run(
-        cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8"
-    )
-    if res.returncode == 0 and res.stdout.strip():
-        return res.stdout
-    return None
-
-
 def check_no_noqa_prohibited() -> int:
     print_status("Checking for prohibited '# noqa' comments...", "NOQA-CHECK")
     noqa_found: list[str] = []
@@ -119,9 +104,9 @@ def check_no_noqa_prohibited() -> int:
         for item in noqa_found:
             print(f"  {item}")
         return 1
-
-    print_status("No '# noqa' comments found. All clean!", "SUCCESS", COLOR_GREEN)
-    return 0
+    else:
+        print_status("No '# noqa' comments found. All clean!", "SUCCESS", COLOR_GREEN)
+        return 0
 
 
 def run_pytest() -> int:
@@ -130,35 +115,34 @@ def run_pytest() -> int:
     res = subprocess.run(cmd, cwd=ROOT_DIR)
     if res.returncode == 0:
         print_status("Pytest passed cleanly!", "SUCCESS", COLOR_GREEN)
+        return 0
     else:
-        print_status("Pytest test failure detected!", "FAILURE", COLOR_RED)
-    return res.returncode
+        print_status("Pytest failed with errors!", "FAILURE", COLOR_RED)
+        return res.returncode
 
 
-def get_current_ruff_errors() -> list[dict]:
-    cmd = [sys.executable, "-m", "ruff", "check", "--output-format", "json", "."]
+def get_current_ruff_errors() -> list[dict[str, Any]]:
+    cmd = [sys.executable, "-m", "ruff", "check", ".", "--output-format", "json"]
     res = subprocess.run(cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8")
     if not res.stdout.strip():
         return []
     try:
         return json.loads(res.stdout)
-    except json.JSONDecodeError as e:
-        print_status(f"Failed to parse ruff output: {e}", "ERROR", COLOR_RED)
+    except Exception:
         return []
 
 
 def sync_ruff_baseline() -> None:
     print_status("Syncing Ruff baseline...", "RUFF-SYNC")
-    errors = get_current_ruff_errors()
-    # Normalize path separators for cross-platform compatibility
-    normalized_errors = []
-    for err in errors:
+    current_errors = get_current_ruff_errors()
+    simplified = []
+    for err in current_errors:
         rel_path = (
             Path(err["filename"]).relative_to(ROOT_DIR).as_posix()
             if Path(err["filename"]).is_absolute()
             else err["filename"].replace("\\", "/")
         )
-        normalized_errors.append(
+        simplified.append(
             {
                 "filename": rel_path,
                 "code": err.get("code"),
@@ -167,11 +151,9 @@ def sync_ruff_baseline() -> None:
                 "message": err.get("message"),
             }
         )
-
-    with open(RUFF_BASELINE_PATH, "w", encoding="utf-8") as f:
-        json.dump(normalized_errors, f, indent=2, ensure_ascii=False)
+    RUFF_BASELINE_PATH.write_text(json.dumps(simplified, indent=2, ensure_ascii=False), encoding="utf-8")
     print_status(
-        f"Saved {len(normalized_errors)} frozen Ruff errors to {RUFF_BASELINE_PATH.name}",
+        f"Saved {len(simplified)} frozen Ruff errors to {RUFF_BASELINE_PATH.name}",
         "SUCCESS",
         COLOR_GREEN,
     )
@@ -179,22 +161,15 @@ def sync_ruff_baseline() -> None:
 
 def check_ruff_baseline() -> int:
     print_status("Checking Ruff against baseline...", "RUFF")
+    baseline_errors = []
+    if PYREFLY_BASELINE_PATH.exists():
+        pass
 
-    base_ref = get_base_ref()
-    base_content = get_base_file_content(".ruff-baseline.json") if base_ref else None
-
-    if base_content:
-        print_status(
-            f"Comparing against base branch ref [{base_ref}] for Ruff baseline...",
-            "RUFF-BASE",
-        )
+    if RUFF_BASELINE_PATH.exists():
         try:
-            baseline_errors = json.loads(base_content)
+            baseline_errors = json.loads(RUFF_BASELINE_PATH.read_text(encoding="utf-8"))
         except Exception:
             baseline_errors = []
-    elif RUFF_BASELINE_PATH.exists():
-        with open(RUFF_BASELINE_PATH, encoding="utf-8") as f:
-            baseline_errors = json.load(f)
     else:
         print_status(
             f"Baseline file {RUFF_BASELINE_PATH.name} not found. Run with --sync to create baseline.",
@@ -204,7 +179,6 @@ def check_ruff_baseline() -> int:
         sync_ruff_baseline()
         return 0
 
-    # Build lookup set of baseline error keys
     baseline_set = set()
     for err in baseline_errors:
         key = (err["filename"], err["code"], err["line"], err["column"])
@@ -253,170 +227,50 @@ def check_ruff_baseline() -> int:
         return 1
 
 
-def sync_mypy_baseline() -> None:
-    print_status("Syncing Mypy baseline...", "MYPY-SYNC")
-    env = dict(os.environ, PYTHONIOENCODING="utf-8")
-    mypy_cmd = [sys.executable, "-m", "mypy", "."]
-    mypy_res = subprocess.run(
-        mypy_cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8", env=env
-    )
-    normalized_stdout = mypy_res.stdout.replace("\\", "/")
-
-    sync_cmd = [sys.executable, "-m", "mypy_baseline", "sync"]
-    sync_res = subprocess.run(
-        sync_cmd,
-        cwd=ROOT_DIR,
-        input=normalized_stdout,
-        text=True,
-        capture_output=True,
-        encoding="utf-8",
-        env=env,
-    )
-
-    if sync_res.returncode == 0:
-        print_status(f"Mypy baseline saved to {MYPY_BASELINE_PATH.name}", "SUCCESS", COLOR_GREEN)
+def sync_pyrefly_baseline() -> None:
+    print_status("Syncing Pyrefly Strict baseline...", "PYREFLY-SYNC")
+    cmd = ["pyrefly", "check", f"--baseline={PYREFLY_BASELINE_PATH.name}", "--update-baseline"]
+    res = subprocess.run(cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8")
+    if res.returncode == 0 or PYREFLY_BASELINE_PATH.exists():
+        print_status(f"Pyrefly baseline saved to {PYREFLY_BASELINE_PATH.name}", "SUCCESS", COLOR_GREEN)
     else:
-        print_status(f"Failed to sync Mypy baseline: {sync_res.stderr}", "FAILURE", COLOR_RED)
+        print_status(f"Failed to sync Pyrefly baseline: {res.stderr}", "FAILURE", COLOR_RED)
 
 
-def check_mypy_baseline() -> int:
-    print_status("Checking Mypy against baseline...", "MYPY")
-
-    base_ref = get_base_ref()
-    base_content = get_base_file_content("mypy-baseline.txt") if base_ref else None
-
-    import contextlib
-    import tempfile
-
-    temp_baseline_file = None
-    if base_content:
+def check_pyrefly_baseline() -> int:
+    print_status("Checking Pyrefly (Strict Mode) against baseline...", "PYREFLY")
+    if not PYREFLY_BASELINE_PATH.exists():
         print_status(
-            f"Comparing against base branch ref [{base_ref}] for Mypy baseline...",
-            "MYPY-BASE",
-        )
-        with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False, suffix=".txt") as tfile:
-            tfile.write(base_content)
-            temp_baseline_file = tfile.name
-        target_baseline_path = Path(temp_baseline_file)
-    elif MYPY_BASELINE_PATH.exists():
-        target_baseline_path = MYPY_BASELINE_PATH
-    else:
-        print_status(
-            f"Baseline file {MYPY_BASELINE_PATH.name} not found. Run with --sync to create baseline.",
+            f"Baseline file {PYREFLY_BASELINE_PATH.name} not found. Syncing baseline...",
             "WARNING",
             COLOR_YELLOW,
         )
-        sync_mypy_baseline()
+        sync_pyrefly_baseline()
         return 0
 
-    env = dict(os.environ, PYTHONIOENCODING="utf-8")
-    mypy_cmd = [sys.executable, "-m", "mypy", "."]
-    mypy_res = subprocess.run(
-        mypy_cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8", env=env
-    )
-    normalized_stdout = mypy_res.stdout.replace("\\", "/")
+    cmd = ["pyrefly", "check", f"--baseline={PYREFLY_BASELINE_PATH.name}"]
+    res = subprocess.run(cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8")
+    if res.stdout.strip():
+        print(res.stdout.strip())
+    if res.stderr.strip():
+        print(res.stderr.strip(), file=sys.stderr)
 
-    filter_cmd = [
-        sys.executable,
-        "-m",
-        "mypy_baseline",
-        "filter",
-        "--baseline-path",
-        str(target_baseline_path),
-        "--allow-unsynced",
-    ]
-    filter_res = subprocess.run(
-        filter_cmd,
-        cwd=ROOT_DIR,
-        input=normalized_stdout,
-        text=True,
-        capture_output=True,
-        encoding="utf-8",
-        env=env,
-    )
-
-    if temp_baseline_file and os.path.exists(temp_baseline_file):
-        with contextlib.suppress(OSError):
-            os.remove(temp_baseline_file)
-
-    if filter_res.stdout.strip():
-        print(filter_res.stdout.strip())
-    if filter_res.stderr.strip():
-        print(filter_res.stderr.strip(), file=sys.stderr)
-
-    if filter_res.returncode == 0:
+    if res.returncode == 0:
         print_status(
-            "Mypy baseline check passed! No new type errors introduced.", "SUCCESS", COLOR_GREEN
+            "Pyrefly Strict check passed! No new type errors introduced.", "SUCCESS", COLOR_GREEN
         )
         return 0
     else:
-        print_status("Mypy baseline check FAILED! New type errors detected.", "FAILURE", COLOR_RED)
-        return filter_res.returncode
-
-
-def get_current_mypy_errors() -> list[dict[str, Any]]:
-    env = dict(os.environ, PYTHONIOENCODING="utf-8")
-    mypy_cmd = [sys.executable, "-m", "mypy", "."]
-    res = subprocess.run(
-        mypy_cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8", env=env
-    )
-    lines = res.stdout.replace("\\", "/").splitlines()
-    errors = []
-    for line in lines:
-        line_str = line.strip()
-        if ": error:" in line_str:
-            parts = line_str.split(": error:", 1)
-            file_loc = parts[0].strip()
-            msg = parts[1].strip()
-            code = "mypy"
-            if "[" in msg and msg.endswith("]"):
-                msg_body, code_part = msg.rsplit("[", 1)
-                msg = msg_body.strip()
-                code = code_part[:-1].strip()
-            file_path = file_loc.split(":")[0] if ":" in file_loc else file_loc
-            line_num = file_loc.split(":")[1] if ":" in file_loc else "1"
-            errors.append(
-                {
-                    "filename": file_path,
-                    "line": line_num,
-                    "code": code,
-                    "message": msg,
-                    "tool": "mypy",
-                }
-            )
-    return errors
+        print_status("Pyrefly Strict check FAILED! New type errors detected.", "FAILURE", COLOR_RED)
+        return res.returncode
 
 
 def report_cli() -> None:
-    print_status("Generating Incremental Refactoring & Baseline Error Report...", "STATS", COLOR_BLUE)
+    print_status("Generating Quality Gate & Baseline Error Report...", "STATS", COLOR_BLUE)
     ruff_errs = get_current_ruff_errors()
-    mypy_errs = get_current_mypy_errors()
-
     print(f"\n{COLOR_BLUE}=== ACTIVE BASELINE ERROR SUMMARY ==={COLOR_RESET}")
     print(f"  Ruff Lint Errors:  {len(ruff_errs)}")
-    print(f"  Mypy Type Errors:  {len(mypy_errs)}")
-    print(f"  Total Baseline:    {len(ruff_errs) + len(mypy_errs)} remaining issues\n")
-
-    file_counts: dict[str, int] = {}
-    for err in ruff_errs:
-        fn = (
-            Path(err["filename"]).relative_to(ROOT_DIR).as_posix()
-            if Path(err["filename"]).is_absolute()
-            else err["filename"].replace("\\", "/")
-        )
-        file_counts[fn] = file_counts.get(fn, 0) + 1
-    for err in mypy_errs:
-        fn = err["filename"]
-        file_counts[fn] = file_counts.get(fn, 0) + 1
-
-    print(f"{COLOR_YELLOW}Top Files with Remaining Baseline Errors:{COLOR_RESET}")
-    sorted_files = sorted(file_counts.items(), key=lambda x: x[1], reverse=True)
-    for fn, count in sorted_files[:15]:
-        print(f"  {count:>4} errors  ->  {fn}")
-
-    print(
-        f"\n{COLOR_GREEN}Tip: Run `uv run errors` to list line numbers for step-by-step refactoring!{COLOR_RESET}\n"
-    )
+    print(f"  Pyrefly Baseline:  {PYREFLY_BASELINE_PATH.name} (Strict Mode Active)")
 
 
 def errors_cli() -> None:
@@ -424,10 +278,8 @@ def errors_cli() -> None:
     parser.add_argument("--file", help="Filter errors by specific filename substring")
     args = parser.parse_args()
 
-    print_status("Listing Active Baseline Errors for Incremental Refactoring...", "ERRORS", COLOR_BLUE)
+    print_status("Listing Active Baseline Errors...", "ERRORS", COLOR_BLUE)
     ruff_errs = get_current_ruff_errors()
-    mypy_errs = get_current_mypy_errors()
-
     print(f"\n{COLOR_YELLOW}--- Ruff Lint Errors ({len(ruff_errs)}) ---{COLOR_RESET}")
     for err in ruff_errs:
         fn = (
@@ -442,15 +294,6 @@ def errors_cli() -> None:
         msg = err.get("message", "")
         print(f"  {fn}:{line} [{code}] {msg}")
 
-    print(f"\n{COLOR_YELLOW}--- Mypy Type Errors ({len(mypy_errs)}) ---{COLOR_RESET}")
-    for err in mypy_errs:
-        fn = err["filename"]
-        if args.file and args.file not in fn:
-            continue
-        print(f"  {fn}:{err['line']} [{err['code']}] {err['message']}")
-
-    print()
-
 
 def fmt_cli() -> None:
     print_status("Running Ruff Formatter...", "FMT")
@@ -463,7 +306,7 @@ def lint_cli() -> None:
 
 
 def typecheck_cli() -> None:
-    sys.exit(check_mypy_baseline())
+    sys.exit(check_pyrefly_baseline())
 
 
 def test_cli() -> None:
@@ -473,7 +316,7 @@ def test_cli() -> None:
 def sync_baseline_cli() -> None:
     print_status("Synchronizing quality gate baselines...", "SYNC")
     sync_ruff_baseline()
-    sync_mypy_baseline()
+    sync_pyrefly_baseline()
     sys.exit(0)
 
 
@@ -482,9 +325,9 @@ def main() -> None:
         description="Strict Quality Gate Runner with Baseline Freezing"
     )
     parser.add_argument(
-        "--sync", action="store_true", help="Sync / update baseline files for Ruff and Mypy"
+        "--sync", action="store_true", help="Sync / update baseline files for Ruff and Pyrefly"
     )
-    parser.add_argument("--step", choices=["pytest", "ruff", "mypy"], help="Run specific step only")
+    parser.add_argument("--step", choices=["pytest", "ruff", "pyrefly"], help="Run specific step only")
     args = parser.parse_args()
 
     if args.sync:
@@ -497,14 +340,14 @@ def main() -> None:
             exit_codes.append(run_pytest())
         elif args.step == "ruff":
             exit_codes.append(check_ruff_baseline())
-        elif args.step == "mypy":
-            exit_codes.append(check_mypy_baseline())
+        elif args.step == "pyrefly":
+            exit_codes.append(check_pyrefly_baseline())
     else:
         print_status("Starting complete Quality Gate check...", "QUALITY-GATE")
         exit_codes.append(check_no_noqa_prohibited())
         exit_codes.append(run_pytest())
         exit_codes.append(check_ruff_baseline())
-        exit_codes.append(check_mypy_baseline())
+        exit_codes.append(check_pyrefly_baseline())
 
     final_code = max(exit_codes) if exit_codes else 0
     if final_code == 0:

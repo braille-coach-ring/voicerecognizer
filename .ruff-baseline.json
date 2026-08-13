@@ -70,6 +70,13 @@
     "message": "String contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
   },
   {
+    "filename": "recognizers/cnn_recognizer.py",
+    "code": "F821",
+    "line": 100,
+    "column": 19,
+    "message": "Undefined name `ModelNotFoundError`"
+  },
+  {
     "filename": "utils/model_uploader.py",
     "code": "RUF001",
     "line": 79,

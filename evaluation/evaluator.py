@@ -4,7 +4,7 @@ import logging
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
@@ -240,12 +240,15 @@ class Evaluator:
 
         labels_list = list(self.labels)
         acc = float(accuracy_score(self.y_true, self.y_pred))
-        report_dict = classification_report(
-            self.y_true,
-            self.y_pred,
-            labels=labels_list,
-            output_dict=True,
-            zero_division=0,
+        report_dict = cast(
+            dict[str, Any],
+            classification_report(
+                self.y_true,
+                self.y_pred,
+                labels=labels_list,
+                output_dict=True,
+                zero_division=0,
+            ),
         )
         cm = confusion_matrix(
             self.y_true,
