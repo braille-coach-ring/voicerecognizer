@@ -182,13 +182,6 @@
     "message": "Variable `X_test` in function should be lowercase"
   },
   {
-    "filename": "tests/test_vad.py",
-    "code": "RUF003",
-    "line": 32,
-    "column": 21,
-    "message": "Comment contains ambiguous `ノ` (KATAKANA LETTER NO). Did you mean `/` (SOLIDUS)?"
-  },
-  {
     "filename": "utils/model_uploader.py",
     "code": "RUF001",
     "line": 79,

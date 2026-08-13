@@ -27,7 +27,7 @@ class VoiceActivityDetector:
         self.min_active_ratio = min(1.0, max(0.0, float(cfg.vad_min_active_ratio)))
         self._speech_streak = 0
 
-    def is_speech(self, audio: np.ndarray) -> bool:
+    def is_speech(self, audio: np.ndarray | None) -> bool:
         if audio is None:
             logger.warning("入力された音声データがNoneです")
             self._speech_streak = 0
@@ -76,12 +76,17 @@ class VoiceActivityDetector:
 
         return True
 
-    def run(self, input_queue: Queue, output_queue: Queue, stop_event: Event) -> None:
+    def run(
+        self,
+        input_queue: Queue[np.ndarray | None],
+        output_queue: Queue[np.ndarray],
+        stop_event: Event,
+    ) -> None:
         while not stop_event.is_set():
             try:
                 audio = input_queue.get(timeout=0.1)
             except Empty:
                 continue
 
-            if self.is_speech(audio):
+            if audio is not None and self.is_speech(audio):
                 output_queue.put(audio)

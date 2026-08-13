@@ -37,6 +37,61 @@ def print_status(msg: str, status: str = "INFO", color: str = COLOR_BLUE) -> Non
     print(f"{color}[{status}]{COLOR_RESET} {msg}")
 
 
+def get_base_ref() -> str | None:
+    gh_base = os.environ.get("GITHUB_BASE_REF")
+    if gh_base:
+        for ref in [f"origin/{gh_base}", gh_base]:
+            res = subprocess.run(
+                ["git", "rev-parse", "--verify", ref],
+                cwd=ROOT_DIR,
+                capture_output=True,
+                text=True,
+            )
+            if res.returncode == 0:
+                return ref
+
+    custom_ref = os.environ.get("QUALITY_GATE_BASE_BRANCH")
+    if custom_ref:
+        return custom_ref
+
+    for main_branch in ["origin/main", "main", "origin/master", "master"]:
+        res = subprocess.run(
+            ["git", "merge-base", "HEAD", main_branch],
+            cwd=ROOT_DIR,
+            capture_output=True,
+            text=True,
+        )
+        if res.returncode == 0 and res.stdout.strip():
+            return res.stdout.strip()
+
+    candidates = ["origin/main", "main", "origin/master", "master"]
+    for cand in candidates:
+        res = subprocess.run(
+            ["git", "rev-parse", "--verify", cand],
+            cwd=ROOT_DIR,
+            capture_output=True,
+            text=True,
+        )
+        if res.returncode == 0:
+            return cand
+    return None
+
+
+def get_base_file_content(rel_path: str) -> str | None:
+    base_ref = get_base_ref()
+    if not base_ref:
+        return None
+
+    clean_path = rel_path.replace("\\", "/")
+    cmd = ["git", "show", f"{base_ref}:{clean_path}"]
+    res = subprocess.run(
+        cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8"
+    )
+    if res.returncode == 0 and res.stdout.strip():
+        return res.stdout
+    return None
+
+
 def run_pytest() -> int:
     print_status("Running pytest test suite...", "PYTEST")
     cmd = [sys.executable, "-m", "pytest"]
@@ -92,7 +147,23 @@ def sync_ruff_baseline() -> None:
 
 def check_ruff_baseline() -> int:
     print_status("Checking Ruff against baseline...", "RUFF")
-    if not RUFF_BASELINE_PATH.exists():
+
+    base_ref = get_base_ref()
+    base_content = get_base_file_content(".ruff-baseline.json") if base_ref else None
+
+    if base_content:
+        print_status(
+            f"Comparing against base branch ref [{base_ref}] for Ruff baseline...",
+            "RUFF-BASE",
+        )
+        try:
+            baseline_errors = json.loads(base_content)
+        except Exception:
+            baseline_errors = []
+    elif RUFF_BASELINE_PATH.exists():
+        with open(RUFF_BASELINE_PATH, encoding="utf-8") as f:
+            baseline_errors = json.load(f)
+    else:
         print_status(
             f"Baseline file {RUFF_BASELINE_PATH.name} not found. Run with --sync to create baseline.",
             "WARNING",
@@ -101,9 +172,6 @@ def check_ruff_baseline() -> int:
         sync_ruff_baseline()
         return 0
 
-    with open(RUFF_BASELINE_PATH, encoding="utf-8") as f:
-        baseline_errors = json.load(f)
-
     # Build lookup set of baseline error keys
     baseline_set = set()
     for err in baseline_errors:
@@ -111,6 +179,7 @@ def check_ruff_baseline() -> int:
         baseline_set.add(key)
 
     current_errors = get_current_ruff_errors()
+    current_set = set()
     new_errors = []
 
     for err in current_errors:
@@ -125,14 +194,18 @@ def check_ruff_baseline() -> int:
             err.get("location", {}).get("row"),
             err.get("location", {}).get("column"),
         )
+        current_set.add(key)
         if key not in baseline_set:
             new_errors.append(
                 (rel_path, err.get("code"), err.get("location", {}).get("row"), err.get("message"))
             )
 
+    fixed_count = len(baseline_set - current_set)
+
     if not new_errors:
+        fixed_msg = f", Fixed (Resolved): {fixed_count}" if fixed_count > 0 else ""
         print_status(
-            f"Ruff baseline check passed! Total frozen baseline errors: {len(baseline_errors)}, New errors: 0",
+            f"Ruff baseline check passed! Base baseline errors: {len(baseline_errors)}{fixed_msg}, New errors: 0",
             "SUCCESS",
             COLOR_GREEN,
         )
@@ -176,7 +249,26 @@ def sync_mypy_baseline() -> None:
 
 def check_mypy_baseline() -> int:
     print_status("Checking Mypy against baseline...", "MYPY")
-    if not MYPY_BASELINE_PATH.exists():
+
+    base_ref = get_base_ref()
+    base_content = get_base_file_content("mypy-baseline.txt") if base_ref else None
+
+    import contextlib
+    import tempfile
+
+    temp_baseline_file = None
+    if base_content:
+        print_status(
+            f"Comparing against base branch ref [{base_ref}] for Mypy baseline...",
+            "MYPY-BASE",
+        )
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False, suffix=".txt") as tfile:
+            tfile.write(base_content)
+            temp_baseline_file = tfile.name
+        target_baseline_path = Path(temp_baseline_file)
+    elif MYPY_BASELINE_PATH.exists():
+        target_baseline_path = MYPY_BASELINE_PATH
+    else:
         print_status(
             f"Baseline file {MYPY_BASELINE_PATH.name} not found. Run with --sync to create baseline.",
             "WARNING",
@@ -192,7 +284,15 @@ def check_mypy_baseline() -> int:
     )
     normalized_stdout = mypy_res.stdout.replace("\\", "/")
 
-    filter_cmd = [sys.executable, "-m", "mypy_baseline", "filter"]
+    filter_cmd = [
+        sys.executable,
+        "-m",
+        "mypy_baseline",
+        "filter",
+        "--baseline-path",
+        str(target_baseline_path),
+        "--allow-unsynced",
+    ]
     filter_res = subprocess.run(
         filter_cmd,
         cwd=ROOT_DIR,
@@ -202,6 +302,10 @@ def check_mypy_baseline() -> int:
         encoding="utf-8",
         env=env,
     )
+
+    if temp_baseline_file and os.path.exists(temp_baseline_file):
+        with contextlib.suppress(OSError):
+            os.remove(temp_baseline_file)
 
     if filter_res.stdout.strip():
         print(filter_res.stdout.strip())

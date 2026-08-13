@@ -82,7 +82,7 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-allowed-confusables = ["（", "）", "〜", "・", "“", "”", "’", "＆", "×", "？"]
+allowed-confusables = ["（", "）", "〜", "・", "“", "”", "’", "＆", "×", "？", "ノ"]
 select = [
     "E",      # pycodestyle errors
     "W",      # pycodestyle warnings
