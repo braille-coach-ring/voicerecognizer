@@ -199,6 +199,9 @@ def train(args: argparse.Namespace) -> None:
     elif not resume:
         logger.info("=== [--from-scratch が指定されたため、既存重みを破棄して 0 から新規学習を開始します] ===")
 
+    patience = getattr(args, "patience", 10)
+    patience_counter = 0
+
     for epoch in range(args.epochs):
         train_loss, train_acc = train_epoch(
             model,
@@ -235,6 +238,7 @@ def train(args: argparse.Namespace) -> None:
         if macro_f1 > best_macro_f1:
             best_macro_f1 = macro_f1
             is_best_updated = True
+            patience_counter = 0
             torch.save(model.state_dict(), best_model_path)
             labels_path = best_model_path.parent / "labels.json"
             with open(labels_path, "w", encoding="utf-8") as f:
@@ -245,6 +249,15 @@ def train(args: argparse.Namespace) -> None:
                 best_macro_f1,
                 val_acc,
             )
+        else:
+            patience_counter += 1
+            if patience > 0 and patience_counter >= patience:
+                logger.info(
+                    "🛑 Early stopping: Validation Macro-F1 が %d エポック連続で向上しなかったため、頭打ちと判断して学習を自動終了します (Best Macro-F1: %.4f)",
+                    patience,
+                    best_macro_f1,
+                )
+                break
 
         if val_acc >= target_acc:
             logger.info("Target validation accuracy reached: %.2f%%", target_acc * 100)
@@ -273,12 +286,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--batch-size", type=int, default=8, help="Batch size (default: 8)")
     parser.add_argument("--learning-rate", type=float, default=0.001, help="Learning rate (default: 0.001)")
     parser.add_argument(
+        "--patience",
+        type=int,
+        default=10,
+        help="Number of epochs with no validation improvement after which training stops early (default: 10, set 0 to disable)",
+    )
+    parser.add_argument(
         "--from-scratch",
         "--no-resume",
         action="store_false",
         dest="resume",
         help="Train from scratch without reusing team/local checkpoint",
     )
+
     parser.add_argument(
         "--skip-prep",
         action="store_true",

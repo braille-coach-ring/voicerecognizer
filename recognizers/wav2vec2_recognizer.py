@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import time
 from pathlib import Path
 from typing import Any
 
@@ -18,7 +19,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
     """
     Wav2Vec2 ONNX Runtime 推論ストラテジー
 
-    ONNX モデル (model_fp32.onnx / model_int8.onnx / model.onnx) を用いて
+    ONNX モデル (model_mel_int8.onnx / model_int8.onnx / model_fp32.onnx) を用いて
     CPU 上で超高速かつ高精度な音声を推論認識します。
     """
 
@@ -35,9 +36,15 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         self.labels = list(labels)
         self.dynamic_trimming = dynamic_trimming
 
-        # ONNX モデルファイルの優先順位 (model_int8.onnx > model_fp32.onnx > model.onnx)
+        # ONNX モデルファイルの優先順位 (model_mel_int8.onnx > model_mel_fp32.onnx > model_int8.onnx > model_fp32.onnx > model.onnx)
         self.onnx_model_path: Path | None = None
-        for candidate_name in ("model_int8.onnx", "model_fp32.onnx", "model.onnx"):
+        for candidate_name in (
+            "model_mel_int8.onnx",
+            "model_mel_fp32.onnx",
+            "model_int8.onnx",
+            "model_fp32.onnx",
+            "model.onnx",
+        ):
             candidate = self.model_path / candidate_name
             if candidate.exists():
                 self.onnx_model_path = candidate
@@ -64,26 +71,39 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         self.session: Any | None = None
         self.input_name: str | None = None
         self.last_confidence: float | None = None
+        self.last_timing_stats: dict[str, float] = {}
         logger.info("Wav2Vec2Recognizer (ONNX) 初期化完了 (動的トリミング=%s): %s", self.dynamic_trimming, self.onnx_model_path)
 
-    def recognize(self, audio: Any) -> str:
-        import time
-        self._ensure_model_loaded()
-        t_start = time.perf_counter()
-
+    def _prepare_input_values(self, audio: Any) -> tuple[np.ndarray, float, float]:
+        """波形前処理を行い ONNX に渡す input_values とタイミング計測値を返します。"""
         t_prep_start = time.perf_counter()
         waveform = self.audio_preprocessor.preprocess_waveform(
             audio,
             pad_to_target=not self.dynamic_trimming,
         )
-        inputs = self.feature_extractor(
-            waveform,
-            sampling_rate=self.sample_rate,
-            return_tensors="np",
-            padding=True,
-        )
-        input_values = inputs["input_values"].astype(np.float32)
+        if self.input_name == "waveform":
+            # 前処理内包型 ONNX: 特徴量抽出処理を行わずダイレクトに生波形を渡す
+            if waveform.ndim == 1:
+                input_values = np.expand_dims(waveform, axis=0).astype(np.float32)
+            else:
+                input_values = waveform.astype(np.float32)
+        else:
+            # 従来型 ONNX: FeatureExtractor を呼び出し
+            inputs = self.feature_extractor(
+                waveform,
+                sampling_rate=self.sample_rate,
+                return_tensors="np",
+                padding=True,
+            )
+            input_values = inputs["input_values"].astype(np.float32)
         t_prep_end = time.perf_counter()
+        return input_values, t_prep_start, t_prep_end
+
+    def recognize(self, audio: Any) -> str:
+        self._ensure_model_loaded()
+        t_start = time.perf_counter()
+
+        input_values, t_prep_start, t_prep_end = self._prepare_input_values(audio)
 
         t_inf_start = time.perf_counter()
         outputs = self.session.run(None, {self.input_name: input_values})
@@ -113,17 +133,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
     def recognize_with_candidates(self, audio: Any, top_k: int = 3) -> list[tuple[str, float]]:
         """上位 top_k 個の認識候補ラベルと確信度スコアのリストを返します"""
         self._ensure_model_loaded()
-        waveform = self.audio_preprocessor.preprocess_waveform(
-            audio,
-            pad_to_target=not self.dynamic_trimming,
-        )
-        inputs = self.feature_extractor(
-            waveform,
-            sampling_rate=self.sample_rate,
-            return_tensors="np",
-            padding=True,
-        )
-        input_values = inputs["input_values"].astype(np.float32)
+        input_values, _, _ = self._prepare_input_values(audio)
         outputs = self.session.run(None, {self.input_name: input_values})
         logits = outputs[0][0]
         exp_logits = np.exp(logits - np.max(logits))
@@ -135,14 +145,14 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         return candidates
 
     def _ensure_model_loaded(self) -> None:
-        if self.session is not None and self.feature_extractor is not None:
+        if self.session is not None and (self.input_name == "waveform" or self.feature_extractor is not None):
             return
 
         if self.onnx_model_path is None or not self.onnx_model_path.exists():
             raise ModelNotFoundError(
                 f"Wav2Vec2 ONNX モデルが見つかりません: {self.model_path}\n"
                 "以下のエクスポートコマンドを実行して ONNX ファイルを生成してください:\n"
-                "  uv run python models/wav2vec2/export_onnx.py"
+                "  uv run python models/wav2vec2/export_mel_prepended_onnx.py"
             )
 
         try:
@@ -150,14 +160,6 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
             from transformers import AutoFeatureExtractor
         except ImportError as exc:
             raise ImportError("Wav2Vec2 ONNX サポートには 'onnxruntime' と 'transformers' が必要です。") from exc
-
-        # Feature Extractor ロード
-        try:
-            self.feature_extractor = AutoFeatureExtractor.from_pretrained(self.model_path)
-        except Exception:
-            self.feature_extractor = AutoFeatureExtractor.from_pretrained(
-                DEFAULT_RECOGNITION_CONFIG.wav2vec2_pretrained_model_name
-            )
 
         # ONNX Runtime セッション初期化 (CPU 最適化)
         sess_options = ort.SessionOptions()
@@ -171,7 +173,16 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
             providers=["CPUExecutionProvider"],
         )
         self.input_name = self.session.get_inputs()[0].name
-        logger.info("ONNX モデルを正常ロードしました: %s", self.onnx_model_path)
+
+        # Feature Extractor ロード (入力が input_values の場合のみ)
+        if self.input_name != "waveform":
+            try:
+                self.feature_extractor = AutoFeatureExtractor.from_pretrained(self.model_path)
+            except Exception:
+                self.feature_extractor = AutoFeatureExtractor.from_pretrained(
+                    DEFAULT_RECOGNITION_CONFIG.wav2vec2_pretrained_model_name
+                )
+        logger.info("ONNX モデルを正常ロードしました (input_name=%s): %s", self.input_name, self.onnx_model_path)
 
     def _label_for_index(self, index: int) -> str:
         if 0 <= index < len(self.labels):
