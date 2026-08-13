@@ -82,7 +82,7 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-allowed-confusables = ["（", "）", "〜", "・", "“", "”", "’", "＆", "×", "？", "ノ"]
+allowed-confusables = ["（", "）", "〜", "・", "“", "”", "’", "＆", "×", "？", "ノ", "∪", "！", "＼"]
 select = [
     "E",      # pycodestyle errors
     "W",      # pycodestyle warnings
@@ -97,6 +97,7 @@ select = [
 ]
 ignore = [
     "E501",   # line length (handled by ruff format)
+    "SIM118", # key in dict.keys() check (false positive on safetensors safe_open objects)
 ]
 
 [tool.ruff.lint.isort]

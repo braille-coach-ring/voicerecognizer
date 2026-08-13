@@ -1,19 +1,14 @@
 import csv
 import json
 import logging
-import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
-from core.interfaces import RecognitionStrategy  # noqa: E402
+from config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
+from core.interfaces import RecognitionStrategy
 
 logger = logging.getLogger(__name__)
 

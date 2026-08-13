@@ -11,6 +11,8 @@ Wav2Vec2 ONNX Export & Benchmark Script
 """
 
 import argparse
+import contextlib
+import io
 import json
 import logging
 import os
@@ -18,19 +20,16 @@ import sys
 import time
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+if sys.platform == "win32":
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if isinstance(sys.stderr, io.TextIOWrapper):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-sys.stdout.reconfigure(encoding="utf-8")
-sys.stderr.reconfigure(encoding="utf-8")
+import numpy as np
+import torch
 
-import contextlib
-
-import numpy as np  # noqa: E402
-import torch  # noqa: E402
-
-from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
+from config import DEFAULT_RECOGNITION_CONFIG
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)

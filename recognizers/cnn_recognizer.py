@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 class CNNRecognizer(RecognitionStrategy):
     def __init__(
         self,
-        model_path: str | Path,
-        labels: tuple[str, ...] | list[str],
+        model_path: str | Path = DEFAULT_RECOGNITION_CONFIG.cnn_weight_path,
+        labels: tuple[str, ...] | list[str] = DEFAULT_RECOGNITION_CONFIG.labels,
         sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
         top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,

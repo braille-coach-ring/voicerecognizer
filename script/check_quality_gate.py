@@ -92,6 +92,38 @@ def get_base_file_content(rel_path: str) -> str | None:
     return None
 
 
+def check_no_noqa_prohibited() -> int:
+    print_status("Checking for prohibited '# noqa' comments...", "NOQA-CHECK")
+    noqa_found: list[str] = []
+    for py_file in ROOT_DIR.rglob("*.py"):
+        if py_file == Path(__file__).resolve():
+            continue
+        parts_set = set(py_file.parts)
+        if ".venv" in parts_set or ".git" in parts_set or "build" in parts_set or ".mypy_cache" in parts_set:
+            continue
+        try:
+            content = py_file.read_text(encoding="utf-8")
+            for idx, line in enumerate(content.splitlines(), 1):
+                if "# noqa" in line or "#noqa" in line:
+                    rel_path = py_file.relative_to(ROOT_DIR)
+                    noqa_found.append(f"{rel_path}:{idx}: {line.strip()}")
+        except Exception:
+            pass
+
+    if noqa_found:
+        print_status(
+            f"FAILURE: Found {len(noqa_found)} prohibited '# noqa' comments!",
+            "FAILURE",
+            COLOR_RED,
+        )
+        for item in noqa_found:
+            print(f"  {item}")
+        return 1
+
+    print_status("No '# noqa' comments found. All clean!", "SUCCESS", COLOR_GREEN)
+    return 0
+
+
 def run_pytest() -> int:
     print_status("Running pytest test suite...", "PYTEST")
     cmd = [sys.executable, "-m", "pytest"]
@@ -469,6 +501,7 @@ def main() -> None:
             exit_codes.append(check_mypy_baseline())
     else:
         print_status("Starting complete Quality Gate check...", "QUALITY-GATE")
+        exit_codes.append(check_no_noqa_prohibited())
         exit_codes.append(run_pytest())
         exit_codes.append(check_ruff_baseline())
         exit_codes.append(check_mypy_baseline())

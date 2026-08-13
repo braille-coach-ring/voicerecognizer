@@ -17,23 +17,18 @@ Voice Recognizer Package API
       print(text)
 """
 
-import sys
 from pathlib import Path
 from typing import Any
 
-PACKAGE_ROOT = Path(__file__).resolve().parent
-if str(PACKAGE_ROOT) not in sys.path:
-    sys.path.insert(0, str(PACKAGE_ROOT))
-
-from core.exceptions import (  # noqa: E402
+from core.exceptions import (
     AudioPreprocessingError,
     DeviceNotFoundError,
     ModelNotFoundError,
     VoiceRecognizerError,
 )
-from core.interfaces import RecognitionStrategy  # noqa: E402
-from recognizers import CNNRecognizer, Wav2Vec2Recognizer, WhisperRecognizer  # noqa: E402
-from runtime.stream_listener import AudioStreamListener, RecognitionResult  # noqa: E402
+from core.interfaces import RecognitionStrategy
+from recognizers import CNNRecognizer, Wav2Vec2Recognizer, WhisperRecognizer
+from runtime.stream_listener import AudioStreamListener, RecognitionResult
 
 __version__ = "0.1.0"
 
@@ -75,11 +70,11 @@ def recognize(audio: str | Path | Any, model_type: str = "wav2vec2") -> str:
         認識されたひらがな文字列
     """
     if model_type == "wav2vec2":
-        rec = get_default_recognizer()
+        rec: RecognitionStrategy = get_default_recognizer()
         return rec.recognize(audio)
     elif model_type == "cnn":
-        rec = CNNRecognizer()
-        return rec.recognize(audio)
+        cnn_rec: RecognitionStrategy = CNNRecognizer()
+        return cnn_rec.recognize(audio)
     else:
         raise ValueError(f"未対応のモデルタイプです: {model_type}")
 
@@ -87,10 +82,10 @@ def recognize(audio: str | Path | Any, model_type: str = "wav2vec2") -> str:
 async def recognize_async(audio: str | Path | Any, model_type: str = "wav2vec2") -> str:
     """非同期 (async/await) でノンブロッキング音声認識を行うショートカット関数"""
     if model_type == "wav2vec2":
-        rec = get_default_recognizer()
+        rec: RecognitionStrategy = get_default_recognizer()
         return await rec.recognize_async(audio)
     elif model_type == "cnn":
-        rec = CNNRecognizer()
-        return await rec.recognize_async(audio)
+        cnn_rec: RecognitionStrategy = CNNRecognizer()
+        return await cnn_rec.recognize_async(audio)
     else:
         raise ValueError(f"未対応のモデルタイプです: {model_type}")

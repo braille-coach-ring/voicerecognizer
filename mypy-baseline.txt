@@ -88,8 +88,6 @@ recognizers/wav2vec2_recognizer.py:0: error: Call to untyped function "from_pret
 models/wav2vec2/processor.py:0: error: Returning Any from function declared to return "dict[str, Tensor]"  [no-any-return]
 models/wav2vec2/processor.py:0: error: "None" not callable  [misc]
 models/wav2vec2/processor.py:0: error: Call to untyped function "from_pretrained" of "AutoFeatureExtractor" in typed context  [no-untyped-call]
-models/wav2vec2/export_mel_prepended_onnx.py:0: error: Item "TextIO" of "TextIO | Any" has no attribute "reconfigure"  [union-attr]
-models/wav2vec2/export_mel_prepended_onnx.py:0: error: Item "TextIO" of "TextIO | Any" has no attribute "reconfigure"  [union-attr]
 models/wav2vec2/export_mel_prepended_onnx.py:0: error: Returning Any from function declared to return "Tensor"  [no-any-return]
 models/wav2vec2/export_mel_prepended_onnx.py:0: error: Call to untyped function "eval" in typed context  [no-untyped-call]
 models/wav2vec2/export_mel_prepended_onnx.py:0: error: Argument 2 to "export" has incompatible type "Tensor"; expected "tuple[Any, ...]"  [arg-type]
@@ -114,8 +112,6 @@ tests/test_wav2vec2_onnx.py:0: error: Function is missing a return type annotati
 tests/test_wav2vec2_onnx.py:0: note: Use "-> None" if function does not return a value
 tests/test_wav2vec2_onnx.py:0: error: Function is missing a type annotation  [no-untyped-def]
 tests/test_wav2vec2_onnx.py:0: error: Argument 1 to "assertGreater" of "TestCase" has incompatible type "float | None"; expected "SupportsDunderGT[float]"  [arg-type]
-script/benchmark_onnx.py:0: error: Item "TextIO" of "TextIO | Any" has no attribute "reconfigure"  [union-attr]
-script/benchmark_onnx.py:0: error: Item "TextIO" of "TextIO | Any" has no attribute "reconfigure"  [union-attr]
 script/benchmark_dynamic_trimming.py:0: error: Function is missing a return type annotation  [no-untyped-def]
 script/benchmark_dynamic_trimming.py:0: note: Use "-> None" if function does not return a value
 script/benchmark_dynamic_trimming.py:0: error: Call to untyped function "benchmark" in typed context  [no-untyped-call]
@@ -128,8 +124,6 @@ models/cnn/export.py:0: error: Call to untyped function "trace" in typed context
 script/benchmark_base_models.py:0: error: Call to untyped function "from_pretrained" of "AutoFeatureExtractor" in typed context  [no-untyped-call]
 script/benchmark_base_models.py:0: error: Function is missing a return type annotation  [no-untyped-def]
 script/benchmark_base_models.py:0: error: Call to untyped function "main" in typed context  [no-untyped-call]
-models/wav2vec2/export_onnx.py:0: error: Item "TextIO" of "TextIO | Any" has no attribute "reconfigure"  [union-attr]
-models/wav2vec2/export_onnx.py:0: error: Item "TextIO" of "TextIO | Any" has no attribute "reconfigure"  [union-attr]
 models/wav2vec2/export_onnx.py:0: error: Argument 2 to "export" has incompatible type "Tensor"; expected "tuple[Any, ...]"  [arg-type]
 models/wav2vec2/export_onnx.py:0: error: Call to untyped function "from_pretrained" of "AutoFeatureExtractor" in typed context  [no-untyped-call]
 models/wav2vec2/export_onnx.py:0: error: Call to untyped function "from_pretrained" of "AutoFeatureExtractor" in typed context  [no-untyped-call]
@@ -147,22 +141,13 @@ models/wav2vec2/train.py:0: error: Missing type arguments for generic type "Subs
 models/wav2vec2/train.py:0: error: Returning Any from function declared to return "bool"  [no-any-return]
 models/wav2vec2/train.py:0: error: Returning Any from function declared to return "dict[str, Tensor]"  [no-any-return]
 models/wav2vec2/train.py:0: error: Missing type arguments for generic type "DataLoader"  [type-arg]
-models/wav2vec2/train.py:0: error: Name "torch.amp.GradScaler" is not defined  [name-defined]
-models/wav2vec2/train.py:0: error: Module "torch.amp" does not explicitly export attribute "autocast"  [attr-defined]
 models/wav2vec2/train.py:0: error: Missing type arguments for generic type "DataLoader"  [type-arg]
-models/wav2vec2/train.py:0: error: Module "torch.amp" does not explicitly export attribute "autocast"  [attr-defined]
 models/wav2vec2/train.py:0: error: Returning Any from function declared to return Module  [no-any-return]
 models/wav2vec2/train.py:0: error: Returning Any from function declared to return Module  [no-any-return]
-models/wav2vec2/train.py:0: error: "Tensor" not callable  [operator]
 models/wav2vec2/train.py:0: error: Incompatible types in assignment (expression has type "AugmentedSubset", variable has type "Subset[Any]")  [assignment]
 models/wav2vec2/train.py:0: error: Incompatible types in assignment (expression has type "AugmentedSubset", variable has type "Subset[Any]")  [assignment]
 models/wav2vec2/train.py:0: error: Argument "weights" to "WeightedRandomSampler" has incompatible type "Tensor"; expected "Sequence[float]"  [arg-type]
 models/wav2vec2/train.py:0: error: Need type annotation for "history"  [var-annotated]
-models/wav2vec2/train.py:0: error: Module "torch.amp" does not explicitly export attribute "GradScaler"  [attr-defined]
-__init__.py:0: error: Missing positional arguments "model_path", "labels" in call to "CNNRecognizer"  [call-arg]
-__init__.py:0: error: Incompatible types in assignment (expression has type "CNNRecognizer", variable has type "Wav2Vec2Recognizer")  [assignment]
-__init__.py:0: error: Missing positional arguments "model_path", "labels" in call to "CNNRecognizer"  [call-arg]
-__init__.py:0: error: Incompatible types in assignment (expression has type "CNNRecognizer", variable has type "Wav2Vec2Recognizer")  [assignment]
 main.py:0: error: Call to untyped function "run" in typed context  [no-untyped-call]
 tests/test_architecture.py:0: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
 tests/test_architecture.py:0: error: Function is missing a return type annotation  [no-untyped-def]
@@ -175,24 +160,6 @@ script/evaluate.py:0: error: Function is missing a return type annotation  [no-u
 script/evaluate.py:0: note: Use "-> None" if function does not return a value
 script/evaluate.py:0: error: Call to untyped function "main" in typed context  [no-untyped-call]
 train.py:0: error: Function is missing a return type annotation  [no-untyped-def]
-tests/test_wav2vec2_lazy_dataset.py:0: error: Function is missing a return type annotation  [no-untyped-def]
-tests/test_wav2vec2_lazy_dataset.py:0: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
-tests/test_wav2vec2_lazy_dataset.py:0: error: Function is missing a type annotation  [no-untyped-def]
-tests/test_wav2vec2_lazy_dataset.py:0: error: Function is missing a type annotation  [no-untyped-def]
-tests/test_wav2vec2_lazy_dataset.py:0: error: Function is missing a type annotation  [no-untyped-def]
-tests/test_wav2vec2_lazy_dataset.py:0: error: Function is missing a return type annotation  [no-untyped-def]
-tests/test_wav2vec2_lazy_dataset.py:0: note: Use "-> None" if function does not return a value
-tests/test_wav2vec2_lazy_dataset.py:0: error: Incompatible types in assignment (expression has type "int", variable has type "str")  [assignment]
-tests/test_wav2vec2_lazy_dataset.py:0: error: Function is missing a return type annotation  [no-untyped-def]
-tests/test_wav2vec2_lazy_dataset.py:0: note: Use "-> None" if function does not return a value
-tests/test_wav2vec2_lazy_dataset.py:0: error: Function is missing a return type annotation  [no-untyped-def]
-tests/test_wav2vec2_lazy_dataset.py:0: note: Use "-> None" if function does not return a value
-tests/test_wav2vec2_lazy_dataset.py:0: error: Function is missing a return type annotation  [no-untyped-def]
-tests/test_wav2vec2_lazy_dataset.py:0: note: Use "-> None" if function does not return a value
-tests/test_wav2vec2_lazy_dataset.py:0: error: Function is missing a return type annotation  [no-untyped-def]
-tests/test_wav2vec2_lazy_dataset.py:0: note: Use "-> None" if function does not return a value
-tests/test_wav2vec2_lazy_dataset.py:0: error: Function is missing a return type annotation  [no-untyped-def]
-tests/test_wav2vec2_lazy_dataset.py:0: note: Use "-> None" if function does not return a value
 tests/test_resume_policy.py:0: error: Function is missing a return type annotation  [no-untyped-def]
 tests/test_resume_policy.py:0: note: Use "-> None" if function does not return a value
 tests/test_resume_policy.py:0: error: Function is missing a return type annotation  [no-untyped-def]
@@ -204,7 +171,6 @@ tests/test_auto_prep_training.py:0: error: Function is missing a type annotation
 script/ab_test_base_models.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 script/ab_test_base_models.py:0: error: Call to untyped function "from_pretrained" of "AutoFeatureExtractor" in typed context  [no-untyped-call]
 script/ab_test_base_models.py:0: error: Call to untyped function "get_linear_schedule_with_warmup" in typed context  [no-untyped-call]
-script/ab_test_base_models.py:0: error: Module "torch.amp" does not explicitly export attribute "GradScaler"  [attr-defined]
 script/ab_test_base_models.py:0: error: Function is missing a return type annotation  [no-untyped-def]
 script/ab_test_base_models.py:0: error: Missing type arguments for generic type "dict"  [type-arg]
 script/ab_test_base_models.py:0: error: Call to untyped function "main" in typed context  [no-untyped-call]

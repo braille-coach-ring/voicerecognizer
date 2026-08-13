@@ -14,29 +14,23 @@ import argparse
 import json
 import logging
 import random
-import sys
-from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+import numpy as np
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader, Subset
+from tqdm import tqdm
 
-import numpy as np  # noqa: E402
-import torch  # noqa: E402
-import torch.nn as nn  # noqa: E402
-from torch.utils.data import DataLoader, Subset  # noqa: E402
-from tqdm import tqdm  # noqa: E402
-
-from config import (  # noqa: E402
+from config import (
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
 )
-from dataset.hiragana_dataset import HiraganaDataset  # noqa: E402
-from evaluation.evaluator import compute_evaluation_result  # noqa: E402
-from models.cnn.hiragana_cnn import HiraganaCNN  # noqa: E402
-from preprocessing.dataset_builder import ensure_merged_and_preprocessed  # noqa: E402
-from utils.plot_saver import save_history_plots  # noqa: E402
+from dataset.hiragana_dataset import HiraganaDataset
+from evaluation.evaluator import compute_evaluation_result
+from models.cnn.hiragana_cnn import HiraganaCNN
+from preprocessing.dataset_builder import ensure_merged_and_preprocessed
+from utils.plot_saver import save_history_plots
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
