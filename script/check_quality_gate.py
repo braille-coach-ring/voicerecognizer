@@ -152,12 +152,13 @@ def sync_mypy_baseline() -> None:
     mypy_res = subprocess.run(
         mypy_cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8"
     )
+    normalized_stdout = mypy_res.stdout.replace("\\", "/")
 
     sync_cmd = [sys.executable, "-m", "mypy_baseline", "sync"]
     sync_res = subprocess.run(
         sync_cmd,
         cwd=ROOT_DIR,
-        input=mypy_res.stdout,
+        input=normalized_stdout,
         text=True,
         capture_output=True,
         encoding="utf-8",
@@ -184,12 +185,13 @@ def check_mypy_baseline() -> int:
     mypy_res = subprocess.run(
         mypy_cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8"
     )
+    normalized_stdout = mypy_res.stdout.replace("\\", "/")
 
     filter_cmd = [sys.executable, "-m", "mypy_baseline", "filter"]
     filter_res = subprocess.run(
         filter_cmd,
         cwd=ROOT_DIR,
-        input=mypy_res.stdout,
+        input=normalized_stdout,
         text=True,
         capture_output=True,
         encoding="utf-8",
