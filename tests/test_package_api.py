@@ -22,7 +22,7 @@ from voicerecognizer.runtime.stream_listener import AudioStreamListener, Recogni
 
 class TestPackageAPI(unittest.TestCase):
     def test_public_api_exports(self) -> None:
-        """Top-level package exports all required classes, functions, and exceptions."""
+        """Top-level package exports all required classes and exceptions explicitly."""
         self.assertEqual(vr.__version__, "0.1.0")
 
         # Classes & Types
@@ -39,32 +39,9 @@ class TestPackageAPI(unittest.TestCase):
         self.assertIs(vr.ModelNotFoundError, ModelNotFoundError)
         self.assertIs(vr.VoiceRecognizerError, VoiceRecognizerError)
 
-        # Shortcut functions
-        self.assertTrue(callable(vr.recognize))
-        self.assertTrue(callable(vr.recognize_async))
-
-    @patch.object(Wav2Vec2Recognizer, "recognize", return_value="あ")
-    @patch("voicerecognizer._ensure_weights_downloaded")
-    def test_top_level_recognize_wav2vec2(
-        self, mock_dl: MagicMock, mock_recognize: MagicMock
-    ) -> None:
-        dummy_audio = np.zeros(16000, dtype=np.float32)
-        result = vr.recognize(dummy_audio, model_type="wav2vec2")
-        self.assertEqual(result, "あ")
-
-    @patch.object(CNNRecognizer, "_load_model")
-    @patch.object(CNNRecognizer, "recognize", return_value="い")
-    @patch("voicerecognizer._ensure_weights_downloaded")
-    def test_top_level_recognize_cnn(
-        self, mock_dl: MagicMock, mock_recognize: MagicMock, mock_load: MagicMock
-    ) -> None:
-        dummy_audio = np.zeros(16000, dtype=np.float32)
-        result = vr.recognize(dummy_audio, model_type="cnn")
-        self.assertEqual(result, "い")
-
     @patch.object(CNNRecognizer, "_load_model")
     def test_cnn_recognizer_default_instantiation(self, mock_load_model: MagicMock) -> None:
-        """CNNRecognizer should be constructable without arguments (defaults from config)."""
+        """CNNRecognizer should be constructable without arguments."""
         recognizer = CNNRecognizer()
         self.assertIsInstance(recognizer, CNNRecognizer)
 

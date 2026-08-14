@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,7 @@ from voicerecognizer.core.interfaces import RecognitionStrategy
 from voicerecognizer.models.cnn.hiragana_cnn import HiraganaCNN
 from voicerecognizer.preprocessing.audio_preprocessor import AudioPreprocessor
 from voicerecognizer.preprocessing.threshold_calculator import AbstractSilenceThresholdCalculator
+from voicerecognizer.utils.model_uploader import download_latest_team_weights_if_needed
 
 logger = logging.getLogger(__name__)
 
@@ -33,12 +35,20 @@ class CNNRecognizer(RecognitionStrategy):
         hop_length: int = DEFAULT_PREPROCESS_CONFIG.hop_length,
         device: torch.device | None = None,
         threshold_calculator: AbstractSilenceThresholdCalculator | None = None,
+        auto_download: bool = True,
     ):
         self.model_path = Path(model_path)
-        labels_json_path = self.model_path.parent / "labels.json"
-        if labels_json_path.exists():
-            import json
+        if not self.model_path.exists() and auto_download:
+            try:
+                download_latest_team_weights_if_needed(
+                    model_type="cnn",
+                    weights_dir=self.model_path.parent,
+                )
+            except Exception as e:
+                logger.warning("CNN 重みの自動ダウンロード中に例外が発生しました: %s", e)
 
+        labels_json_path = self.model_path.parent / DEFAULT_RECOGNITION_CONFIG.labels_filename
+        if labels_json_path.exists():
             with open(labels_json_path, encoding="utf-8") as f:
                 self.labels = tuple(json.load(f))
         else:
@@ -56,6 +66,21 @@ class CNNRecognizer(RecognitionStrategy):
         self.hop_length = hop_length
         self.model = self._load_model()
         logger.info("CNNレコグナイザーの初期化完了")
+
+    def _build_model_not_found_message(self, err: Exception | None = None) -> str:
+        err_msg = f"\n  詳細エラー: {err}" if err else ""
+        return (
+            f"CNN モデル重みファイル ({DEFAULT_RECOGNITION_CONFIG.cnn_model_filename}) のロードに失敗しました。{err_msg}\n\n"
+            f"【確認されたパス】\n"
+            f"  モデルファイル: {self.model_path}\n\n"
+            f"【対処方法・トラブルシューティング】\n"
+            f"  1. [ネットワーク接続] Hugging Face Hub (braille-mate/braille-mate-hiragana-recognizer) へのアクセスを確認してください。\n"
+            f"  2. [認証トークン] リポジトリがプライベート、またはレート制限されている場合は環境変数を設定してください:\n"
+            f"     export HF_TOKEN=\"your_huggingface_token\" (または .env ファイルに記述)\n"
+            f"  3. [手動配置] 以下のファイルを {self.model_path.parent} に配置してください:\n"
+            f"     - {DEFAULT_RECOGNITION_CONFIG.cnn_model_filename}\n"
+            f"     - {DEFAULT_RECOGNITION_CONFIG.labels_filename}\n"
+        )
 
     def recognize(self, audio: Any) -> str:
         import time
@@ -98,7 +123,7 @@ class CNNRecognizer(RecognitionStrategy):
             return model
         except Exception as e:
             logger.error("CNN モデルのロードに失敗しました: %s", e)
-            raise ModelNotFoundError(f"CNN モデルのロードに失敗しました ({self.model_path}): {e}") from e
+            raise ModelNotFoundError(self._build_model_not_found_message(e)) from e
 
     def _preprocess(self, audio: Any) -> np.ndarray:
         return self.audio_preprocessor.preprocess_waveform(audio)

@@ -11,6 +11,7 @@ from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
 from voicerecognizer.core.exceptions import ModelNotFoundError
 from voicerecognizer.core.interfaces import RecognitionStrategy
 from voicerecognizer.preprocessing.audio_preprocessor import AudioPreprocessor
+from voicerecognizer.utils.model_uploader import download_latest_team_weights_if_needed
 
 logger = logging.getLogger(__name__)
 
@@ -31,27 +32,28 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
         top_db: float = DEFAULT_RECOGNITION_CONFIG.top_db,
         dynamic_trimming: bool = True,
+        auto_download: bool = True,
+        candidate_filenames: tuple[str, ...] | list[str] = DEFAULT_RECOGNITION_CONFIG.wav2vec2_onnx_candidate_filenames,
     ):
         self.model_path = Path(model_path)
         self.labels = list(labels)
         self.dynamic_trimming = dynamic_trimming
+        self.candidate_filenames = tuple(candidate_filenames)
 
-        # ONNX モデルファイルの優先順位 (model_mel_int8.onnx > model_mel_fp32.onnx > model_int8.onnx > model_fp32.onnx > model.onnx)
-        self.onnx_model_path: Path | None = None
-        for candidate_name in (
-            "model_mel_int8.onnx",
-            "model_mel_fp32.onnx",
-            "model_int8.onnx",
-            "model_fp32.onnx",
-            "model.onnx",
-        ):
-            candidate = self.model_path / candidate_name
-            if candidate.exists():
-                self.onnx_model_path = candidate
-                break
+        # ONNX モデルファイルの探索
+        self.onnx_model_path = self._find_onnx_model()
+        if self.onnx_model_path is None and auto_download:
+            try:
+                download_latest_team_weights_if_needed(
+                    model_type="wav2vec2",
+                    weights_dir=self.model_path.parent,
+                )
+                self.onnx_model_path = self._find_onnx_model()
+            except Exception as e:
+                logger.warning("Wav2Vec2 重みの自動ダウンロード中に例外が発生しました: %s", e)
 
         # labels.json のロード
-        labels_json = self.model_path / "labels.json"
+        labels_json = self.model_path / DEFAULT_RECOGNITION_CONFIG.labels_filename
         if labels_json.exists():
             try:
                 with open(labels_json, encoding="utf-8") as f:
@@ -76,6 +78,31 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
             "Wav2Vec2Recognizer (ONNX) 初期化完了 (動的トリミング=%s): %s",
             self.dynamic_trimming,
             self.onnx_model_path,
+        )
+
+    def _find_onnx_model(self) -> Path | None:
+        """ONNX モデルファイルの優先順位探索"""
+        for candidate_name in self.candidate_filenames:
+            candidate = self.model_path / candidate_name
+            if candidate.exists():
+                return candidate
+        return None
+
+    def _build_model_not_found_message(self) -> str:
+        candidate_list_str = "\n".join(f"     - {name}" for name in self.candidate_filenames)
+        return (
+            f"Wav2Vec2 ONNX モデルファイル ({DEFAULT_RECOGNITION_CONFIG.wav2vec2_default_onnx_filename} 等) が見つかりません。\n\n"
+            f"【確認されたパス】\n"
+            f"  ローカルモデルディレクトリ: {self.model_path}\n\n"
+            f"【対処方法・トラブルシューティング】\n"
+            f"  1. [ネットワーク接続] Hugging Face Hub (braille-mate/braille-mate-hiragana-recognizer) へのアクセスを確認してください。\n"
+            f"  2. [認証トークン] リポジトリがプライベート、またはレート制限されている場合は環境変数を設定してください:\n"
+            f"     export HF_TOKEN=\"your_huggingface_token\" (または .env ファイルに記述)\n"
+            f"  3. [手動配置] 以下のいずれかの ONNX モデルおよびメタデータを {self.model_path} に配置してください:\n"
+            f"{candidate_list_str}\n"
+            f"     - {DEFAULT_RECOGNITION_CONFIG.labels_filename}\n"
+            f"     - {DEFAULT_RECOGNITION_CONFIG.config_filename}\n"
+            f"     - {DEFAULT_RECOGNITION_CONFIG.preprocessor_config_filename}\n"
         )
 
     def _prepare_input_values(self, audio: Any) -> tuple[np.ndarray, float, float]:
@@ -166,11 +193,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
             return
 
         if self.onnx_model_path is None or not self.onnx_model_path.exists():
-            raise ModelNotFoundError(
-                f"Wav2Vec2 ONNX モデルが見つかりません: {self.model_path}\n"
-                "以下のエクスポートコマンドを実行して ONNX ファイルを生成してください:\n"
-                "  uv run python models/wav2vec2/export_mel_prepended_onnx.py"
-            )
+            raise ModelNotFoundError(self._build_model_not_found_message())
 
         try:
             import onnxruntime as ort

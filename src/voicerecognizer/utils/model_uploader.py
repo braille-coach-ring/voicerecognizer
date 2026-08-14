@@ -59,24 +59,20 @@ def download_latest_team_weights_if_needed(
 
     files_to_sync = []
     if model_type == "cnn":
-        files_to_sync.extend(["best_model.pth", "labels.json"])
+        files_to_sync.extend(DEFAULT_RECOGNITION_CONFIG.cnn_essential_filenames)
     elif model_type == "wav2vec2":
         files_to_sync.extend(
-            [
-                "wav2vec2_best/config.json",
-                "wav2vec2_best/labels.json",
-                "wav2vec2_best/model.safetensors",
-                "wav2vec2_best/preprocessor_config.json",
-            ]
+            [f"wav2vec2_best/{fname}" for fname in DEFAULT_RECOGNITION_CONFIG.wav2vec2_essential_filenames]
         )
 
     if not files_to_sync:
         return True
 
+    logger.info("Hugging Face Hub (%s) より最新モデル重み情報を確認中...", cfg.repo_id)
     remote_sha_map = get_remote_file_sha256_map(api, cfg.repo_id, files_to_sync)
     if not remote_sha_map:
         logger.info(
-            "ℹ️ リモートリポジトリ %s に事前モデルが見つからないため、ローカルのまま続行します。",
+            "[INFO] リモートリポジトリ %s からメタデータを取得できなかったため、ローカルのまま続行します。",
             cfg.repo_id,
         )
         return True
@@ -88,14 +84,14 @@ def download_latest_team_weights_if_needed(
         if local_file.exists() and remote_sha:
             local_sha = calculate_file_sha256(local_file)
             if local_sha.lower() == remote_sha.lower():
-                logger.info(
-                    "ℹ️ 手元の %s はチーム共有の最新モデルと一致しています。(ダウンロード不要)",
+                logger.debug(
+                    "[INFO] 手元の %s はチーム共有の最新モデルと一致しています。(ダウンロード不要)",
                     rel_path,
                 )
                 continue
 
         # リモートからダウンロード
-        logger.info("📥 チーム共有の最新モデル (%s) をダウンロード中...", rel_path)
+        logger.info("📥 モデルファイル (%s) を Hugging Face Hub よりダウンロード中...", rel_path)
         try:
             downloaded_path = hf_hub_download(
                 repo_id=cfg.repo_id,
@@ -107,9 +103,13 @@ def download_latest_team_weights_if_needed(
             # ダウンロードしたファイルを target_dir に配置
             with open(downloaded_path, "rb") as src, open(local_file, "wb") as dst:
                 dst.write(src.read())
-            logger.info("✨ %s をチーム共有最新版に更新しました。", rel_path)
+            logger.info("✨ %s をローカルキャッシュ (%s) に保存しました。", rel_path, local_file)
         except Exception as e:
-            logger.warning("チーム最新モデル (%s) の取得をスキップしました: %s", rel_path, e)
+            logger.warning("モデルファイル (%s) のダウンロードに失敗しました: %s", rel_path, e)
+            if not token:
+                logger.debug(
+                    "ヒント: プライベートリポジトリへのアクセスには環境変数 HF_TOKEN が必要です。"
+                )
 
     return True
 
@@ -169,7 +169,7 @@ def upload_weights_to_hf(
                 remote_sha = remote_sha_map.get(rel_path)
 
                 if not force_upload and remote_sha and remote_sha.lower() == local_sha.lower():
-                    logger.info("ℹ️ %s はリモートと一致しているため送信をスキップします。", rel_path)
+                    logger.info("[INFO] %s はリモートと一致しているため送信をスキップします。", rel_path)
                     continue
 
                 logger.info(
@@ -201,14 +201,18 @@ def upload_weights_to_hf(
                 )
                 return True
 
-            essential_filenames = [
-                "config.json",
-                "labels.json",
-                "model.safetensors",
-                "preprocessor_config.json",
-                "vocab.json",
-                "tokenizer_config.json",
-            ]
+            essential_filenames = list(
+                dict.fromkeys(
+                    (
+                        *DEFAULT_RECOGNITION_CONFIG.wav2vec2_essential_filenames,
+                        DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_fp32_onnx_filename,
+                        DEFAULT_RECOGNITION_CONFIG.wav2vec2_fp32_onnx_filename,
+                        "model.safetensors",
+                        "vocab.json",
+                        "tokenizer_config.json",
+                    )
+                )
+            )
             files_to_check = []
             for fname in essential_filenames:
                 fpath = wav2vec2_best_dir / fname
@@ -231,7 +235,7 @@ def upload_weights_to_hf(
                 remote_sha = remote_sha_map.get(rel_path)
 
                 if not force_upload and remote_sha and remote_sha.lower() == local_sha.lower():
-                    logger.info("ℹ️ %s はリモートと一致しているため送信をスキップします。", rel_path)
+                    logger.info("[INFO] %s はリモートと一致しているため送信をスキップします。", rel_path)
                     continue
 
                 logger.info(
