@@ -41,7 +41,26 @@ class TestPackageAPI(unittest.TestCase):
         result = asyncio.run(recognizer.recognize_async(dummy_audio))
         self.assertEqual(result, "い")
 
+    def test_module_routing_imports(self) -> None:
+        """Module routing should allow importing core.factory and other subpackages directly."""
+        import core.factory
+        import core.services
+        import evaluation
+        import models.cnn
+        import models.wav2vec2
+        from core.factory import RecognizerFactory
+        from core.factory.recognizer_factory import RecognizerFactory as RF
+        from evaluation import Evaluator
+
+        self.assertIsNotNone(core.factory)
+        self.assertIsNotNone(core.services)
+        self.assertIsNotNone(models.cnn)
+        self.assertIsNotNone(models.wav2vec2)
+        self.assertIsNotNone(evaluation)
+        self.assertIs(RecognizerFactory, RF)
+        self.assertIsNotNone(Evaluator)
 
 
 if __name__ == "__main__":
     unittest.main()
+
