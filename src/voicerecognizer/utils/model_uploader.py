@@ -5,7 +5,7 @@ from typing import Literal
 
 from huggingface_hub import HfApi, hf_hub_download, login
 
-from voicerecognizer.config import DEFAULT_HUGGINGFACE_CONFIG, DEFAULT_RECOGNITION_CONFIG, HuggingFaceConfig
+from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, HuggingFaceConfig, load_env
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ def download_latest_team_weights_if_needed(
     学習開始時等に呼ぶことで、Hugging Face リモートのチーム共有最新モデルと手元のモデルの SHA-256 を比較し、
     手元が古い場合や未存在の場合のみ高速ダウンロードして同期します。
     """
-    cfg = hf_config or DEFAULT_HUGGINGFACE_CONFIG
+    cfg = hf_config or HuggingFaceConfig()
     target_dir = weights_dir or DEFAULT_RECOGNITION_CONFIG.weights_dir
     target_dir.mkdir(parents=True, exist_ok=True)
 
@@ -131,8 +131,18 @@ def upload_weights_to_hf(
     指定されたモデルのベスト成果物を Hugging Face Hub へスマートにアップロードします。
     ローカルとリモートで差分がないファイルは送信を自動スキップします。
     """
-    cfg = hf_config or DEFAULT_HUGGINGFACE_CONFIG
-    target_dir = weights_dir or DEFAULT_RECOGNITION_CONFIG.weights_dir
+    if hf_config is not None:
+        cfg = hf_config
+    else:
+        load_env()
+        cfg = HuggingFaceConfig()
+
+    if weights_dir is not None:
+        target_dir = Path(weights_dir)
+    elif Path("weights").exists():
+        target_dir = Path("weights")
+    else:
+        target_dir = DEFAULT_RECOGNITION_CONFIG.weights_dir
 
     if not target_dir.exists():
         logger.error("アップロード対象の weights ディレクトリが存在しません: %s", target_dir)

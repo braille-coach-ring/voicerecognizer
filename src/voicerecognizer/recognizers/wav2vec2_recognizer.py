@@ -46,10 +46,14 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         self.dynamic_trimming = dynamic_trimming
         self.candidate_filenames = tuple(candidate_filenames)
         self._last_download_error: str | None = None
-        self.hf_config = HuggingFaceConfig(
-            repo_id=hf_repo_id or DEFAULT_HUGGINGFACE_CONFIG.repo_id,
-            token=hf_token if hf_token is not None else DEFAULT_HUGGINGFACE_CONFIG.token,
-        )
+        if hf_repo_id is not None and hf_token is not None:
+            self.hf_config = HuggingFaceConfig(repo_id=hf_repo_id, token=hf_token)
+        elif hf_repo_id is not None:
+            self.hf_config = HuggingFaceConfig(repo_id=hf_repo_id)
+        elif hf_token is not None:
+            self.hf_config = HuggingFaceConfig(token=hf_token)
+        else:
+            self.hf_config = HuggingFaceConfig()
 
         # ONNX モデルファイルの探索
         self.onnx_model_path = self._find_onnx_model()

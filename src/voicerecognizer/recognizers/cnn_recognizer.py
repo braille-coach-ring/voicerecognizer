@@ -43,10 +43,14 @@ class CNNRecognizer(RecognitionStrategy):
     ):
         self.model_path = Path(model_path)
         self._last_download_error: str | None = None
-        self.hf_config = HuggingFaceConfig(
-            repo_id=hf_repo_id or DEFAULT_HUGGINGFACE_CONFIG.repo_id,
-            token=hf_token if hf_token is not None else DEFAULT_HUGGINGFACE_CONFIG.token,
-        )
+        if hf_repo_id is not None and hf_token is not None:
+            self.hf_config = HuggingFaceConfig(repo_id=hf_repo_id, token=hf_token)
+        elif hf_repo_id is not None:
+            self.hf_config = HuggingFaceConfig(repo_id=hf_repo_id)
+        elif hf_token is not None:
+            self.hf_config = HuggingFaceConfig(token=hf_token)
+        else:
+            self.hf_config = HuggingFaceConfig()
         if not self.model_path.exists() and auto_download:
             logger.info(
                 "ローカルに CNN モデル重みが見つかりません (%s)。Hugging Face Hub より自動ダウンロードを開始します...",
