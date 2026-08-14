@@ -348,11 +348,11 @@ def save_pretrained_model(
         err_text = str(exc).lower()
         if "not enough space" in err_text or "os error 112" in err_text:
             logger.error(
-                "❌ ディスク容量不足のためモデルの保存に失敗しました (%s)。Cドライブの空き容量を確保してください。",
+                "ディスク容量不足のためモデルの保存に失敗しました (%s)。Cドライブの空き容量を確保してください。",
                 output_dir,
             )
         else:
-            logger.error("❌ モデルの保存中にエラーが発生しました (%s): %s", output_dir, exc)
+            logger.error("モデルの保存中にエラーが発生しました (%s): %s", output_dir, exc)
         raise
 
 
@@ -730,7 +730,7 @@ def train(args: argparse.Namespace) -> None:
                 f"指定されたチェックポイントが見つかりません: {target_resume_path}"
             )
         logger.info(
-            "📌 指定されたローカルチェックポイント (%s) から学習を再開します。(HFダウンロード送信なし)",
+            "指定されたローカルチェックポイント (%s) から学習を再開します。(HFダウンロード送信なし)",
             target_resume_path,
         )
     elif resume:
@@ -766,7 +766,7 @@ def train(args: argparse.Namespace) -> None:
     num_workers_arg = getattr(args, "num_workers", None)
     num_workers = determine_optimal_num_workers(num_workers_arg)
     logger.info(
-        "⚡ DataLoader の並列ワーカー数 (num_workers) を自動動的設定しました: %d (CPUコア数: %d)",
+        "DataLoader の並列ワーカー数 (num_workers) を自動動的設定しました: %d (CPUコア数: %d)",
         num_workers,
         os.cpu_count() or 1,
     )
@@ -839,7 +839,7 @@ def train(args: argparse.Namespace) -> None:
             )
         else:
             logger.info(
-                "💡 旧モデル (%s) の音声特徴表現 (CNN+Transformer) を引き継ぎつつ、分類層を新しいクラス数 (%dクラス) に自動拡張してファインチューニングを開始します。",
+                "旧モデル (%s) の音声特徴表現 (CNN+Transformer) を引き継ぎつつ、分類層を新しいクラス数 (%dクラス) に自動拡張してファインチューニングを開始します。",
                 model_source,
                 len(dataset.labels),
             )
@@ -879,7 +879,7 @@ def train(args: argparse.Namespace) -> None:
             replacement=True,
         )
         logger.info(
-            "⚖️ マイルド全クラスサンプラー (WeightedRandomSampler: power=0.5) を有効化しました。aiueo の正解率を維持しつつマイナー音もバランスよく学習します。"
+            "マイルド全クラスサンプラー (WeightedRandomSampler: power=0.5) を有効化しました。aiueo の正解率を維持しつつマイナー音もバランスよく学習します。"
         )
 
     pin_memory = device.type == "cuda"
@@ -952,7 +952,7 @@ def train(args: argparse.Namespace) -> None:
             init_result = compute_evaluation_result(val_true, val_pred, labels=dataset.labels)
             best_macro_f1 = init_result.overall.macro_f1
             logger.info(
-                "🏆 チーム最高精度モデル (%s) のベースラインスコア - Val Acc: %.4f, Val Macro-F1: %.4f",
+                "チーム最高精度モデル (%s) のベースラインスコア - Val Acc: %.4f, Val Macro-F1: %.4f",
                 best_model_path,
                 val_acc,
                 best_macro_f1,
@@ -1035,7 +1035,7 @@ def train(args: argparse.Namespace) -> None:
                 patience_counter += 1
                 if patience > 0 and patience_counter >= patience:
                     logger.info(
-                        "🛑 Early stopping: Validation Macro-F1 が %d エポック連続で向上しなかったため、頭打ちと判断して学習を自動終了します (Best Macro-F1: %.4f)",
+                        "Early stopping: Validation Macro-F1 が %d エポック連続で向上しなかったため、頭打ちと判断して学習を自動終了します (Best Macro-F1: %.4f)",
                         patience,
                         best_macro_f1,
                     )
@@ -1050,9 +1050,9 @@ def train(args: argparse.Namespace) -> None:
 
     except KeyboardInterrupt:
         interrupted = True
-        logger.warning("⚠️ ユーザー操作 (Ctrl+C / SIGINT) により学習が途中で中断されました。")
+        logger.warning("ユーザー操作 (Ctrl+C / SIGINT) により学習が途中で中断されました。")
 
-    logger.info("💾 チェックポイント保存中: 最新のモデル状態を %s に保存します...", last_model_path)
+    logger.info("チェックポイント保存中: 最新のモデル状態を %s に保存します...", last_model_path)
     save_pretrained_model(
         model,
         feature_extractor,
@@ -1069,7 +1069,7 @@ def train(args: argparse.Namespace) -> None:
 
     if interrupted:
         logger.info(
-            "👋 中断処理が正常に完了しました。保存されたチェックポイント (%s) から `--resume-from %s` で学習を再開可能です。",
+            "中断処理が正常に完了しました。保存されたチェックポイント (%s) から `--resume-from %s` で学習を再開可能です。",
             last_model_path,
             last_model_path,
         )

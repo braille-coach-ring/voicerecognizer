@@ -118,7 +118,7 @@ def main() -> None:
     logger.info("ベンチマーク完了。結果を保存しました: %s", output_report_path)
 
     print("\n" + "=" * 70)
-    print(" 🚀 Wav2Vec2 ONNX モデル比較ベンチマーク評価レポート")
+    print(" Wav2Vec2 ONNX モデル比較ベンチマーク評価レポート")
     print("=" * 70)
     print(
         f"{'モデルファイル':<22} | {'入力形式':<10} | {'容量(MB)':<8} | {'Accuracy':<8} | {'Macro-F1':<8} | {'推論時間(ms)':<10} | {'前処理(ms)':<8}"

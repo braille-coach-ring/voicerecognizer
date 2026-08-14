@@ -94,7 +94,7 @@ def extract_features_for_model(
     """指定された Wav2Vec2 モデルから音声埋め込みベクトル (Embeddings) を抽出する"""
     from transformers import AutoFeatureExtractor, AutoModel
 
-    logger.info("📦 Loading model and feature extractor: %s ...", model_name)
+    logger.info("Loading model and feature extractor: %s ...", model_name)
     feature_extractor = AutoFeatureExtractor.from_pretrained(model_name)
     model = AutoModel.from_pretrained(model_name).to(device)
     model.eval()

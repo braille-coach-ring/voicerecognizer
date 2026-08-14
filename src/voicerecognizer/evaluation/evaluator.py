@@ -371,8 +371,8 @@ def generate_html_report(
         insights.append(
             {
                 "type": "danger",
-                "icon": "🚨",
-                "title": f"最重点ボトルネック: 「{top_pair[0]}」 ➔ 「{top_pair[1]}」 の誤認識",
+                "icon": "[!] ",
+                "title": f"最重点ボトルネック: 「{top_pair[0]}」 -> 「{top_pair[1]}」 の誤認識",
                 "desc": f"正解が「{top_pair[0]}」のサンプルのうち {top_pair[2]} 件 ({top_pair[3]:.1f}%) が「{top_pair[1]}」と誤認されています。音量歪み（クリッピング）や『{top_pair[0]}』の生声サンプルの追加収集を推奨します。",
             }
         )
@@ -386,7 +386,7 @@ def generate_html_report(
                 insights.append(
                     {
                         "type": "warning",
-                        "icon": "⚠️",
+                        "icon": "[Warning] ",
                         "title": f"データ偏りの警告: ラベル 「{lbl}」 のサンプル不足",
                         "desc": f"「{lbl}」のデータ数（{m.support}件）が全平均（{avg_supp:.0f}件）に対して著しく少ないため、誤判定や過学習のリスクがあります。",
                     }
@@ -398,7 +398,7 @@ def generate_html_report(
         insights.append(
             {
                 "type": "success",
-                "icon": "🎉",
+                "icon": "[OK] ",
                 "title": f"優秀クラス: 「{', '.join(high_acc_labels)}」 は F1 95% 以上を維持",
                 "desc": "これらの音階・音声特徴表現は安定して正しく学習されています。",
             }
@@ -503,7 +503,7 @@ def generate_html_report(
             </tr>
             """
     else:
-        mis_rows_html = "<tr><td colspan='6' style='text-align:center; color:#34d399; padding:20px;'>🎉 誤識別サンプルはありません（全件完全正解）！</td></tr>"
+        mis_rows_html = "<tr><td colspan='6' style='text-align:center; color:#34d399; padding:20px;'>誤識別サンプルはありません（全件完全正解）！</td></tr>"
 
     html = f"""<!DOCTYPE html>
 <html lang="ja">
@@ -723,7 +723,7 @@ def generate_html_report(
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 {title}</h1>
+            <h1>{title}</h1>
             <span style="color: var(--text-muted);">インタラクティブ・モデル解析ダッシュボード</span>
         </div>
 
@@ -749,14 +749,14 @@ def generate_html_report(
 
         <!-- 2. AI Executive Insights -->
         <div class="insights-section">
-            <h2 style="border-left-color: #f59e0b;">💡 モデル改善のAI診断 ＆ アクション提案</h2>
+            <h2 style="border-left-color: #f59e0b;">モデル改善のAI診断 ＆ アクション提案</h2>
             {insights_html}
         </div>
 
         <!-- 3. Metrics & Chart Grid -->
         <div class="grid-2col">
             <div class="section-card" style="margin-bottom:0;">
-                <h2>📈 クラス別精度指標</h2>
+                <h2>クラス別精度指標</h2>
                 <table>
                     <thead>
                         <tr>
@@ -773,7 +773,7 @@ def generate_html_report(
                 </table>
             </div>
             <div class="section-card" style="margin-bottom:0;">
-                <h2>📊 F1 / Precision / Recall 比較グラフ</h2>
+                <h2>F1 / Precision / Recall 比較グラフ</h2>
                 <div style="height: 250px;">
                     <canvas id="metricsChart"></canvas>
                 </div>
@@ -782,7 +782,7 @@ def generate_html_report(
 
         <!-- 4. Confusion Matrix Heatmap -->
         <div class="section-card">
-            <h2>🧩 混同行列ヒートマップ (Confusion Matrix Heatmap)</h2>
+            <h2>混同行列ヒートマップ (Confusion Matrix Heatmap)</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: -10px;">※ 各セル内のパーセンテージは、正解ラベル全体に対する予測割合を示しています。</p>
             <table>
                 <thead>
@@ -799,8 +799,8 @@ def generate_html_report(
 
         <!-- 5. Misclassified Samples with Audio Player & Filtering -->
         <div class="section-card">
-            <h2>🎧 誤識別サンプルの試聴 ＆ 詳細解析 (Misclassified Samples: {len(misclassified)}件)</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: -10px;">ブラウザ上で直接 ▶ ボタンを押すと実際の音声を試聴できます。問題のある文字カテゴリをクリックして絞り込めます。</p>
+            <h2>誤識別サンプルの試聴 ＆ 詳細解析 (Misclassified Samples: {len(misclassified)}件)</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: -10px;">ブラウザ上で直接再生ボタンを押すと実際の音声を試聴できます。問題のある文字カテゴリをクリックして絞り込めます。</p>
 
             <div class="filter-container">
                 {filter_buttons_html}

@@ -91,7 +91,7 @@ def download_latest_team_weights_if_needed(
                 continue
 
         # リモートからダウンロード
-        logger.info("📥 モデルファイル (%s) を Hugging Face Hub よりダウンロード中...", rel_path)
+        logger.info("モデルファイル (%s) を Hugging Face Hub よりダウンロード中...", rel_path)
         try:
             downloaded_path = hf_hub_download(
                 repo_id=cfg.repo_id,
@@ -103,7 +103,7 @@ def download_latest_team_weights_if_needed(
             # ダウンロードしたファイルを target_dir に配置
             with open(downloaded_path, "rb") as src, open(local_file, "wb") as dst:
                 dst.write(src.read())
-            logger.info("✨ %s をローカルキャッシュ (%s) に保存しました。", rel_path, local_file)
+            logger.info("%s をローカルキャッシュ (%s) に保存しました。", rel_path, local_file)
         except Exception as e:
             logger.warning("モデルファイル (%s) のダウンロードに失敗しました: %s", rel_path, e)
             if not token:
@@ -135,7 +135,7 @@ def upload_weights_to_hf(
     token = cfg.token
     if not token:
         logger.warning(
-            "⚠️ HF_TOKEN が設定されていません。.env ファイルまたは環境変数に HF_TOKEN を設定してください。"
+            "HF_TOKEN が設定されていません。.env ファイルまたは環境変数に HF_TOKEN を設定してください。"
         )
         return False
 
@@ -173,7 +173,7 @@ def upload_weights_to_hf(
                     continue
 
                 logger.info(
-                    "🚀 Hugging Face Hub (%s) へ %s をアップロード中...", cfg.repo_id, rel_path
+                    "Hugging Face Hub (%s) へ %s をアップロード中...", cfg.repo_id, rel_path
                 )
                 api.upload_file(
                     path_or_fileobj=str(local_file),
@@ -185,11 +185,11 @@ def upload_weights_to_hf(
 
             if not uploaded_any:
                 logger.info(
-                    "✨ すべての CNN ベストモデルファイルは既にリモートと最新同期されています。"
+                    "すべての CNN ベストモデルファイルは既にリモートと最新同期されています。"
                 )
             else:
                 logger.info(
-                    "✨ CNN ベストモデルのアップロードが完了しました: https://huggingface.co/%s",
+                    "CNN ベストモデルのアップロードが完了しました: https://huggingface.co/%s",
                     cfg.repo_id,
                 )
 
@@ -239,7 +239,7 @@ def upload_weights_to_hf(
                     continue
 
                 logger.info(
-                    "🚀 Hugging Face Hub (%s) へ %s をアップロード中...", cfg.repo_id, rel_path
+                    "Hugging Face Hub (%s) へ %s をアップロード中...", cfg.repo_id, rel_path
                 )
                 api.upload_file(
                     path_or_fileobj=str(local_file),
@@ -251,11 +251,11 @@ def upload_weights_to_hf(
 
             if not uploaded_any:
                 logger.info(
-                    "✨ すべての Wav2Vec2 ベストモデルファイルは既にリモートと最新同期されています。"
+                    "すべての Wav2Vec2 ベストモデルファイルは既にリモートと最新同期されています。"
                 )
             else:
                 logger.info(
-                    "✨ Wav2Vec2 ベストモデルのアップロードが完了しました: https://huggingface.co/%s",
+                    "Wav2Vec2 ベストモデルのアップロードが完了しました: https://huggingface.co/%s",
                     cfg.repo_id,
                 )
 
@@ -267,5 +267,5 @@ def upload_weights_to_hf(
         return True
 
     except Exception as e:
-        logger.error("❌ Hugging Face へのアップロード中にエラーが発生しました: %s", e)
+        logger.error("Hugging Face へのアップロード中にエラーが発生しました: %s", e)
         return False
