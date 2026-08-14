@@ -6,13 +6,9 @@ Usage:
 """
 
 import logging
-import sys
-from pathlib import Path
 
 import librosa
 import numpy as np
-
-sys.path.append(str(Path(__file__).parent.parent))
 
 from voicerecognizer.config import (
     DEFAULT_AUDIO_CONFIG,
