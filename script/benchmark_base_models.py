@@ -16,6 +16,7 @@ Wav2Vec2 Pre-trained Base Model Benchmark Script
 """
 
 import argparse
+import contextlib
 import json
 import logging
 import sys
@@ -30,14 +31,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import train_test_split
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-import contextlib
-
-from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
-from dataset.hiragana_dataset import HiraganaDataset  # noqa: E402
+from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
+from voicerecognizer.dataset.hiragana_dataset import HiraganaDataset
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -99,7 +94,7 @@ def extract_features_for_model(
     """指定された Wav2Vec2 モデルから音声埋め込みベクトル (Embeddings) を抽出する"""
     from transformers import AutoFeatureExtractor, AutoModel
 
-    logger.info("📦 Loading model and feature extractor: %s ...", model_name)
+    logger.info("Loading model and feature extractor: %s ...", model_name)
     feature_extractor = AutoFeatureExtractor.from_pretrained(model_name)
     model = AutoModel.from_pretrained(model_name).to(device)
     model.eval()
@@ -131,16 +126,15 @@ def extract_features_for_model(
     return np.concatenate(all_embeddings, axis=0)
 
 
-def evaluate_linear_probe(X: np.ndarray, y: list[int], seed: int = 42) -> dict[str, float]:
+def evaluate_linear_probe(features: np.ndarray, y: list[int], seed: int = 42) -> dict[str, float]:
     """抽出した特徴量に対して線形分類器 (Logistic Regression) を学習・評価する"""
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=seed, stratify=y
+    features_train, features_test, y_train, y_test = train_test_split(
+        features, y, test_size=0.2, random_state=seed, stratify=y
     )
 
     clf = LogisticRegression(max_iter=1000, C=1.0, random_state=seed)
-    clf.fit(X_train, y_train)
-
-    preds = clf.predict(X_test)
+    clf.fit(features_train, y_train)
+    preds = clf.predict(features_test)
 
     acc = float(accuracy_score(y_test, preds))
     macro_f1 = float(f1_score(y_test, preds, average="macro"))
@@ -206,7 +200,7 @@ def main():
             embeddings = extract_features_for_model(
                 model_name=model_name, waveforms=waveforms, device=device
             )
-            metrics = evaluate_linear_probe(X=embeddings, y=labels)
+            metrics = evaluate_linear_probe(features=embeddings, y=labels)
             elapsed = time.time() - start_time
 
             res = {

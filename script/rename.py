@@ -7,7 +7,7 @@ Usage:
 
 import logging
 
-from config import DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
 
 logger = logging.getLogger(__name__)
 

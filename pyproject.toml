@@ -35,8 +35,7 @@ errors = "script.check_quality_gate:errors_cli"
 
 [dependency-groups]
 dev = [
-    "mypy>=2.3.0",
-    "mypy-baseline>=0.7.4",
+    "pyrefly>=1.2.0",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
     "ruff>=0.15.21",
@@ -56,19 +55,22 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src", "."]
+include = ["voicerecognizer*", "script*"]
+
+
 
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
-extraPaths = ["."]
+extraPaths = ["src", "."]
 reportAttributeAccessIssue = false
 reportMissingModuleSource = false
 
 [tool.ruff]
 target-version = "py313"
 line-length = 100
-src = ["."]
+src = ["src", "."]
 exclude = [
     ".git",
     ".venv",
@@ -82,7 +84,7 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-allowed-confusables = ["（", "）", "〜", "・", "“", "”", "’", "＆", "×", "？", "ノ"]
+allowed-confusables = ["（", "）", "〜", "・", "“", "”", "’", "＆", "×", "？", "ノ", "∪", "！", "＼"]
 select = [
     "E",      # pycodestyle errors
     "W",      # pycodestyle warnings
@@ -97,53 +99,23 @@ select = [
 ]
 ignore = [
     "E501",   # line length (handled by ruff format)
+    "SIM118", # key in dict.keys() check (false positive on safetensors safe_open objects)
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["core", "dataset", "evaluation", "models", "preprocessing", "recognizers", "runtime", "utils"]
-
-[tool.mypy]
-python_version = "3.13"
-mypy_path = "."
-explicit_package_bases = true
-strict = true
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-
-[[tool.mypy.overrides]]
-module = [
-    "librosa.*",
-    "sounddevice.*",
-    "soundfile.*",
-    "matplotlib.*",
-    "sklearn.*",
-    "scipy.*",
-    "tqdm.*",
-    "torch.*",
-    "torchvision.*",
-    "transformers.*",
-    "onnxruntime.*",
-    "onnx.*",
-    "onnxscript.*",
-    "accelerate.*"
-]
-ignore_missing_imports = true
+known-first-party = ["voicerecognizer"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-testpaths = ["tests", "test"]
-pythonpath = ["."]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
 addopts = "-v --strict-markers"
 filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::UserWarning"
 ]
+
+[tool.pyrefly]
+preset = "strict"
+search-path = ["src", "."]
+baseline = "pyrefly-baseline.json"

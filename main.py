@@ -13,12 +13,12 @@ from pathlib import Path
 
 import sounddevice as sd
 
-from config import DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG
-from config_labels import HIRAGANA_TO_ROMAJI, ROMAJI_TO_HIRAGANA
-from core.factory.recognizer_factory import RecognizerFactory
-from core.services.audio_pipeline import AudioPipeline
-from core.services.voice_recognizer import VoiceRecognizer
-from runtime.vad import VoiceActivityDetector
+from voicerecognizer.config import DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.config_labels import HIRAGANA_TO_ROMAJI, ROMAJI_TO_HIRAGANA
+from voicerecognizer.core.factory.recognizer_factory import RecognizerFactory
+from voicerecognizer.core.services.audio_pipeline import AudioPipeline
+from voicerecognizer.core.services.voice_recognizer import VoiceRecognizer
+from voicerecognizer.runtime.vad import VoiceActivityDetector
 
 logging.basicConfig(
     level=logging.INFO,
@@ -77,7 +77,7 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
     }
 
     print("\n" + "=" * 65)
-    print(" 🎤 リアルタイム音声認識 ＆ 連続人間丸付け（採点・アノテーション）モード")
+    print(" リアルタイム音声認識 ＆ 連続人間丸付け（採点・アノテーション）モード")
     print("=" * 65)
     print("※ 発声を検知すると自動で予測結果を表示し、録音音声を再生します。")
     print("※ 全105ひらがなラベル（50音・濁音・半濁音・拗音・その他）の直打ちに対応。")
@@ -88,7 +88,7 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
         while True:
             session_count += 1
             print(f"\n--- [ セッション #{session_count} ] ---")
-            print("👂 音声待機中... マイクに向かって声を出してください。")
+            print("音声待機中... マイクに向かって声を出してください。")
 
             res = pipeline.capture_until_speech()
             if res is None:
@@ -108,7 +108,7 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
                 confidence_str = f" (確信度: {stats['confidence'] * 100:.1f}%)"
 
             print("\n" + "─" * 60)
-            print(f"🤖 予測結果: 【 {disp_pred} 】{confidence_str}")
+            print(f"予測結果: 【 {disp_pred} 】{confidence_str}")
             print("─" * 60)
 
             # 詳細タイムライン & 計測内訳の表示
@@ -129,7 +129,7 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
             inf_ms = stats.get("inference_latency_ms", 0.0)
             total_ms = stats.get("total_latency_ms", 0.0)
 
-            print("⏱️  詳細タイムライン & 処理時間計測内訳:")
+            print("詳細タイムライン & 処理時間計測内訳:")
             print(f"  ・話し始め時刻   : {start_dt_str} (録音波形内: {onset_ms:.1f} ms)")
             print(f"  ・話し終わり時刻 : {end_dt_str} (録音波形内: {offset_ms:.1f} ms)")
             print(f"  ・発声持続時間   : {speech_dur_ms:.1f} ms ({speech_dur_ms / 1000.0:.2f}秒)")
@@ -186,7 +186,7 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
                     break
                 else:
                     print(
-                        "⚠️ 無効な入力です。ひらがな（例: 「か」「きゃ」）またはローマ字（例: 「ka」「kya」）を入力してください。"
+                        "無効な入力です。ひらがな（例: 「か」「きゃ」）またはローマ字（例: 「ka」「kya」）を入力してください。"
                     )
 
             gt_hiragana = ROMAJI_TO_HIRAGANA.get(ground_truth, ground_truth)
@@ -203,7 +203,7 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
                 sample_rate=pipeline.audio_capture.sample_rate,
             )
             print(
-                f"✅ 保存完了: 予測=「{disp_pred}」, 正解=「{disp_gt}」 (データセットに蓄積されました)"
+                f"保存完了: 予測=「{disp_pred}」, 正解=「{disp_gt}」 (データセットに蓄積されました)"
             )
 
     except KeyboardInterrupt:

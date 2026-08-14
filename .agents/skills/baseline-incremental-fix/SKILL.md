@@ -2,7 +2,7 @@
 name: baseline-incremental-fix
 description: >-
   Guide and workflow for systematically and cautiously resolving baseline lint
-  (Ruff) and type (Mypy) errors file-by-file without causing code regressions.
+  (Ruff) and type (Pyrefly) errors file-by-file without causing code regressions.
   Inspired by strict quality gate automation principles.
 ---
 

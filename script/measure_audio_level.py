@@ -11,20 +11,17 @@ It then writes the measured thresholds back to config.py by default.
 import argparse
 import logging
 import re
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 from time import sleep
 
 import numpy as np
 
-PROJECT_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
-from config import (  # noqa: E402
+from voicerecognizer.config import (
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
+    PROJECT_ROOT,
 )
 
 logger = logging.getLogger(__name__)
@@ -89,7 +86,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config-path",
         type=Path,
-        default=PROJECT_ROOT / "config.py",
+        default=PROJECT_ROOT / "src" / "voicerecognizer" / "config.py",
         help="config.py path to update.",
     )
     parser.add_argument(

@@ -8,16 +8,10 @@ Audio Preprocessing Script
 """
 
 import logging
-import sys
 import time
-from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
-from preprocessing.dataset_builder import DatasetBuilder  # noqa: E402
+from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.preprocessing.dataset_builder import DatasetBuilder
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)

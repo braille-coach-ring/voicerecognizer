@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 
-from config import DEFAULT_RECOGNITION_CONFIG
-from recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
+from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
 
 
 class TestWav2Vec2ONNXRecognizer(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestWav2Vec2ONNXRecognizer(unittest.TestCase):
         recognizer = Wav2Vec2Recognizer(model_path=non_existent_dir)
         with self.assertRaises(FileNotFoundError) as ctx:
             recognizer.recognize(np.zeros(16000, dtype=np.float32))
-        self.assertIn("Wav2Vec2 ONNX モデルが見つかりません", str(ctx.exception))
+        self.assertIn("Wav2Vec2 ONNX モデル", str(ctx.exception))
 
     @patch("onnxruntime.InferenceSession")
     @patch("transformers.AutoFeatureExtractor.from_pretrained")
@@ -42,6 +42,7 @@ class TestWav2Vec2ONNXRecognizer(unittest.TestCase):
             result = recognizer.recognize(np.zeros(16000, dtype=np.float32))
             self.assertEqual(result, "a")
             self.assertIsNotNone(recognizer.last_confidence)
+            assert recognizer.last_confidence is not None
             self.assertGreater(recognizer.last_confidence, 0.5)
 
 

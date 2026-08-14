@@ -1,7 +1,7 @@
 import re
 import unittest
 
-from utils.machine_id import get_machine_id
+from voicerecognizer.utils.machine_id import get_machine_id
 
 
 class TestMachineId(unittest.TestCase):

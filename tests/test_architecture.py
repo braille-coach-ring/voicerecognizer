@@ -1,10 +1,10 @@
 import unittest
 
-from core.factory.recognizer_factory import RecognizerFactory
-from core.interfaces import RecognitionStrategy
-from core.services.voice_recognizer import VoiceRecognizer
-from recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
-from recognizers.whisper_recognizer import WhisperRecognizer
+from voicerecognizer.core.factory.recognizer_factory import RecognizerFactory
+from voicerecognizer.core.interfaces import RecognitionStrategy
+from voicerecognizer.core.services.voice_recognizer import VoiceRecognizer
+from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
+from voicerecognizer.recognizers.whisper_recognizer import WhisperRecognizer
 
 
 class FakeRecognitionStrategy(RecognitionStrategy):

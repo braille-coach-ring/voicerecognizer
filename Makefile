@@ -10,7 +10,7 @@ lint:
 	uv run python script/check_quality_gate.py --step ruff
 
 type:
-	uv run python script/check_quality_gate.py --step mypy
+	uv run python script/check_quality_gate.py --step pyrefly
 
 test:
 	uv run python script/check_quality_gate.py --step pytest

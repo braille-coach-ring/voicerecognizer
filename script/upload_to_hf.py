@@ -1,12 +1,8 @@
 import argparse
 import logging
 import sys
-from pathlib import Path
 
-# 親ディレクトリを sys.path に追加
-sys.path.append(str(Path(__file__).resolve().parent.parent))
-
-from utils.model_uploader import upload_weights_to_hf
+from voicerecognizer.utils.model_uploader import upload_weights_to_hf
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 

@@ -1,13 +1,8 @@
-import sys
 import time
-from pathlib import Path
-
-# プロジェクトルートの追加
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
 
-from recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
+from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
 
 
 def benchmark():

@@ -8,7 +8,7 @@ import soundfile as sf
 import torch
 from torch.utils.data import DataLoader
 
-from models.wav2vec2.train import (
+from voicerecognizer.models.wav2vec2.train import (
     Wav2Vec2ClassificationDataset,
     build_collate_fn,
     build_parser,
@@ -22,11 +22,11 @@ from models.wav2vec2.train import (
 class FakeFeatureExtractor:
     def __call__(
         self,
-        waveforms,
+        waveforms: list[np.ndarray],
         sampling_rate: int,
         return_tensors: str,
         padding: bool,
-    ):
+    ) -> dict[str, torch.Tensor]:
         max_len = max(len(waveform) for waveform in waveforms)
         padded = np.zeros((len(waveforms), max_len), dtype=np.float32)
         for index, waveform in enumerate(waveforms):
@@ -40,22 +40,22 @@ class TinyConfig:
 
 class TinyConfigLoader:
     @staticmethod
-    def from_pretrained(model_source):
+    def from_pretrained(model_source: str | Path) -> TinyConfig:
         return TinyConfig()
 
 
 class TinyModel(torch.nn.Linear):
-    def __init__(self, config):
+    def __init__(self, config: TinyConfig) -> None:
         super().__init__(2, 2)
         self.config = config
 
     @classmethod
-    def from_pretrained(cls, *args, **kwargs):
+    def from_pretrained(cls, *args: object, **kwargs: object) -> "TinyModel":
         raise MemoryError()
 
 
 class TestWav2Vec2LazyDataset(unittest.TestCase):
-    def test_dataset_keeps_paths_only_and_dataloader_builds_batch(self):
+    def test_dataset_keeps_paths_only_and_dataloader_builds_batch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             sample_rate = 16000
@@ -80,9 +80,9 @@ class TestWav2Vec2LazyDataset(unittest.TestCase):
             self.assertIsInstance(dataset.data[0][0], Path)
             pickle.dumps(dataset)
 
-            waveform, label = dataset[0]
+            waveform, label_idx = dataset[0]
             self.assertEqual(waveform.shape, (sample_rate,))
-            self.assertIsInstance(label, int)
+            self.assertIsInstance(label_idx, int)
 
             collate_fn = build_collate_fn(FakeFeatureExtractor(), sample_rate)
             pickle.dumps(collate_fn)
@@ -97,12 +97,12 @@ class TestWav2Vec2LazyDataset(unittest.TestCase):
             self.assertEqual(batch["input_values"].shape, (2, sample_rate))
             self.assertEqual(batch["labels"].shape, (2,))
 
-    def test_epoch_alias_is_supported(self):
+    def test_epoch_alias_is_supported(self) -> None:
         args = build_parser().parse_args(["--epoch", "1"])
 
         self.assertEqual(args.epochs, 1)
 
-    def test_streaming_safetensors_loader_copies_matching_tensors(self):
+    def test_streaming_safetensors_loader_copies_matching_tensors(self) -> None:
         from safetensors.torch import save_file
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -134,7 +134,7 @@ class TestWav2Vec2LazyDataset(unittest.TestCase):
             self.assertTrue(torch.equal(model.weight, expected_weight))
             self.assertTrue(torch.equal(model.bias, expected_bias))
 
-    def test_pagefile_error_detection(self):
+    def test_pagefile_error_detection(self) -> None:
         self.assertTrue(
             is_pagefile_or_memory_error(
                 OSError(
@@ -145,7 +145,7 @@ class TestWav2Vec2LazyDataset(unittest.TestCase):
         self.assertTrue(is_pagefile_or_memory_error(MemoryError()))
         self.assertFalse(is_pagefile_or_memory_error(RuntimeError("other")))
 
-    def test_classifier_loader_falls_back_to_streaming_after_memory_error(self):
+    def test_classifier_loader_falls_back_to_streaming_after_memory_error(self) -> None:
         from safetensors.torch import save_file
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -173,7 +173,7 @@ class TestWav2Vec2LazyDataset(unittest.TestCase):
             self.assertTrue(torch.equal(model.bias, expected_bias))
             self.assertEqual(model.config.num_labels, 2)
 
-    def test_determine_optimal_num_workers(self):
+    def test_determine_optimal_num_workers(self) -> None:
         # 手動指定がある場合はそれを優先する
         self.assertEqual(determine_optimal_num_workers(2), 2)
         self.assertEqual(determine_optimal_num_workers(0), 0)

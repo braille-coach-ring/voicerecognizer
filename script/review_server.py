@@ -11,10 +11,14 @@ from typing import Any, cast
 from urllib.parse import urlparse
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+SRC_ROOT = PROJECT_ROOT / "src"
+REVIEW_ROOT = SRC_ROOT / "voicerecognizer" / "evaluation"
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+if str(REVIEW_ROOT) not in sys.path:
+    sys.path.insert(0, str(REVIEW_ROOT))
 
-from evaluation.review import (  # noqa: E402
+from review import (  # noqa: E402
     ReviewDecision,
     ReviewDecisionValue,
     load_review_decisions,

@@ -13,7 +13,6 @@ import argparse
 import logging
 import math
 import subprocess
-import sys
 import time
 from collections import deque
 from pathlib import Path
@@ -22,16 +21,12 @@ import numpy as np
 import sounddevice as sd
 import soundfile as sf
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from config import (  # noqa: E402
+from voicerecognizer.config import (
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
 )
-from config_labels import (  # noqa: E402
+from voicerecognizer.config_labels import (
     DAKUON_LABELS,
     HANDAKUON_LABELS,
     ROMAJI_TO_HIRAGANA,
