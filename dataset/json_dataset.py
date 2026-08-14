@@ -12,8 +12,8 @@ class JsonSpeechDataset(Dataset):
     def __len__(self) -> int:
         return len(self.items)
 
-    def __getitem__(self, idx: int) -> dict:
-        return self.items[idx]
+    def __getitem__(self, index: int) -> dict:
+        return self.items[index]
 
     def _load_manifest(self) -> list[dict]:
         with self.manifest_path.open("r", encoding="utf-8") as file:

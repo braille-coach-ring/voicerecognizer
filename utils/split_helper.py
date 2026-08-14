@@ -26,7 +26,7 @@ def safe_stratified_split(
     if not singletons:
         # 全クラスのサンプル数が 2 以上の場合、通常の StratifiedShuffleSplit を実行
         splitter = StratifiedShuffleSplit(n_splits=1, test_size=val_rate, random_state=seed)
-        train_idx, val_idx = next(splitter.split(range(len(labels)), labels))
+        train_idx, val_idx = next(splitter.split(np.arange(len(labels)), labels))
         return list(train_idx), list(val_idx)
 
     logger.warning(
@@ -51,7 +51,7 @@ def safe_stratified_split(
         return shuffled[n_val:], shuffled[:n_val]
 
     splitter = StratifiedShuffleSplit(n_splits=1, test_size=val_rate, random_state=seed)
-    train_sub, val_sub = next(splitter.split(range(len(multi_labels)), multi_labels))
+    train_sub, val_sub = next(splitter.split(np.arange(len(multi_labels)), multi_labels))
 
     train_idx = [multi_indices[i] for i in train_sub] + [
         i for i, lbl in enumerate(labels) if lbl in singletons

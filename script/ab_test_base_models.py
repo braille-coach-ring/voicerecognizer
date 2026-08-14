@@ -21,6 +21,7 @@ Wav2Vec2 Base Model A/B Test Script
 """
 
 import argparse
+import contextlib
 import gc
 import json
 import logging
@@ -32,15 +33,10 @@ from typing import Any
 
 import numpy as np
 import torch
+from torch.cuda.amp import GradScaler
 from torch.utils.data import DataLoader
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-import contextlib
-
-from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
+from config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -218,7 +214,7 @@ def run_single_condition(
         num_warmup_steps=warmup_steps,
         num_training_steps=training_steps,
     )
-    scaler = torch.amp.GradScaler("cuda") if device.type == "cuda" else None
+    scaler = GradScaler() if device.type == "cuda" else None
 
     # Training loop
     history = []

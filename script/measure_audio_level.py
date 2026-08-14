@@ -11,20 +11,17 @@ It then writes the measured thresholds back to config.py by default.
 import argparse
 import logging
 import re
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 from time import sleep
 
 import numpy as np
 
-PROJECT_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
-from config import (  # noqa: E402
+from config import (
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
+    PROJECT_ROOT,
 )
 
 logger = logging.getLogger(__name__)

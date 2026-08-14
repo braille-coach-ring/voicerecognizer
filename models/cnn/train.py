@@ -14,29 +14,23 @@ import argparse
 import json
 import logging
 import random
-import sys
-from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+import numpy as np
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader, Subset
+from tqdm import tqdm
 
-import numpy as np  # noqa: E402
-import torch  # noqa: E402
-import torch.nn as nn  # noqa: E402
-from torch.utils.data import DataLoader, Subset  # noqa: E402
-from tqdm import tqdm  # noqa: E402
-
-from config import (  # noqa: E402
+from config import (
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
 )
-from dataset.hiragana_dataset import HiraganaDataset  # noqa: E402
-from evaluation.evaluator import compute_evaluation_result  # noqa: E402
-from models.cnn.hiragana_cnn import HiraganaCNN  # noqa: E402
-from preprocessing.dataset_builder import ensure_merged_and_preprocessed  # noqa: E402
-from utils.plot_saver import save_history_plots  # noqa: E402
+from dataset.hiragana_dataset import HiraganaDataset
+from evaluation.evaluator import compute_evaluation_result
+from models.cnn.hiragana_cnn import HiraganaCNN
+from preprocessing.dataset_builder import ensure_merged_and_preprocessed
+from utils.plot_saver import save_history_plots
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -169,7 +163,7 @@ def train(args: argparse.Namespace) -> None:
     best_macro_f1 = 0.0
     is_best_updated = False
 
-    if resume and best_model_path.exists():
+    if resume and best_model_path and best_model_path.exists():
         try:
             state_dict = torch.load(best_model_path, map_location=device, weights_only=True)
             model_dict = model.state_dict()
@@ -247,16 +241,17 @@ def train(args: argparse.Namespace) -> None:
             best_macro_f1 = macro_f1
             is_best_updated = True
             patience_counter = 0
-            torch.save(model.state_dict(), best_model_path)
-            labels_path = best_model_path.parent / "labels.json"
-            with open(labels_path, "w", encoding="utf-8") as f:
-                json.dump(list(dataset.labels), f, ensure_ascii=False, indent=2)
-            logger.info(
-                "Best model saved: %s (Val Macro-F1: %.4f, Val Acc: %.4f)",
-                best_model_path,
-                best_macro_f1,
-                val_acc,
-            )
+            if best_model_path:
+                torch.save(model.state_dict(), best_model_path)
+                labels_path = best_model_path.parent / "labels.json"
+                with open(labels_path, "w", encoding="utf-8") as f:
+                    json.dump(list(dataset.labels), f, ensure_ascii=False, indent=2)
+                logger.info(
+                    "Best model saved: %s (Val Macro-F1: %.4f, Val Acc: %.4f)",
+                    best_model_path,
+                    best_macro_f1,
+                    val_acc,
+                )
         else:
             patience_counter += 1
             if patience > 0 and patience_counter >= patience:
@@ -271,7 +266,8 @@ def train(args: argparse.Namespace) -> None:
             logger.info("Target validation accuracy reached: %.2f%%", target_acc * 100)
             break
 
-    torch.save(model.state_dict(), last_model_path)
+    if last_model_path:
+        torch.save(model.state_dict(), last_model_path)
     save_history_plots(
         history=history,
         model_name="cnn",

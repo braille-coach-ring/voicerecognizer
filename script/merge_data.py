@@ -10,14 +10,8 @@ Dataset Merging Script (Index Generation)
 """
 
 import logging
-import sys
-from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from preprocessing.dataset_builder import DatasetBuilder  # noqa: E402
+from preprocessing.dataset_builder import DatasetBuilder
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)

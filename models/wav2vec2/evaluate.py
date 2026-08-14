@@ -1,15 +1,10 @@
 import argparse
 import logging
-import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
-from evaluation.evaluator import Evaluator  # noqa: E402
-from recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer  # noqa: E402
+from config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
+from evaluation.evaluator import Evaluator
+from recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)

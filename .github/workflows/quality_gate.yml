@@ -2,9 +2,10 @@ name: Strict Quality Gate
 
 on:
   push:
-    branches: [ main, master, "feature/*", "refactor/*" ]
+    branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+
 
 jobs:
   quality-gate:
@@ -37,5 +38,5 @@ jobs:
       - name: Check Ruff Baseline
         run: uv run python script/check_quality_gate.py --step ruff
 
-      - name: Check Mypy Baseline
-        run: uv run python script/check_quality_gate.py --step mypy
+      - name: Check Pyrefly Baseline
+        run: uv run python script/check_quality_gate.py --step pyrefly

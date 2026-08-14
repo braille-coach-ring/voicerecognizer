@@ -20,26 +20,26 @@ import random
 import sys
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+import numpy as np
+import soundfile as sf
+import torch
+import torch.amp
+import torch.cuda
+import torch.nn
+import torch.optim
+from torch.cuda.amp import GradScaler, autocast
+from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
+from tqdm import tqdm
 
-import numpy as np  # noqa: E402
-import soundfile as sf  # noqa: E402
-import torch  # noqa: E402
-import torch.amp  # noqa: E402
-import torch.cuda  # noqa: E402
-import torch.nn  # noqa: E402
-import torch.optim  # noqa: E402
-from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler  # noqa: E402
-from tqdm import tqdm  # noqa: E402
-
-from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
-from dataset.hiragana_dataset import HiraganaDataset  # noqa: E402
-from evaluation.evaluator import compute_evaluation_result  # noqa: E402
-from preprocessing.audio_augmentor import AudioAugmentor  # noqa: E402
+from config import DEFAULT_RECOGNITION_CONFIG
+from dataset.hiragana_dataset import HiraganaDataset
+from evaluation.evaluator import compute_evaluation_result
+from preprocessing.audio_augmentor import AudioAugmentor
+from preprocessing.dataset_builder import ensure_merged_and_preprocessed
+from utils.plot_saver import save_history_plots
+from utils.split_helper import safe_stratified_split
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -132,8 +132,6 @@ def fix_seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
-from utils.split_helper import safe_stratified_split  # noqa: E402
-
 
 def split_dataset(
     dataset: Wav2Vec2ClassificationDataset, val_rate: float, seed: int
@@ -156,7 +154,8 @@ class AugmentedSubset(Dataset):
         return len(self.subset)
 
     def __getitem__(self, index: int) -> tuple[np.ndarray, int]:
-        waveform, label = self.subset[index]
+        item = cast(tuple[np.ndarray, int], self.subset[index])
+        waveform, label = item
         if self.augmentor is not None:
             waveform = self.augmentor.augment(waveform)
         return waveform, label
@@ -231,7 +230,7 @@ def train_epoch(
     epochs: int,
     max_grad_norm: float,
     loss_fct: torch.nn.Module | None = None,
-    scaler: torch.amp.GradScaler | None = None,
+    scaler: GradScaler | None = None,
 ) -> tuple[float, float]:
     model.train()
     total_loss = 0.0
@@ -246,7 +245,7 @@ def train_epoch(
 
         optimizer.zero_grad()
         if use_amp and scaler is not None:
-            with torch.amp.autocast("cuda"):
+            with autocast():
                 outputs = model(**batch)
                 if loss_fct is not None:
                     loss = loss_fct(outputs.logits, batch["labels"])
@@ -301,7 +300,7 @@ def validate(
         for batch in loader:
             batch = move_batch(batch, device)
             if use_amp:
-                with torch.amp.autocast("cuda"):
+                with autocast():
                     outputs = model(**batch)
             else:
                 outputs = model(**batch)
@@ -320,8 +319,6 @@ def validate(
 
     return total_loss / max(len(loader), 1), correct / max(total, 1), all_true, all_pred
 
-
-from utils.plot_saver import save_history_plots  # noqa: E402
 
 
 def save_plots(history: dict[str, list[float]], loss_path: Path, accuracy_path: Path) -> None:
@@ -482,7 +479,7 @@ def ensure_sharded_safetensors(
         gc.collect()
 
     with safe_open(str(source_path), framework="numpy") as tensors:
-        for key in tensors.keys():  # noqa: SIM118
+        for key in tensors.keys():
             tensor = tensors.get_tensor(key)
             tensor_size = tensor.nbytes
             if current_tensors and current_size + tensor_size > max_shard_bytes:
@@ -537,7 +534,7 @@ def load_local_safetensors_streaming(
     with torch.no_grad():
         for tensor_file in tensor_files:
             with safe_open(str(tensor_file), framework="pt", device="cpu") as tensors:
-                for key in tensors.keys():  # noqa: SIM118
+                for key in tensors.keys():
                     if key not in state_dict:
                         unexpected.append(key)
                         continue
@@ -602,8 +599,9 @@ def initialize_unloaded_classification_head(
             continue
 
         module = getattr(model, module_name, None)
-        if isinstance(module, torch.nn.Module):
-            model._init_weights(module)
+        init_fn = getattr(model, "_init_weights", None)
+        if isinstance(module, torch.nn.Module) and callable(init_fn):
+            init_fn(module)
             logger.info("Initialized Wav2Vec2 %s parameters.", module_name)
 
 
@@ -709,8 +707,6 @@ def freeze_wav2vec2_layers(
         )
 
 
-from preprocessing.dataset_builder import ensure_merged_and_preprocessed  # noqa: E402
-
 
 def train(args: argparse.Namespace) -> None:
     ensure_merged_and_preprocessed(skip_prep=getattr(args, "skip_prep", False))
@@ -743,12 +739,12 @@ def train(args: argparse.Namespace) -> None:
 
         download_latest_team_weights_if_needed(model_type="wav2vec2")
 
-        if best_model_path.exists() and (
+        if best_model_path and best_model_path.exists() and (
             (best_model_path / "model.safetensors").exists()
             or (best_model_path / "pytorch_model.bin").exists()
         ):
             target_resume_path = best_model_path
-        elif last_model_path.exists() and (
+        elif last_model_path and last_model_path.exists() and (
             (last_model_path / "model.safetensors").exists()
             or (last_model_path / "pytorch_model.bin").exists()
         ):
@@ -785,9 +781,9 @@ def train(args: argparse.Namespace) -> None:
     fix_seed(seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     (
-        AutoFeatureExtractor,
-        AutoConfig,
-        Wav2Vec2ForSequenceClassification,
+        auto_feature_extractor_cls,
+        auto_config_cls,
+        wav2vec2_model_cls,
         get_linear_schedule_with_warmup,
     ) = import_transformers()
 
@@ -808,13 +804,11 @@ def train(args: argparse.Namespace) -> None:
             "Audio Data Augmentation (ノイズ加算・音量変調・タイムシフト) を訓練データセットに有効化しました。"
         )
         train_augmentor = AudioAugmentor()
-        train_dataset = AugmentedSubset(train_dataset, train_augmentor)
+        train_augmented_subset = AugmentedSubset(train_dataset, train_augmentor)
     else:
-        train_dataset = AugmentedSubset(train_dataset, augmentor=None)
+        train_augmented_subset = AugmentedSubset(train_dataset, augmentor=None)
 
-    raw_train_subset = (
-        train_dataset.subset if isinstance(train_dataset, AugmentedSubset) else train_dataset
-    )
+    raw_train_subset = train_augmented_subset.subset
     train_labels = [dataset.data[i][1] for i in raw_train_subset.indices]
 
     loss_fct: torch.nn.Module | None = None
@@ -862,7 +856,7 @@ def train(args: argparse.Namespace) -> None:
             len(dataset.labels),
         )
 
-    feature_extractor = AutoFeatureExtractor.from_pretrained(model_source)
+    feature_extractor = auto_feature_extractor_cls.from_pretrained(model_source)
     feature_sample_rate = getattr(feature_extractor, "sampling_rate", None)
     if feature_sample_rate and feature_sample_rate != sample_rate:
         logger.warning(
@@ -879,10 +873,9 @@ def train(args: argparse.Namespace) -> None:
         label_counts = Counter(train_labels)
         class_weights_dict = {lbl: 1.0 / (count**0.5) for lbl, count in label_counts.items()}
         sample_weights = [class_weights_dict[lbl] for lbl in train_labels]
-        sample_weights_tensor = torch.tensor(sample_weights, dtype=torch.float)
         train_sampler = WeightedRandomSampler(
-            weights=sample_weights_tensor,
-            num_samples=len(sample_weights_tensor),
+            weights=sample_weights,
+            num_samples=len(sample_weights),
             replacement=True,
         )
         logger.info(
@@ -914,8 +907,8 @@ def train(args: argparse.Namespace) -> None:
     label2id = {label: index for index, label in enumerate(dataset.labels)}
     id2label = {index: label for label, index in label2id.items()}
     model = load_wav2vec2_classifier(
-        Wav2Vec2ForSequenceClassification,
-        AutoConfig,
+        wav2vec2_model_cls,
+        auto_config_cls,
         model_source,
         dataset.labels,
         label2id,
@@ -943,11 +936,11 @@ def train(args: argparse.Namespace) -> None:
     best_macro_f1 = -1.0
 
     # チーム最高精度 (best_model_path) のベースラインスコアを事前評価してハードルに設定する
-    if best_model_path.exists() and is_labels_compatible(best_model_path, dataset.labels):
+    if best_model_path and best_model_path.exists() and is_labels_compatible(best_model_path, dataset.labels):
         try:
             baseline_model = load_wav2vec2_classifier(
-                Wav2Vec2ForSequenceClassification,
-                AutoConfig,
+                wav2vec2_model_cls,
+                auto_config_cls,
                 best_model_path,
                 dataset.labels,
                 label2id,
@@ -978,7 +971,7 @@ def train(args: argparse.Namespace) -> None:
         "val_macro_f1": [],
     }
     is_best_updated = False
-    scaler = torch.amp.GradScaler("cuda") if device.type == "cuda" else None
+    scaler = GradScaler() if device.type == "cuda" else None
 
     patience = getattr(args, "patience", 5)
     patience_counter = 0
@@ -1089,7 +1082,7 @@ def train(args: argparse.Namespace) -> None:
 
     # ONNX 自動エクスポート ＆ 量子化
     no_onnx_export = getattr(args, "no_onnx_export", False)
-    if not no_onnx_export and best_model_path.exists():
+    if not no_onnx_export and best_model_path and best_model_path.exists():
         try:
             logger.info("学習完了後の Wav2Vec2 ONNX エクスポート ＆ INT8 量子化を開始します...")
             from models.wav2vec2.export_onnx import export_and_benchmark

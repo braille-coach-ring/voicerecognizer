@@ -11,22 +11,22 @@ Mel / Waveform Prepended Wav2Vec2 ONNX Export & Quantization Script
   uv run python models/wav2vec2/export_mel_prepended_onnx.py
 """
 
+import io
 import logging
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+import torch
+import torch.nn as nn
+from transformers import AutoConfig, Wav2Vec2ForSequenceClassification
 
-sys.stdout.reconfigure(encoding="utf-8")
-sys.stderr.reconfigure(encoding="utf-8")
+from config import DEFAULT_RECOGNITION_CONFIG
 
-import torch  # noqa: E402
-import torch.nn as nn  # noqa: E402
-from transformers import AutoConfig, Wav2Vec2ForSequenceClassification  # noqa: E402
-
-from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
+if sys.platform == "win32":
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if isinstance(sys.stderr, io.TextIOWrapper):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ def export_mel_prepended_onnx(
     logger.info("前処理内包型 ONNX モデルを出力中: %s", output_fp32_path)
     torch.onnx.export(
         prepended_model,
-        dummy_waveform,
+        (dummy_waveform,),
         str(output_fp32_path),
         export_params=True,
         opset_version=14,

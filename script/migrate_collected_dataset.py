@@ -6,11 +6,6 @@ Usage:
 """
 
 import logging
-import sys
-from pathlib import Path
-
-# プロジェクトルートを sys.path に追加
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import DEFAULT_RECOGNITION_CONFIG
 from utils.machine_id import get_machine_id
