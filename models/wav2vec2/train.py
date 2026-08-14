@@ -739,12 +739,12 @@ def train(args: argparse.Namespace) -> None:
 
         download_latest_team_weights_if_needed(model_type="wav2vec2")
 
-        if best_model_path.exists() and (
+        if best_model_path and best_model_path.exists() and (
             (best_model_path / "model.safetensors").exists()
             or (best_model_path / "pytorch_model.bin").exists()
         ):
             target_resume_path = best_model_path
-        elif last_model_path.exists() and (
+        elif last_model_path and last_model_path.exists() and (
             (last_model_path / "model.safetensors").exists()
             or (last_model_path / "pytorch_model.bin").exists()
         ):
@@ -936,7 +936,7 @@ def train(args: argparse.Namespace) -> None:
     best_macro_f1 = -1.0
 
     # チーム最高精度 (best_model_path) のベースラインスコアを事前評価してハードルに設定する
-    if best_model_path.exists() and is_labels_compatible(best_model_path, dataset.labels):
+    if best_model_path and best_model_path.exists() and is_labels_compatible(best_model_path, dataset.labels):
         try:
             baseline_model = load_wav2vec2_classifier(
                 wav2vec2_model_cls,
@@ -1082,7 +1082,7 @@ def train(args: argparse.Namespace) -> None:
 
     # ONNX 自動エクスポート ＆ 量子化
     no_onnx_export = getattr(args, "no_onnx_export", False)
-    if not no_onnx_export and best_model_path.exists():
+    if not no_onnx_export and best_model_path and best_model_path.exists():
         try:
             logger.info("学習完了後の Wav2Vec2 ONNX エクスポート ＆ INT8 量子化を開始します...")
             from models.wav2vec2.export_onnx import export_and_benchmark

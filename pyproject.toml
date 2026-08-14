@@ -54,8 +54,26 @@ torchvision = { index = "pytorch-cu124", marker = "sys_platform != 'darwin'" }
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-where = ["."]
+[tool.setuptools]
+packages = [
+    "voicerecognizer",
+    "core",
+    "dataset",
+    "evaluation",
+    "models",
+    "preprocessing",
+    "recognizers",
+    "runtime",
+    "script",
+    "test",
+    "tests",
+    "utils",
+]
+
+
+[tool.setuptools.package-dir]
+voicerecognizer = "."
+
 
 [tool.pyright]
 venvPath = "."
