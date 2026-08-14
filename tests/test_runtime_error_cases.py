@@ -17,6 +17,7 @@ import torch
 
 from voicerecognizer.core.exceptions import ModelNotFoundError, VoiceRecognizerError
 from voicerecognizer.evaluation.evaluator import Evaluator
+from voicerecognizer.recognizers.cnn_recognizer import CNNRecognizer
 from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
 
 
@@ -124,6 +125,31 @@ class TestONNXExportArgumentTypes(unittest.TestCase):
             # 第二引数 (args) が tuple であることを検証
             passed_input = args[1]
             self.assertIsInstance(passed_input, tuple)
+
+
+class TestModelNotFoundTroubleshootingGuidance(unittest.TestCase):
+    """モデルファイル未存在時に分かりやすいトラブルシューティング手順が案内されるかの検証"""
+
+    def test_wav2vec2_guidance_message(self) -> None:
+        rec = Wav2Vec2Recognizer(model_path=Path("non_existent_dir_12345"), auto_download=False)
+        with self.assertRaises(ModelNotFoundError) as ctx:
+            rec._ensure_model_loaded()
+        msg = str(ctx.exception)
+        self.assertIn("Hugging Face Hub", msg)
+        self.assertIn("HF_TOKEN", msg)
+        self.assertIn("Wav2Vec2", msg)
+
+    def test_cnn_guidance_message(self) -> None:
+        rec = CNNRecognizer.__new__(CNNRecognizer)
+        rec.model_path = Path("non_existent_dir_12345/best_model.pth")
+        rec.labels = ("あ",)
+        rec.device = torch.device("cpu")
+        with self.assertRaises(ModelNotFoundError) as ctx:
+            rec._load_model()
+        msg = str(ctx.exception)
+        self.assertIn("best_model.pth", msg)
+        self.assertIn("Hugging Face Hub", msg)
+        self.assertIn("HF_TOKEN", msg)
 
 
 if __name__ == "__main__":

@@ -256,7 +256,7 @@ def train(args: argparse.Namespace) -> None:
             patience_counter += 1
             if patience > 0 and patience_counter >= patience:
                 logger.info(
-                    "🛑 Early stopping: Validation Macro-F1 が %d エポック連続で向上しなかったため、頭打ちと判断して学習を自動終了します (Best Macro-F1: %.4f)",
+                    "Early stopping: Validation Macro-F1 が %d エポック連続で向上しなかったため、頭打ちと判断して学習を自動終了します (Best Macro-F1: %.4f)",
                     patience,
                     best_macro_f1,
                 )

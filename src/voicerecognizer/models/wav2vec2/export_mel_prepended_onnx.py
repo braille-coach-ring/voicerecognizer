@@ -125,8 +125,8 @@ def quantize_onnx_int8(fp32_onnx_path: Path, int8_onnx_path: Path) -> None:
 
 def main() -> None:
     model_dir = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir
-    fp32_path = model_dir / "model_mel_fp32.onnx"
-    int8_path = model_dir / "model_mel_int8.onnx"
+    fp32_path = model_dir / DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_fp32_onnx_filename
+    int8_path = model_dir / DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_int8_onnx_filename
 
     export_mel_prepended_onnx(model_dir, fp32_path)
     quantize_onnx_int8(fp32_path, int8_path)

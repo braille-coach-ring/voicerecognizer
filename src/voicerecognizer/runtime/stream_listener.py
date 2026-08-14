@@ -67,12 +67,12 @@ class AudioStreamListener:
         self._is_listening = True
         if self.audio_capture:
             self.audio_capture.start()
-        logger.info("🎤 リアルタイム非同期リスニングを開始/再開しました。")
+        logger.info("リアルタイム非同期リスニングを開始/再開しました。")
 
     def pause(self) -> None:
         """マイクとモデルは保持したまま、聴取のみ一時停止（再開コストゼロ）"""
         self._is_paused = True
-        logger.info("⏸️ リアルタイム非同期リスニングを一時停止しました（モデル・マイクは保持）。")
+        logger.info("リアルタイム非同期リスニングを一時停止しました（モデル・マイクは保持）。")
 
     def close(self) -> None:
         """マイクを完全に閉じ、全リソースを解放・終了（Context Manager 対応）"""
@@ -80,7 +80,7 @@ class AudioStreamListener:
         self._is_paused = True
         if self.audio_capture:
             self.audio_capture.stop()
-        logger.info("🛑 リアルタイム非同期リスニングをクローズ・リソース解放しました。")
+        logger.info("リアルタイム非同期リスニングをクローズ・リソース解放しました。")
 
     def __enter__(self) -> "AudioStreamListener":
         self.start()

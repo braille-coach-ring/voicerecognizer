@@ -56,12 +56,48 @@ class RecognitionConfig:
     hop_length: int = 160
     labels: tuple[str, ...] = field(default_factory=lambda: ALL_HIRAGANA_LABELS)
     weights_dir: Path = DEFAULT_WEIGHTS_DIR
+
+    # 共通ファイル名
+    labels_filename: str = "labels.json"
+    config_filename: str = "config.json"
+    preprocessor_config_filename: str = "preprocessor_config.json"
+
+    # CNN モデル関連
+    cnn_model_filename: str = "best_model.pth"
     cnn_weight_path: Path = DEFAULT_WEIGHTS_DIR / "best_model.pth"
     last_model_path: Path = DEFAULT_WEIGHTS_DIR / "last_model.pth"
     torchscript_model_path: Path = DEFAULT_WEIGHTS_DIR / "hiragana_cnn.pt"
+    cnn_essential_filenames: tuple[str, ...] = ("best_model.pth", "labels.json")
+
+    # Wav2Vec2 モデル関連
     wav2vec2_pretrained_model_name: str = "facebook/wav2vec2-base"
     wav2vec2_best_model_dir: Path = DEFAULT_WEIGHTS_DIR / "wav2vec2_best"
     wav2vec2_last_model_dir: Path = DEFAULT_WEIGHTS_DIR / "wav2vec2_last"
+
+    # 前処理内包型 (Mel/Waveform-prepended) ONNX をデフォルト・最優先とする
+    wav2vec2_default_onnx_filename: str = "model_mel_int8.onnx"
+    wav2vec2_mel_fp32_onnx_filename: str = "model_mel_fp32.onnx"
+    wav2vec2_mel_int8_onnx_filename: str = "model_mel_int8.onnx"
+    wav2vec2_int8_onnx_filename: str = "model_int8.onnx"
+    wav2vec2_fp32_onnx_filename: str = "model_fp32.onnx"
+
+    # 推論時 ONNX 候補探索順序（前処理内包版 INT8 -> 前処理内包版 FP32 -> 通常 INT8 -> 通常 FP32 -> model.onnx）
+    wav2vec2_onnx_candidate_filenames: tuple[str, ...] = (
+        "model_mel_int8.onnx",
+        "model_mel_fp32.onnx",
+        "model_int8.onnx",
+        "model_fp32.onnx",
+        "model.onnx",
+    )
+    # Hugging Face 同期対象のファイル一覧
+    wav2vec2_essential_filenames: tuple[str, ...] = (
+        "model_mel_int8.onnx",
+        "model_int8.onnx",
+        "labels.json",
+        "config.json",
+        "preprocessor_config.json",
+    )
+
     output_audio_path: Path = PROJECT_ROOT / "predicted_audio.wav"
     raw_dataset_dir: Path = PROJECT_ROOT / "dataset"
     collected_dataset_dir: Path = PROJECT_ROOT / "dataset" / "collected"

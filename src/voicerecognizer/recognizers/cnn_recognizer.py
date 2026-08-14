@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -8,6 +9,7 @@ import torch
 
 from voicerecognizer.config import (
     DEFAULT_AUDIO_CONFIG,
+    DEFAULT_HUGGINGFACE_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
 )
@@ -16,6 +18,7 @@ from voicerecognizer.core.interfaces import RecognitionStrategy
 from voicerecognizer.models.cnn.hiragana_cnn import HiraganaCNN
 from voicerecognizer.preprocessing.audio_preprocessor import AudioPreprocessor
 from voicerecognizer.preprocessing.threshold_calculator import AbstractSilenceThresholdCalculator
+from voicerecognizer.utils.model_uploader import download_latest_team_weights_if_needed
 
 logger = logging.getLogger(__name__)
 
@@ -33,12 +36,28 @@ class CNNRecognizer(RecognitionStrategy):
         hop_length: int = DEFAULT_PREPROCESS_CONFIG.hop_length,
         device: torch.device | None = None,
         threshold_calculator: AbstractSilenceThresholdCalculator | None = None,
+        auto_download: bool = True,
     ):
         self.model_path = Path(model_path)
-        labels_json_path = self.model_path.parent / "labels.json"
-        if labels_json_path.exists():
-            import json
+        self._last_download_error: str | None = None
+        if not self.model_path.exists() and auto_download:
+            logger.info(
+                "ローカルに CNN モデル重みが見つかりません (%s)。Hugging Face Hub より自動ダウンロードを開始します...",
+                self.model_path,
+            )
+            try:
+                download_latest_team_weights_if_needed(
+                    model_type="cnn",
+                    weights_dir=self.model_path.parent,
+                )
+                if self.model_path.exists():
+                    logger.info("CNN モデル重みのダウンロードと配置が完了しました: %s", self.model_path)
+            except Exception as e:
+                self._last_download_error = str(e)
+                logger.warning("CNN 重みの自動ダウンロード中に例外が発生しました: %s", e)
 
+        labels_json_path = self.model_path.parent / DEFAULT_RECOGNITION_CONFIG.labels_filename
+        if labels_json_path.exists():
             with open(labels_json_path, encoding="utf-8") as f:
                 self.labels = tuple(json.load(f))
         else:
@@ -56,6 +75,34 @@ class CNNRecognizer(RecognitionStrategy):
         self.hop_length = hop_length
         self.model = self._load_model()
         logger.info("CNNレコグナイザーの初期化完了")
+
+    def _build_model_not_found_message(self, err: Exception | None = None) -> str:
+        last_err = getattr(self, "_last_download_error", None)
+        download_err_info = (
+            f"\n  ダウンロード例外詳細: {last_err}"
+            if last_err
+            else ""
+        )
+        load_err_info = f"\n  ロード例外詳細: {err}" if err else ""
+        return (
+            f"voicerecognizer の CNN モデル重み ({DEFAULT_RECOGNITION_CONFIG.cnn_model_filename}) が見つかりません。\n\n"
+            "【原因】\n"
+            f"  ローカルパス ({self.model_path}) にモデルが存在せず、\n"
+            f"  Hugging Face Hub ({DEFAULT_HUGGINGFACE_CONFIG.repo_id}) からの自動ダウンロードも完了できませんでした。{download_err_info}{load_err_info}\n\n"
+            "【使い方の確認・解決手順】\n"
+            "  1. [インターネット接続]\n"
+            "     初回実行時は Hugging Face Hub より自動的にモデルがダウンロードされます。\n"
+            "     ネットワーク接続を確認の上、再度実行してください。\n"
+            "  2. [Hugging Face 認証トークン]\n"
+            "     アクセス制限やレートリミットを回避する場合は環境変数を設定してください:\n"
+            "     - Windows (PowerShell): $env:HF_TOKEN = \"your_token\"\n"
+            "     - Linux / macOS (Bash): export HF_TOKEN=\"your_token\"\n"
+            "     - または .env ファイルに HF_TOKEN=your_token を記述\n"
+            "  3. [ローカルモデルの指定]\n"
+            "     ローカルに既にあるモデルファイルを使用したい場合は、初期化時に model_path を渡してください:\n"
+            "     >>> import voicerecognizer as vr\n"
+            "     >>> recognizer = vr.CNNRecognizer(model_path=\"/path/to/your/best_model.pth\")\n"
+        )
 
     def recognize(self, audio: Any) -> str:
         import time
@@ -98,7 +145,7 @@ class CNNRecognizer(RecognitionStrategy):
             return model
         except Exception as e:
             logger.error("CNN モデルのロードに失敗しました: %s", e)
-            raise ModelNotFoundError(f"CNN モデルのロードに失敗しました ({self.model_path}): {e}") from e
+            raise ModelNotFoundError(self._build_model_not_found_message(e)) from e
 
     def _preprocess(self, audio: Any) -> np.ndarray:
         return self.audio_preprocessor.preprocess_waveform(audio)

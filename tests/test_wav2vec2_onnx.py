@@ -14,7 +14,7 @@ class TestWav2Vec2ONNXRecognizer(unittest.TestCase):
         recognizer = Wav2Vec2Recognizer(model_path=non_existent_dir)
         with self.assertRaises(FileNotFoundError) as ctx:
             recognizer.recognize(np.zeros(16000, dtype=np.float32))
-        self.assertIn("Wav2Vec2 ONNX モデルが見つかりません", str(ctx.exception))
+        self.assertIn("Wav2Vec2 ONNX モデル", str(ctx.exception))
 
     @patch("onnxruntime.InferenceSession")
     @patch("transformers.AutoFeatureExtractor.from_pretrained")

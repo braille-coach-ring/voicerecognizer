@@ -30,7 +30,7 @@ def safe_stratified_split(
         return list(train_idx), list(val_idx)
 
     logger.warning(
-        "⚠️ 以下の %d クラスはデータセット内のサンプル数が1件のため、学習セット(train)へ優先割り当てします: %s",
+        "以下の %d クラスはデータセット内のサンプル数が1件のため、学習セット(train)へ優先割り当てします: %s",
         len(singletons),
         sorted(singletons),
     )
