@@ -25,9 +25,11 @@
 
 ---
 
-## 2. ローカル環境設定 (.env)
+## 2. 開発者向けローカル環境設定 (.env)
 
-プロジェクト直下に `.env` ファイルを作成し、ご自身の Hugging Face アクセストークンと Organization リポジトリ ID を記述します。
+リポジトリ ID (`braille-mate/braille-mate-hiragana-recognizer`) はコード内（`config.py`）で固定されているため、一般利用者は設定不要です。
+
+モデルを学習・更新してアップロードする開発者のみ、プロジェクト直下に `.env` を作成し、Write 権限付きのアクセストークンを記載します。
 
 ```bash
 cp .env.example .env
@@ -35,10 +37,8 @@ cp .env.example .env
 
 `.env` 内の設定内容:
 ```env
-# Hugging Face Hub 設定
+# Hugging Face Hub Write トークン (開発者のみ)
 HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
-HF_REPO_ID=braille-mate/braille-mate-hiragana-recognizer
-HF_AUTO_UPLOAD=false
 ```
 
 ---
