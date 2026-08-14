@@ -322,8 +322,8 @@ def play_guide_wav(label: str) -> None:
 
 def samples_needed(folder: Path, args: argparse.Namespace) -> int:
     if args.target_per_label is None:
-        return args.repeat
-    return max(0, args.target_per_label - wav_count(folder))
+        return int(args.repeat)
+    return max(0, int(args.target_per_label) - wav_count(folder))
 
 
 def to_mono(audio: np.ndarray) -> np.ndarray:
@@ -343,7 +343,7 @@ def audio_stats(audio: np.ndarray) -> tuple[float, float]:
 
 def is_speech(audio: np.ndarray, args: argparse.Namespace) -> bool:
     peak, rms = audio_stats(audio)
-    return peak >= args.silence_threshold and rms >= args.rms_threshold
+    return peak >= float(args.silence_threshold) and rms >= float(args.rms_threshold)
 
 
 def save_audio(folder: Path, number: int, audio: np.ndarray) -> Path:
