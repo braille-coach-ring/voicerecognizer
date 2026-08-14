@@ -58,8 +58,6 @@ build-backend = "setuptools.build_meta"
 where = ["."]
 include = ["*"]
 
-[tool.setuptools.package-dir]
-voicerecognizer = "."
 
 
 [tool.pyright]
