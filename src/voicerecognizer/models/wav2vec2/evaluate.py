@@ -2,7 +2,7 @@ import argparse
 import logging
 from pathlib import Path
 
-from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
+from voicerecognizer.config import DEFAULT_AUDIO_CONFIG, DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
 from voicerecognizer.evaluation.evaluator import Evaluator
 from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
 
@@ -11,19 +11,12 @@ logger = logging.getLogger(__name__)
 
 
 def evaluate(args: argparse.Namespace) -> None:
-    recognizer = Wav2Vec2Recognizer(
-        model_path=args.model_path,
-        sample_rate=args.sample_rate,
+    recognizer = Wav2Vec2Recognizer(model_path=args.model_path)
+    evaluator = Evaluator(
+        model=recognizer,
+        dataset_path=args.dataset_dir,
     )
-    evaluator = Evaluator(model=recognizer, dataset_path=args.dataset_dir)
-    result = evaluator.evaluate()
-
-    logger.info("--- Wav2Vec2 evaluation results ---")
-    logger.info("Accuracy    : %.4f", result.overall.accuracy)
-    logger.info("Macro F1    : %.4f", result.overall.macro_f1)
-    logger.info("Weighted F1 : %.4f", result.overall.weighted_f1)
-    logger.info("Total       : %d samples", result.overall.total_samples)
-
+    evaluator.evaluate()
     if args.output_json:
         evaluator.export_json(args.output_json)
 
@@ -43,7 +36,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--sample-rate",
         type=int,
-        default=DEFAULT_RECOGNITION_CONFIG.sample_rate,
+        default=DEFAULT_AUDIO_CONFIG.sample_rate,
     )
     parser.add_argument(
         "--output-json",

@@ -8,8 +8,10 @@ from typing import Any
 import numpy as np
 
 from voicerecognizer.config import (
-    DEFAULT_HUGGINGFACE_CONFIG,
+    DEFAULT_AUDIO_CONFIG,
+    DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
+    PUBLIC_DEFAULT_HF_REPO_ID,
     HuggingFaceConfig,
 )
 from voicerecognizer.core.exceptions import ModelNotFoundError
@@ -32,9 +34,9 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         self,
         model_path: str | Path = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir,
         labels: tuple[str, ...] | list[str] = DEFAULT_RECOGNITION_CONFIG.labels,
-        sample_rate: int = DEFAULT_RECOGNITION_CONFIG.sample_rate,
+        sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
-        top_db: float = DEFAULT_RECOGNITION_CONFIG.top_db,
+        top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,
         dynamic_trimming: bool = True,
         auto_download: bool = True,
         candidate_filenames: tuple[str, ...] | list[str] = DEFAULT_RECOGNITION_CONFIG.wav2vec2_onnx_candidate_filenames,
@@ -129,12 +131,13 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
             if last_err
             else ""
         )
-        repo_id = getattr(self, "hf_config", DEFAULT_HUGGINGFACE_CONFIG).repo_id
+        repo_id = getattr(self, "hf_config", None)
+        repo_id_str = repo_id.repo_id if repo_id else PUBLIC_DEFAULT_HF_REPO_ID
         return (
             "voicerecognizer の Wav2Vec2 ONNX モデルが見つかりません。\n\n"
             "【原因】\n"
             f"  ローカルパス ({self.model_path}) にモデルが存在せず、\n"
-            f"  Hugging Face Hub ({repo_id}) からの自動ダウンロードも完了できませんでした。{download_err_info}\n\n"
+            f"  Hugging Face Hub ({repo_id_str}) からの自動ダウンロードも完了できませんでした。{download_err_info}\n\n"
             "【使い方の確認・解決手順】\n"
             "  1. [インターネット接続]\n"
             "     初回実行時は Hugging Face Hub より自動的にモデルがダウンロードされます。\n"

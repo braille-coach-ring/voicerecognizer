@@ -16,7 +16,6 @@ from voicerecognizer.core.exceptions import (
 from voicerecognizer.core.interfaces import RecognitionStrategy
 from voicerecognizer.recognizers.cnn_recognizer import CNNRecognizer
 from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
-from voicerecognizer.recognizers.whisper_recognizer import WhisperRecognizer
 from voicerecognizer.runtime.stream_listener import AudioStreamListener, RecognitionResult
 
 
@@ -28,7 +27,6 @@ class TestPackageAPI(unittest.TestCase):
         # Classes & Types
         self.assertIs(vr.CNNRecognizer, CNNRecognizer)
         self.assertIs(vr.Wav2Vec2Recognizer, Wav2Vec2Recognizer)
-        self.assertIs(vr.WhisperRecognizer, WhisperRecognizer)
         self.assertIs(vr.AudioStreamListener, AudioStreamListener)
         self.assertIs(vr.RecognitionResult, RecognitionResult)
         self.assertIs(vr.RecognitionStrategy, RecognitionStrategy)
@@ -39,10 +37,9 @@ class TestPackageAPI(unittest.TestCase):
         self.assertIs(vr.ModelNotFoundError, ModelNotFoundError)
         self.assertIs(vr.VoiceRecognizerError, VoiceRecognizerError)
 
-    @patch.object(CNNRecognizer, "_load_model")
-    def test_cnn_recognizer_default_instantiation(self, mock_load_model: MagicMock) -> None:
+    def test_cnn_recognizer_default_instantiation(self) -> None:
         """CNNRecognizer should be constructable without arguments."""
-        recognizer = CNNRecognizer()
+        recognizer = CNNRecognizer(auto_download=False)
         self.assertIsInstance(recognizer, CNNRecognizer)
 
     @patch.object(CNNRecognizer, "_load_model")

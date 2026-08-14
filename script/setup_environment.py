@@ -31,9 +31,6 @@ def setup_directories() -> None:
     """必要なディレクトリ構成を作成・検証します。"""
     logger.info("--- ステップ 1: ディレクトリ構成の整備 ---")
     dirs_to_create = [
-        PROJECT_ROOT / "weights",
-        PROJECT_ROOT / "weights" / "wav2vec2_best",
-        PROJECT_ROOT / "weights" / "wav2vec2_last",
         PROJECT_ROOT / "dataset",
         PROJECT_ROOT / "dataset" / "collected",
         PROJECT_ROOT / "merged_dataset",
@@ -45,6 +42,19 @@ def setup_directories() -> None:
         d.mkdir(parents=True, exist_ok=True)
     if not DEFAULT_RECOGNITION_CONFIG.log_path.exists():
         DEFAULT_RECOGNITION_CONFIG.log_path.touch()
+
+    # プロジェクト直下の旧 weights ディレクトリの残存検知
+    project_weights = PROJECT_ROOT / "weights"
+    if project_weights.exists():
+        model_artifacts = list(project_weights.glob("**/*.onnx")) + list(project_weights.glob("**/*.pth")) + list(project_weights.glob("**/*.safetensors"))
+        if model_artifacts:
+            logger.warning(
+                "プロジェクト直下の weights ディレクトリ (%s) にモデルファイル (%d 件) が検出されました。voicerecognizer は中央キャッシュ (%s) を標準で使用するため、プロジェクト直下の weights ディレクトリは削除して問題ありません。",
+                project_weights,
+                len(model_artifacts),
+                DEFAULT_RECOGNITION_CONFIG.weights_dir,
+            )
+
     logger.info("ディレクトリ構成の整備が完了しました。")
 
 
@@ -54,28 +64,6 @@ def setup_models(dest_dir: Path | None = None) -> bool:
     target = dest_dir or DEFAULT_RECOGNITION_CONFIG.weights_dir
     ok_w2v = download_latest_team_weights_if_needed(model_type="wav2vec2", weights_dir=target)
     ok_cnn = download_latest_team_weights_if_needed(model_type="cnn", weights_dir=target)
-
-    # プロジェクト直下の weights/ ディレクトリにも複製・同期（ローカル開発の利便性向上）
-    project_weights = PROJECT_ROOT / "weights"
-    if target != project_weights and target.exists():
-        try:
-            for item in target.glob("*"):
-                if item.is_file():
-                    dest_file = project_weights / item.name
-                    if not dest_file.exists():
-                        with open(item, "rb") as src_f, open(dest_file, "wb") as dst_f:
-                            dst_f.write(src_f.read())
-                elif item.is_dir():
-                    dest_subdir = project_weights / item.name
-                    dest_subdir.mkdir(parents=True, exist_ok=True)
-                    for subfile in item.glob("*"):
-                        if subfile.is_file():
-                            sub_dst = dest_subdir / subfile.name
-                            if not sub_dst.exists():
-                                with open(subfile, "rb") as src_f, open(sub_dst, "wb") as dst_f:
-                                    dst_f.write(src_f.read())
-        except Exception as e:
-            logger.debug("ローカル weights への同期中に例外 (スキップ): %s", e)
 
     if ok_w2v and ok_cnn:
         logger.info("モデル重みの取得・同期が完了しました。")

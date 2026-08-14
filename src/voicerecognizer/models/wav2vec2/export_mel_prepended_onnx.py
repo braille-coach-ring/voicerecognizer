@@ -20,7 +20,7 @@ import torch
 import torch.nn as nn
 from transformers import AutoConfig, Wav2Vec2ForSequenceClassification
 
-from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.config import DEFAULT_AUDIO_CONFIG, DEFAULT_RECOGNITION_CONFIG
 
 if sys.platform == "win32":
     if isinstance(sys.stdout, io.TextIOWrapper):
@@ -60,7 +60,7 @@ class WaveformPrependedWav2Vec2(nn.Module):
 def export_mel_prepended_onnx(
     model_dir: Path,
     output_fp32_path: Path,
-    sample_rate: int = DEFAULT_RECOGNITION_CONFIG.sample_rate,
+    sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
     target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
 ) -> None:
     """前処理内包型 Wav2Vec2 モデルを ONNX フォーマットへエクスポートします。"""

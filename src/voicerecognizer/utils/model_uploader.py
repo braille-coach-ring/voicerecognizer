@@ -71,6 +71,7 @@ def download_latest_team_weights_if_needed(
     logger.info("Hugging Face Hub (%s) より最新モデル重み情報を確認中...", cfg.repo_id)
     remote_sha_map = get_remote_file_sha256_map(api, cfg.repo_id, files_to_sync)
 
+    any_failed = False
     for rel_path in files_to_sync:
         local_file = target_dir / rel_path
         remote_sha = remote_sha_map.get(rel_path)
@@ -95,12 +96,30 @@ def download_latest_team_weights_if_needed(
         # リモートからダウンロード
         logger.info("モデルファイル (%s) を Hugging Face Hub よりダウンロード中...", rel_path)
         try:
-            downloaded_path = hf_hub_download(
-                repo_id=cfg.repo_id,
-                filename=rel_path,
-                repo_type="model",
-                token=token,
-            )
+            try:
+                downloaded_path = hf_hub_download(
+                    repo_id=cfg.repo_id,
+                    filename=rel_path,
+                    repo_type="model",
+                    token=token,
+                )
+            except Exception as first_exc:
+                err_lower = str(first_exc).lower()
+                if token and ("401" in err_lower or "403" in err_lower or "unauthorized" in err_lower or "invalid" in err_lower):
+                    logger.warning(
+                        "設定された Hugging Face トークンが無効です。公開モデルのためトークンなしでもダウンロード可能ですが、設定を確認・修正してください: %s",
+                        first_exc,
+                    )
+                    # トークンなしで再試行
+                    downloaded_path = hf_hub_download(
+                        repo_id=cfg.repo_id,
+                        filename=rel_path,
+                        repo_type="model",
+                        token=None,
+                    )
+                else:
+                    raise first_exc
+
             local_file.parent.mkdir(parents=True, exist_ok=True)
             # ダウンロードしたファイルを target_dir に配置
             with open(downloaded_path, "rb") as src, open(local_file, "wb") as dst:
@@ -112,12 +131,9 @@ def download_latest_team_weights_if_needed(
                 logger.debug("Hugging Face Hub 上に %s は存在しませんでした (スキップ): %s", rel_path, e)
             else:
                 logger.warning("モデルファイル (%s) のダウンロードに失敗しました: %s", rel_path, e)
-                if not token:
-                    logger.debug(
-                        "ヒント: プライベートリポジトリへのアクセスには環境変数 HF_TOKEN が必要です。"
-                    )
+                any_failed = True
 
-    return True
+    return not any_failed
 
 
 def upload_weights_to_hf(

@@ -36,7 +36,12 @@ import torch
 from torch.cuda.amp import GradScaler
 from torch.utils.data import DataLoader
 
-from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
+from voicerecognizer.config import (
+    DEFAULT_AUDIO_CONFIG,
+    DEFAULT_PREPROCESS_CONFIG,
+    DEFAULT_RECOGNITION_CONFIG,
+    PROJECT_ROOT,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -126,9 +131,9 @@ def run_single_condition(
     )
     dataset = Wav2Vec2ClassificationDataset(
         root_dir=root_dir,
-        sample_rate=DEFAULT_RECOGNITION_CONFIG.sample_rate,
+        sample_rate=DEFAULT_AUDIO_CONFIG.sample_rate,
         target_length_seconds=DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
-        top_db=DEFAULT_RECOGNITION_CONFIG.top_db,
+        top_db=DEFAULT_PREPROCESS_CONFIG.top_db,
     )
     train_subset, val_subset = split_dataset(dataset, val_rate=0.2, seed=seed)
 
@@ -144,7 +149,7 @@ def run_single_condition(
 
     # Model
     feature_extractor = AutoFeatureExtractor.from_pretrained(model_name)
-    collate_fn = build_collate_fn(feature_extractor, DEFAULT_RECOGNITION_CONFIG.sample_rate)
+    collate_fn = build_collate_fn(feature_extractor, DEFAULT_AUDIO_CONFIG.sample_rate)
 
     label2id = {label: idx for idx, label in enumerate(dataset.labels)}
     id2label = {idx: label for label, idx in label2id.items()}
