@@ -36,7 +36,7 @@ import torch
 from torch.cuda.amp import GradScaler
 from torch.utils.data import DataLoader
 
-from config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
+from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -86,8 +86,8 @@ def run_single_condition(
         get_linear_schedule_with_warmup,
     )
 
-    from evaluation.evaluator import compute_evaluation_result
-    from models.wav2vec2.train import (
+    from voicerecognizer.evaluation.evaluator import compute_evaluation_result
+    from voicerecognizer.models.wav2vec2.train import (
         AugmentedSubset,
         Wav2Vec2ClassificationDataset,
         build_collate_fn,
@@ -99,7 +99,7 @@ def run_single_condition(
         train_epoch,
         validate,
     )
-    from preprocessing.audio_augmentor import AudioAugmentor
+    from voicerecognizer.preprocessing.audio_augmentor import AudioAugmentor
 
     fix_seed(seed)
 

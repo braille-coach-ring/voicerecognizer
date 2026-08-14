@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 
-from config import DEFAULT_RECOGNITION_CONFIG
-from recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
+from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
 
 
 class TestWav2Vec2ONNXRecognizer(unittest.TestCase):

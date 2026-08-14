@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import torch
 
-from models.wav2vec2.train import initialize_unloaded_classification_head
+from voicerecognizer.models.wav2vec2.train import initialize_unloaded_classification_head
 
 
 class TestCriticalRuntimeFixes(unittest.TestCase):

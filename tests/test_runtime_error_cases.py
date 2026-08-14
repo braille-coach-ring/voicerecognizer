@@ -15,9 +15,9 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import torch
 
-from core.exceptions import ModelNotFoundError, VoiceRecognizerError
-from evaluation.evaluator import Evaluator
-from recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
+from voicerecognizer.core.exceptions import ModelNotFoundError, VoiceRecognizerError
+from voicerecognizer.evaluation.evaluator import Evaluator
+from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
 
 
 class TestWav2Vec2RecognizerRuntimeProtections(unittest.TestCase):
@@ -99,7 +99,7 @@ class TestONNXExportArgumentTypes(unittest.TestCase):
     @patch("torch.onnx.export")
     def test_export_onnx_passes_dummy_input_as_tuple(self, mock_export: MagicMock) -> None:
         """torch.onnx.export の args 引数には単体 Tensor ではなく (dummy_input,) のタプルが渡されるべき"""
-        from models.wav2vec2.export_onnx import export_to_onnx
+        from voicerecognizer.models.wav2vec2.export_onnx import export_to_onnx
 
         dummy_model = MagicMock(spec=torch.nn.Module)
         dummy_model.eval = MagicMock()

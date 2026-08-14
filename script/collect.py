@@ -21,12 +21,12 @@ import numpy as np
 import sounddevice as sd
 import soundfile as sf
 
-from config import (
+from voicerecognizer.config import (
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
 )
-from config_labels import (
+from voicerecognizer.config_labels import (
     DAKUON_LABELS,
     HANDAKUON_LABELS,
     ROMAJI_TO_HIRAGANA,

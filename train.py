@@ -36,12 +36,12 @@ def build_dispatch_parser() -> argparse.ArgumentParser:
 
 def _load_model_trainer(model_type: str):
     if model_type == "cnn":
-        from models.cnn.train import build_parser, train
+        from voicerecognizer.models.cnn.train import build_parser, train
 
         return build_parser, train
 
     if model_type == "wav2vec2":
-        from models.wav2vec2.train import build_parser, train
+        from voicerecognizer.models.wav2vec2.train import build_parser, train
 
         return build_parser, train
 

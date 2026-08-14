@@ -17,7 +17,7 @@ from time import sleep
 
 import numpy as np
 
-from config import (
+from voicerecognizer.config import (
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
@@ -86,7 +86,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config-path",
         type=Path,
-        default=PROJECT_ROOT / "config.py",
+        default=PROJECT_ROOT / "src" / "voicerecognizer" / "config.py",
         help="config.py path to update.",
     )
     parser.add_argument(

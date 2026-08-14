@@ -1,40 +1,5 @@
 [
   {
-    "filename": "config_labels.py",
-    "code": "RUF002",
-    "line": 4,
-    "column": 25,
-    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
-  },
-  {
-    "filename": "config_labels.py",
-    "code": "RUF002",
-    "line": 4,
-    "column": 30,
-    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
-  },
-  {
-    "filename": "config_labels.py",
-    "code": "RUF002",
-    "line": 4,
-    "column": 36,
-    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
-  },
-  {
-    "filename": "config_labels.py",
-    "code": "RUF002",
-    "line": 4,
-    "column": 41,
-    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
-  },
-  {
-    "filename": "core/services/audio_pipeline.py",
-    "code": "SIM102",
-    "line": 87,
-    "column": 17,
-    "message": "Use a single `if` statement instead of nested `if` statements"
-  },
-  {
     "filename": "main.py",
     "code": "N806",
     "line": 70,
@@ -42,66 +7,115 @@
     "message": "Variable `SHORTCUT_CHOICES` in function should be lowercase"
   },
   {
-    "filename": "models/cnn/hiragana_cnn.py",
+    "filename": "src/voicerecognizer/config_labels.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 25,
+    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "src/voicerecognizer/config_labels.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 30,
+    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "src/voicerecognizer/config_labels.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 36,
+    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "src/voicerecognizer/config_labels.py",
+    "code": "RUF002",
+    "line": 4,
+    "column": 41,
+    "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
+  },
+  {
+    "filename": "src/voicerecognizer/core/services/audio_pipeline.py",
+    "code": "SIM102",
+    "line": 87,
+    "column": 17,
+    "message": "Use a single `if` statement instead of nested `if` statements"
+  },
+  {
+    "filename": "src/voicerecognizer/models/cnn/hiragana_cnn.py",
     "code": "B008",
     "line": 7,
     "column": 36,
     "message": "Do not perform function call `len` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable"
   },
   {
-    "filename": "models/wav2vec2/train.py",
+    "filename": "src/voicerecognizer/models/wav2vec2/train.py",
     "code": "RUF002",
     "line": 5,
     "column": 32,
     "message": "Docstring contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
   },
   {
-    "filename": "preprocessing/audio_augmentor.py",
+    "filename": "src/voicerecognizer/preprocessing/audio_augmentor.py",
     "code": "RUF002",
     "line": 31,
     "column": 33,
     "message": "Docstring contains ambiguous `～` (FULLWIDTH TILDE). Did you mean `~` (TILDE)?"
   },
   {
-    "filename": "preprocessing/audio_preprocessor.py",
+    "filename": "src/voicerecognizer/preprocessing/audio_preprocessor.py",
     "code": "RUF001",
     "line": 46,
     "column": 54,
     "message": "String contains ambiguous `＋` (FULLWIDTH PLUS SIGN). Did you mean `+` (PLUS SIGN)?"
   },
   {
-    "filename": "tests/test_package_api.py",
-    "code": "N817",
-    "line": 52,
-    "column": 53,
-    "message": "CamelCase `RecognizerFactory` imported as acronym `RF`"
+    "filename": "src/voicerecognizer/runtime/stream_listener.py",
+    "code": "I001",
+    "line": 13,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
   },
   {
-    "filename": "utils/model_uploader.py",
+    "filename": "src/voicerecognizer/utils/model_uploader.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
+  },
+  {
+    "filename": "src/voicerecognizer/utils/model_uploader.py",
     "code": "RUF001",
     "line": 79,
     "column": 14,
     "message": "String contains ambiguous `ℹ` (INFORMATION SOURCE). Did you mean `i` (LATIN SMALL LETTER I)?"
   },
   {
-    "filename": "utils/model_uploader.py",
+    "filename": "src/voicerecognizer/utils/model_uploader.py",
     "code": "RUF001",
     "line": 92,
     "column": 22,
     "message": "String contains ambiguous `ℹ` (INFORMATION SOURCE). Did you mean `i` (LATIN SMALL LETTER I)?"
   },
   {
-    "filename": "utils/model_uploader.py",
+    "filename": "src/voicerecognizer/utils/model_uploader.py",
     "code": "RUF001",
     "line": 172,
     "column": 34,
     "message": "String contains ambiguous `ℹ` (INFORMATION SOURCE). Did you mean `i` (LATIN SMALL LETTER I)?"
   },
   {
-    "filename": "utils/model_uploader.py",
+    "filename": "src/voicerecognizer/utils/model_uploader.py",
     "code": "RUF001",
     "line": 234,
     "column": 34,
     "message": "String contains ambiguous `ℹ` (INFORMATION SOURCE). Did you mean `i` (LATIN SMALL LETTER I)?"
+  },
+  {
+    "filename": "tests/test_model_uploader.py",
+    "code": "I001",
+    "line": 1,
+    "column": 1,
+    "message": "Import block is un-sorted or un-formatted"
   }
 ]

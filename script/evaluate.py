@@ -15,9 +15,9 @@ import argparse
 import logging
 from pathlib import Path
 
-from config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
-from core.factory.recognizer_factory import RecognizerFactory
-from evaluation.evaluator import Evaluator
+from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
+from voicerecognizer.core.factory.recognizer_factory import RecognizerFactory
+from voicerecognizer.evaluation.evaluator import Evaluator
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)

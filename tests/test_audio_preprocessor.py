@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from preprocessing.audio_preprocessor import AudioPreprocessor
+from voicerecognizer.preprocessing.audio_preprocessor import AudioPreprocessor
 
 
 class TestAudioPreprocessor(unittest.TestCase):

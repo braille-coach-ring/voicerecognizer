@@ -1,6 +1,6 @@
 import unittest
 
-from utils.split_helper import safe_stratified_split
+from voicerecognizer.utils.split_helper import safe_stratified_split
 
 
 class TestSplitHelper(unittest.TestCase):

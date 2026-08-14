@@ -7,8 +7,8 @@ Usage:
 
 import logging
 
-from config import DEFAULT_RECOGNITION_CONFIG
-from utils.machine_id import get_machine_id
+from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.utils.machine_id import get_machine_id
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)

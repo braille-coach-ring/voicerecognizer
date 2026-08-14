@@ -3,8 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from core.interfaces import RecognitionStrategy
-from evaluation.evaluator import EvaluationResult, Evaluator
+from voicerecognizer.core.interfaces import RecognitionStrategy
+from voicerecognizer.evaluation.evaluator import EvaluationResult, Evaluator
 
 
 class MockRecognizer(RecognitionStrategy):

@@ -11,7 +11,7 @@ Dataset Merging Script (Index Generation)
 
 import logging
 
-from preprocessing.dataset_builder import DatasetBuilder
+from voicerecognizer.preprocessing.dataset_builder import DatasetBuilder
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)

@@ -55,22 +55,22 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["*"]
+where = ["src", "."]
+include = ["voicerecognizer*", "script*"]
 
 
 
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
-extraPaths = ["."]
+extraPaths = ["src", "."]
 reportAttributeAccessIssue = false
 reportMissingModuleSource = false
 
 [tool.ruff]
 target-version = "py313"
 line-length = 100
-src = ["."]
+src = ["src", "."]
 exclude = [
     ".git",
     ".venv",
@@ -103,12 +103,12 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["core", "dataset", "evaluation", "models", "preprocessing", "recognizers", "runtime", "utils"]
+known-first-party = ["voicerecognizer"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-testpaths = ["tests", "test"]
-pythonpath = ["."]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
 addopts = "-v --strict-markers"
 filterwarnings = [
     "ignore::DeprecationWarning",
@@ -117,6 +117,7 @@ filterwarnings = [
 
 [tool.pyrefly]
 preset = "strict"
-search-path = ["."]
+search-path = ["src", "."]
 baseline = "pyrefly-baseline.json"
+
 
