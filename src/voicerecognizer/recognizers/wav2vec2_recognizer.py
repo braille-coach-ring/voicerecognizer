@@ -43,14 +43,31 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         # ONNX モデルファイルの探索
         self.onnx_model_path = self._find_onnx_model()
         if self.onnx_model_path is None and auto_download:
+            logger.info(
+                "ローカルに Wav2Vec2 ONNX モデルが見つかりません (%s)。Hugging Face Hub より自動ダウンロードを開始します...",
+                self.model_path,
+            )
             try:
                 download_latest_team_weights_if_needed(
                     model_type="wav2vec2",
                     weights_dir=self.model_path.parent,
                 )
                 self.onnx_model_path = self._find_onnx_model()
+                if self.onnx_model_path is not None:
+                    logger.info(
+                        "Wav2Vec2 ONNX モデルのダウンロードと配置が完了しました: %s",
+                        self.onnx_model_path,
+                    )
             except Exception as e:
                 logger.warning("Wav2Vec2 重みの自動ダウンロード中に例外が発生しました: %s", e)
+
+        # 前処理内包型 (model_mel_*) 以外のモデルにフォールバックした場合の警告
+        if self.onnx_model_path is not None and not self.onnx_model_path.name.startswith("model_mel_"):
+            logger.warning(
+                "⚠️ 前処理内包型 ONNX モデル (%s) が見つかりませんでした。通常モデル (%s) にフォールバックして推論を実行します。(前処理オーバーヘッドが増加する可能性があります)",
+                DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_int8_onnx_filename,
+                self.onnx_model_path.name,
+            )
 
         # labels.json のロード
         labels_json = self.model_path / DEFAULT_RECOGNITION_CONFIG.labels_filename

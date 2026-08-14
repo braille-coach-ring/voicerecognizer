@@ -39,11 +39,17 @@ class CNNRecognizer(RecognitionStrategy):
     ):
         self.model_path = Path(model_path)
         if not self.model_path.exists() and auto_download:
+            logger.info(
+                "ローカルに CNN モデル重みが見つかりません (%s)。Hugging Face Hub より自動ダウンロードを開始します...",
+                self.model_path,
+            )
             try:
                 download_latest_team_weights_if_needed(
                     model_type="cnn",
                     weights_dir=self.model_path.parent,
                 )
+                if self.model_path.exists():
+                    logger.info("CNN モデル重みのダウンロードと配置が完了しました: %s", self.model_path)
             except Exception as e:
                 logger.warning("CNN 重みの自動ダウンロード中に例外が発生しました: %s", e)
 
