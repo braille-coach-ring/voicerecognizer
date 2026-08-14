@@ -124,7 +124,29 @@ def quantize_onnx_int8(fp32_onnx_path: Path, int8_onnx_path: Path) -> None:
 
 
 def main() -> None:
-    model_dir = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Export Wav2Vec2 to Waveform-prepended ONNX format"
+    )
+    parser.add_argument(
+        "--model-dir",
+        type=Path,
+        default=None,
+        help="Path to wav2vec2 model directory containing model.safetensors and config.json",
+    )
+    args = parser.parse_args()
+
+    model_dir = args.model_dir
+    if model_dir is None:
+        local_weights_dir = Path("weights/wav2vec2_best")
+        if (local_weights_dir / "model.safetensors").exists() or (
+            local_weights_dir / "config.json"
+        ).exists():
+            model_dir = local_weights_dir
+        else:
+            model_dir = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir
+
     fp32_path = model_dir / DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_fp32_onnx_filename
     int8_path = model_dir / DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_int8_onnx_filename
 
