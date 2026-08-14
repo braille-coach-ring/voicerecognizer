@@ -108,7 +108,9 @@ class TestONNXExportArgumentTypes(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             output_file = Path(tmp) / "model.onnx"
 
-            def mock_export_side_effect(model: torch.nn.Module, args: tuple[torch.Tensor, ...], f: str, **kwargs: object) -> None:
+            def mock_export_side_effect(
+                model: torch.nn.Module, args: tuple[torch.Tensor, ...], f: str, **kwargs: object
+            ) -> None:
                 Path(f).touch()
 
             mock_export.side_effect = mock_export_side_effect

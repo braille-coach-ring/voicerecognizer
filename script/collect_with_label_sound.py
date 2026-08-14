@@ -41,8 +41,7 @@ CHANNELS = DEFAULT_AUDIO_CONFIG.channels
 RECORD_SECONDS = DEFAULT_AUDIO_CONFIG.window_seconds
 DEFAULT_REPEAT = 10
 ROOT = DEFAULT_RECOGNITION_CONFIG.raw_dataset_dir
-GUIDE_WAV_ROOT = PROJECT_ROOT / "dataset" / "rinry"
-
+GUIDE_WAV_ROOT = ROOT / "rinry"
 
 
 # Optional overrides for labels whose prompt WAV filename/path differs.
@@ -271,7 +270,6 @@ def validate_args(args: argparse.Namespace) -> None:
         )
 
 
-
 def format_label(label: str) -> str:
     hiragana = ROMAJI_TO_HIRAGANA.get(label, label)
     if hiragana == label:
@@ -291,6 +289,7 @@ def next_file_number(folder: Path) -> int:
 
 def wav_count(folder: Path) -> int:
     return sum(1 for _ in folder.glob("*.wav"))
+
 
 def play_guide_wav(label: str) -> None:
     """現在録音する文字に対応した008.wavをお手本として再生する。"""
@@ -314,6 +313,7 @@ def play_guide_wav(label: str) -> None:
 
     except Exception as exc:
         print(f"⚠️ お手本音声の再生に失敗しました: {exc}")
+
 
 def samples_needed(folder: Path, args: argparse.Namespace) -> int:
     if args.target_per_label is None:

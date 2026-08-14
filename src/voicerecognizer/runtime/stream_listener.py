@@ -16,7 +16,12 @@ from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
 from typing import Any
 
-from voicerecognizer.config import DEFAULT_AUDIO_CONFIG, DEFAULT_PREPROCESS_CONFIG, AudioConfig, PreprocessConfig
+from voicerecognizer.config import (
+    DEFAULT_AUDIO_CONFIG,
+    DEFAULT_PREPROCESS_CONFIG,
+    AudioConfig,
+    PreprocessConfig,
+)
 from voicerecognizer.core.exceptions import DeviceNotFoundError
 from voicerecognizer.core.interfaces import RecognitionStrategy
 from voicerecognizer.runtime.audio_capture import AudioCapture

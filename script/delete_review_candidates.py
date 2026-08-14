@@ -8,6 +8,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Literal
 
+from voicerecognizer.evaluation.review import ReviewDecision, load_review_decisions, utc_now_iso
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SRC_ROOT = PROJECT_ROOT / "src"
 REVIEW_ROOT = SRC_ROOT / "voicerecognizer" / "evaluation"
@@ -16,7 +18,6 @@ if str(PROJECT_ROOT) not in sys.path:
 if str(REVIEW_ROOT) not in sys.path:
     sys.path.insert(0, str(REVIEW_ROOT))
 
-from review import ReviewDecision, load_review_decisions, utc_now_iso  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

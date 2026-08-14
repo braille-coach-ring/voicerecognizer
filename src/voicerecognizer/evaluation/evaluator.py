@@ -211,11 +211,12 @@ class Evaluator:
 
         candidates_method = getattr(self.model, "recognize_with_candidates", None)
         if callable(candidates_method):
-            raw_candidates = candidates_method(str(audio_path), top_k=top_k)
+            raw_candidates = cast(
+                Sequence[tuple[str, float]],
+                candidates_method(str(audio_path), top_k=top_k),
+            )
             candidates: list[PredictionCandidate] = []
             for item in raw_candidates:
-                if len(item) < 2:
-                    continue
                 confidence = self._coerce_optional_float(item[1])
                 if confidence is None:
                     continue
@@ -472,7 +473,6 @@ class Evaluator:
             f.write(html_content)
         logger.info(f"評価結果HTMLレポートを保存しました: {output_path}")
         return True
-
 
     def export_review_json(self, output_path: Path | str) -> bool:
         output_path = Path(output_path)

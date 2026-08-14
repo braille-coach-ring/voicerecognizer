@@ -7,8 +7,17 @@ import sys
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, cast, override
 from urllib.parse import urlparse
+
+from voicerecognizer.evaluation.review import (
+    ReviewDecision,
+    ReviewDecisionValue,
+    load_review_decisions,
+    normalize_filepath,
+    utc_now_iso,
+    write_review_decisions,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SRC_ROOT = PROJECT_ROOT / "src"
@@ -18,14 +27,6 @@ if str(PROJECT_ROOT) not in sys.path:
 if str(REVIEW_ROOT) not in sys.path:
     sys.path.insert(0, str(REVIEW_ROOT))
 
-from review import (  # noqa: E402
-    ReviewDecision,
-    ReviewDecisionValue,
-    load_review_decisions,
-    normalize_filepath,
-    utc_now_iso,
-    write_review_decisions,
-)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
     def _send_error_json(self, message: str, status: HTTPStatus) -> None:
         self._send_json({"error": message}, status=status)
 
+    @override
     def do_GET(self) -> None:
         path = urlparse(self.path).path
         if path == "/api/review-decisions":
@@ -84,7 +86,9 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
         if incoming is None:
             incoming = [payload]
         if not isinstance(incoming, list):
-            self._send_error_json("Expected a decision object or decisions list", HTTPStatus.BAD_REQUEST)
+            self._send_error_json(
+                "Expected a decision object or decisions list", HTTPStatus.BAD_REQUEST
+            )
             return
 
         decisions = load_review_decisions(self.decisions_path)

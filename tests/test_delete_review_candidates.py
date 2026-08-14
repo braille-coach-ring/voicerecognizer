@@ -2,6 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from typing import override
 
 from script.delete_review_candidates import (
     delete_review_candidates,
@@ -11,6 +12,7 @@ from script.delete_review_candidates import (
 
 
 class TestDeleteReviewCandidates(unittest.TestCase):
+    @override
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
         self.project_root = Path(self.temp_dir.name)
@@ -56,6 +58,7 @@ class TestDeleteReviewCandidates(unittest.TestCase):
                 f,
             )
 
+    @override
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 

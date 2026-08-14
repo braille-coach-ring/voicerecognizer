@@ -4,7 +4,10 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, HuggingFaceConfig
-from voicerecognizer.utils.model_uploader import download_latest_team_weights_if_needed, upload_weights_to_hf
+from voicerecognizer.utils.model_uploader import (
+    download_latest_team_weights_if_needed,
+    upload_weights_to_hf,
+)
 
 
 class TestModelUploader(unittest.TestCase):
@@ -39,7 +42,9 @@ class TestModelUploader(unittest.TestCase):
     @patch("voicerecognizer.utils.model_uploader.hf_hub_download")
     def test_download_latest_team_weights_wav2vec2(self, mock_download, mock_remote_map, mock_sha):
         essential = DEFAULT_RECOGNITION_CONFIG.wav2vec2_essential_filenames
-        mock_remote_map.return_value = {f"wav2vec2_best/{fname}": "same_hash" for fname in essential}
+        mock_remote_map.return_value = {
+            f"wav2vec2_best/{fname}": "same_hash" for fname in essential
+        }
         dummy_cfg = HuggingFaceConfig(token="dummy_token_123", repo_id="dummy/repo-id")
         with tempfile.TemporaryDirectory() as tmpdir:
             weights_dir = Path(tmpdir)
@@ -56,7 +61,9 @@ class TestModelUploader(unittest.TestCase):
 
     @patch("voicerecognizer.utils.model_uploader.login")
     @patch("voicerecognizer.utils.model_uploader.HfApi")
-    @patch("voicerecognizer.utils.model_uploader.calculate_file_sha256", return_value="dummy_hash_123")
+    @patch(
+        "voicerecognizer.utils.model_uploader.calculate_file_sha256", return_value="dummy_hash_123"
+    )
     @patch("voicerecognizer.utils.model_uploader.get_remote_file_sha256_map", return_value={})
     def test_upload_weights_cnn_only(
         self, mock_remote_map, mock_sha, mock_hf_api_class, mock_login
@@ -106,7 +113,9 @@ class TestModelUploader(unittest.TestCase):
 
     @patch("voicerecognizer.utils.model_uploader.login")
     @patch("voicerecognizer.utils.model_uploader.HfApi")
-    @patch("voicerecognizer.utils.model_uploader.calculate_file_sha256", return_value="dummy_hash_123")
+    @patch(
+        "voicerecognizer.utils.model_uploader.calculate_file_sha256", return_value="dummy_hash_123"
+    )
     @patch("voicerecognizer.utils.model_uploader.get_remote_file_sha256_map", return_value={})
     def test_upload_weights_wav2vec2_essential_files_strict_count(
         self, mock_remote_map, mock_sha, mock_hf_api_class, mock_login

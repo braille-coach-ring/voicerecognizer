@@ -132,7 +132,6 @@ def fix_seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
-
 def split_dataset(
     dataset: Wav2Vec2ClassificationDataset, val_rate: float, seed: int
 ) -> tuple[Subset, Subset]:
@@ -313,12 +312,13 @@ def validate(
             correct += (pred == batch_labels).sum().item()
             total += batch_labels.size(0)
 
-            for true_index, pred_index in zip(batch_labels.cpu().numpy(), pred.cpu().numpy(), strict=False):
+            for true_index, pred_index in zip(
+                batch_labels.cpu().numpy(), pred.cpu().numpy(), strict=False
+            ):
                 all_true.append(labels[int(true_index)])
                 all_pred.append(labels[int(pred_index)])
 
     return total_loss / max(len(loader), 1), correct / max(total, 1), all_true, all_pred
-
 
 
 def save_plots(history: dict[str, list[float]], loss_path: Path, accuracy_path: Path) -> None:
@@ -707,7 +707,6 @@ def freeze_wav2vec2_layers(
         )
 
 
-
 def train(args: argparse.Namespace) -> None:
     ensure_merged_and_preprocessed(skip_prep=getattr(args, "skip_prep", False))
 
@@ -739,14 +738,22 @@ def train(args: argparse.Namespace) -> None:
 
         download_latest_team_weights_if_needed(model_type="wav2vec2")
 
-        if best_model_path and best_model_path.exists() and (
-            (best_model_path / "model.safetensors").exists()
-            or (best_model_path / "pytorch_model.bin").exists()
+        if (
+            best_model_path
+            and best_model_path.exists()
+            and (
+                (best_model_path / "model.safetensors").exists()
+                or (best_model_path / "pytorch_model.bin").exists()
+            )
         ):
             target_resume_path = best_model_path
-        elif last_model_path and last_model_path.exists() and (
-            (last_model_path / "model.safetensors").exists()
-            or (last_model_path / "pytorch_model.bin").exists()
+        elif (
+            last_model_path
+            and last_model_path.exists()
+            and (
+                (last_model_path / "model.safetensors").exists()
+                or (last_model_path / "pytorch_model.bin").exists()
+            )
         ):
             target_resume_path = last_model_path
 
@@ -936,7 +943,11 @@ def train(args: argparse.Namespace) -> None:
     best_macro_f1 = -1.0
 
     # チーム最高精度 (best_model_path) のベースラインスコアを事前評価してハードルに設定する
-    if best_model_path and best_model_path.exists() and is_labels_compatible(best_model_path, dataset.labels):
+    if (
+        best_model_path
+        and best_model_path.exists()
+        and is_labels_compatible(best_model_path, dataset.labels)
+    ):
         try:
             baseline_model = load_wav2vec2_classifier(
                 wav2vec2_model_cls,

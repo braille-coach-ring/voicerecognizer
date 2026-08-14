@@ -10,7 +10,6 @@ Issue #20: ラベル体系の拡大（50音 ＋ 濁音 ＋ 半濁音 ＋ 拗音 
 計 105 ラベル
 """
 
-
 # 1. 清音 (Seion: 46 labels)
 SEION_LABELS: tuple[str, ...] = (
     "a",

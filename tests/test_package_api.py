@@ -94,7 +94,9 @@ class TestPackageAPI(unittest.TestCase):
             if (project_root / extra / "__init__.py").exists():
                 discovered_packages.add(extra)
 
-        self.assertGreater(len(discovered_packages), 0, "ファイル構造からパッケージが抽出されませんでした。")
+        self.assertGreater(
+            len(discovered_packages), 0, "ファイル構造からパッケージが抽出されませんでした。"
+        )
 
         for pkg in sorted(discovered_packages):
             with self.subTest(package=pkg):

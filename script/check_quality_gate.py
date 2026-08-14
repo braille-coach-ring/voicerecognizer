@@ -100,9 +100,7 @@ def get_base_file_content(rel_path: str) -> str | None:
 
     clean_path = rel_path.replace("\\", "/")
     cmd = ["git", "show", f"{base_ref}:{clean_path}"]
-    res = subprocess.run(
-        cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8"
-    )
+    res = subprocess.run(cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8")
     if res.returncode == 0 and res.stdout.strip():
         return res.stdout
     return None
@@ -115,7 +113,12 @@ def check_no_noqa_prohibited() -> int:
         if py_file == Path(__file__).resolve():
             continue
         parts_set = set(py_file.parts)
-        if ".venv" in parts_set or ".git" in parts_set or "build" in parts_set or ".mypy_cache" in parts_set:
+        if (
+            ".venv" in parts_set
+            or ".git" in parts_set
+            or "build" in parts_set
+            or ".mypy_cache" in parts_set
+        ):
             continue
         try:
             content = py_file.read_text(encoding="utf-8")
@@ -182,7 +185,9 @@ def sync_ruff_baseline() -> None:
                 "message": err.get("message"),
             }
         )
-    RUFF_BASELINE_PATH.write_text(json.dumps(simplified, indent=2, ensure_ascii=False), encoding="utf-8")
+    RUFF_BASELINE_PATH.write_text(
+        json.dumps(simplified, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     print_status(
         f"Saved {len(simplified)} frozen Ruff errors to {RUFF_BASELINE_PATH.name}",
         "SUCCESS",
@@ -340,7 +345,9 @@ def print_pyrefly_category_table(
     total_fixed = max(0, total_base - total_curr)
     tf_str = f"-{total_fixed}" if total_fixed > 0 else "0"
 
-    print(f"| Total                          | {total_base:>6} | {tf_str:>6} | {total_curr:>6} | {0:>6} |")
+    print(
+        f"| Total                          | {total_base:>6} | {tf_str:>6} | {total_curr:>6} | {0:>6} |"
+    )
     print(border_line + "\n")
 
 
@@ -496,7 +503,9 @@ def main() -> None:
     parser.add_argument(
         "--sync", action="store_true", help="Sync / update baseline files for Ruff and Pyrefly"
     )
-    parser.add_argument("--step", choices=["pytest", "ruff", "pyrefly"], help="Run specific step only")
+    parser.add_argument(
+        "--step", choices=["pytest", "ruff", "pyrefly"], help="Run specific step only"
+    )
     args = parser.parse_args()
 
     if args.sync:

@@ -198,8 +198,7 @@ def load_review_decisions(path: Path | str | None) -> dict[str, ReviewDecision]:
     decisions: dict[str, ReviewDecision] = {}
     if isinstance(raw_items, dict):
         raw_items = [
-            {"filepath": filepath, "decision": decision}
-            for filepath, decision in raw_items.items()
+            {"filepath": filepath, "decision": decision} for filepath, decision in raw_items.items()
         ]
 
     if not isinstance(raw_items, list):
@@ -252,10 +251,14 @@ def ensure_review_decisions_file(path: Path | str | None) -> None:
     write_review_decisions(decision_path, {})
 
 
+def _review_priority(candidate: ReviewCandidate) -> float:
+    return candidate.review_priority
+
+
 def review_candidates_payload(candidates: list[ReviewCandidate]) -> dict[str, Any]:
     sorted_candidates = sorted(
         candidates,
-        key=lambda candidate: candidate.review_priority,
+        key=_review_priority,
         reverse=True,
     )
     return {
@@ -289,7 +292,7 @@ def generate_review_html_report(
 ) -> str:
     sorted_candidates = sorted(
         candidates,
-        key=lambda candidate: candidate.review_priority,
+        key=_review_priority,
         reverse=True,
     )
     payload = [asdict(candidate) for candidate in sorted_candidates]

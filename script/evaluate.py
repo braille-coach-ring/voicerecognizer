@@ -123,7 +123,6 @@ def main() -> None:
             args.output_html, title=f"モデル評価レポート ({args.model_type.upper()})"
         )
 
-
     if args.output_review_json:
         evaluator.export_review_json(args.output_review_json)
 
