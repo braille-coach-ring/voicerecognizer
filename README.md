@@ -31,15 +31,20 @@ pip install git+https://github.com/braille-coach-ring/voicerecognizer.git
 uv add git+https://github.com/braille-coach-ring/voicerecognizer.git
 ```
 
-### システム依存関係
+### リポジトリをクローンして開発する場合の初期セットアップ
 
-マイク入力ストリーミング機能を利用する場合は、OS ごとに以下のオーディオライブラリが必要です。
+```bash
+# 依存関係のインストール
+uv sync
 
-- Ubuntu / Debian: `sudo apt-get install -y libportaudio2 libsndfile1`
-- macOS: `brew install portaudio libsndfile`
-- Windows: 通常 `sounddevice` のホイールパッケージに PortAudio が同梱されています。
+# モデル取得・ディレクトリ準備・データセット統合を一括実行
+uv run python setup_env.py
+```
 
----
+※ モデル重みのみを個別同期したい場合:
+```bash
+uv run python script/download_from_hf.py --type all
+```
 
 ## クイックスタート
 

@@ -10,11 +10,15 @@
 uv sync
 ```
 
-`uv run python ...` が使えない環境では、仮想環境の Python を直接使えます。
+リポジトリ初期化・モデル取得・ディレクトリおよびデータセットの準備を一括実行します。
 
 ```powershell
-.\.venv\Scripts\python.exe --version
-.\.venv\Scripts\python.exe main.py --help
+uv run python setup_env.py
+```
+
+※ 個別にモデル重みのみをダウンロード・同期したい場合:
+```powershell
+uv run python script\download_from_hf.py --type all
 ```
 
 Hugging Face へモデルをアップロードする場合だけ、`.env.example` を参考に `.env` を設定します（リポジトリ ID は `config.py` で固定されているため、トークンのみで動作します）。

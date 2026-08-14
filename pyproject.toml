@@ -23,6 +23,7 @@ dependencies = [
 ]
 
 [project.scripts]
+setup-env = "script.setup_environment:main"
 ci = "script.check_quality_gate:main"
 check-quality = "script.check_quality_gate:main"
 fmt = "script.check_quality_gate:fmt_cli"
