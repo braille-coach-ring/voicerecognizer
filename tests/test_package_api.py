@@ -1,13 +1,67 @@
 import asyncio
+import importlib
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import numpy as np
 
-from recognizers.cnn_recognizer import CNNRecognizer
+import voicerecognizer as vr
+from voicerecognizer.core.exceptions import (
+    AudioPreprocessingError,
+    DeviceNotFoundError,
+    ModelNotFoundError,
+    VoiceRecognizerError,
+)
+from voicerecognizer.core.interfaces import RecognitionStrategy
+from voicerecognizer.recognizers.cnn_recognizer import CNNRecognizer
+from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
+from voicerecognizer.recognizers.whisper_recognizer import WhisperRecognizer
+from voicerecognizer.runtime.stream_listener import AudioStreamListener, RecognitionResult
 
 
 class TestPackageAPI(unittest.TestCase):
+    def test_public_api_exports(self) -> None:
+        """Top-level package exports all required classes, functions, and exceptions."""
+        self.assertEqual(vr.__version__, "0.1.0")
+
+        # Classes & Types
+        self.assertIs(vr.CNNRecognizer, CNNRecognizer)
+        self.assertIs(vr.Wav2Vec2Recognizer, Wav2Vec2Recognizer)
+        self.assertIs(vr.WhisperRecognizer, WhisperRecognizer)
+        self.assertIs(vr.AudioStreamListener, AudioStreamListener)
+        self.assertIs(vr.RecognitionResult, RecognitionResult)
+        self.assertIs(vr.RecognitionStrategy, RecognitionStrategy)
+
+        # Exceptions
+        self.assertIs(vr.AudioPreprocessingError, AudioPreprocessingError)
+        self.assertIs(vr.DeviceNotFoundError, DeviceNotFoundError)
+        self.assertIs(vr.ModelNotFoundError, ModelNotFoundError)
+        self.assertIs(vr.VoiceRecognizerError, VoiceRecognizerError)
+
+        # Shortcut functions
+        self.assertTrue(callable(vr.recognize))
+        self.assertTrue(callable(vr.recognize_async))
+
+    @patch.object(Wav2Vec2Recognizer, "recognize", return_value="あ")
+    @patch("voicerecognizer._ensure_weights_downloaded")
+    def test_top_level_recognize_wav2vec2(
+        self, mock_dl: MagicMock, mock_recognize: MagicMock
+    ) -> None:
+        dummy_audio = np.zeros(16000, dtype=np.float32)
+        result = vr.recognize(dummy_audio, model_type="wav2vec2")
+        self.assertEqual(result, "あ")
+
+    @patch.object(CNNRecognizer, "_load_model")
+    @patch.object(CNNRecognizer, "recognize", return_value="い")
+    @patch("voicerecognizer._ensure_weights_downloaded")
+    def test_top_level_recognize_cnn(
+        self, mock_dl: MagicMock, mock_recognize: MagicMock, mock_load: MagicMock
+    ) -> None:
+        dummy_audio = np.zeros(16000, dtype=np.float32)
+        result = vr.recognize(dummy_audio, model_type="cnn")
+        self.assertEqual(result, "い")
+
     @patch.object(CNNRecognizer, "_load_model")
     def test_cnn_recognizer_default_instantiation(self, mock_load_model: MagicMock) -> None:
         """CNNRecognizer should be constructable without arguments (defaults from config)."""
@@ -46,69 +100,46 @@ class TestPackageAPI(unittest.TestCase):
         ファイル構造から自動的にすべてのパッケージ・サブパッケージを抽出し、
         すべてのルーティングおよびインポートが正常に動作することを検証する。
         """
-        import importlib
-        from pathlib import Path
-
         project_root = Path(__file__).resolve().parent.parent
-        excluded_dirs = {
-            ".venv",
-            ".git",
-            ".github",
-            ".agents",
-            ".pytest_cache",
-            ".ruff_cache",
-            "build",
-            "dist",
-            "evaluation_results",
-            "merged_dataset",
-            "processed_dataset",
-            "plots",
-            "log",
-            "weights",
-            "scratch",
-            "__pycache__",
-        }
+        src_dir = project_root / "src"
 
-        # __init__.py を保持する全パッケージ / サブパッケージをファイル構造から動的抽出
         discovered_packages: set[str] = set()
 
-        for path in project_root.rglob("__init__.py"):
-            rel_parts = path.relative_to(project_root).parts
-            if any(part in excluded_dirs or part.endswith(".egg-info") for part in rel_parts):
-                continue
+        # src 配下のパッケージ
+        if src_dir.exists():
+            for path in src_dir.rglob("__init__.py"):
+                parent_rel = path.parent.relative_to(src_dir)
+                mod_name = ".".join(parent_rel.parts)
+                discovered_packages.add(mod_name)
 
-            parent_rel = path.parent.relative_to(project_root)
-            if str(parent_rel) == ".":
-                continue
-            mod_name = ".".join(parent_rel.parts)
-            discovered_packages.add(mod_name)
+        # ルート直下の補助パッケージ
+        for extra in ["script", "tests"]:
+            if (project_root / extra / "__init__.py").exists():
+                discovered_packages.add(extra)
 
-        # 動的抽出が正しく行われたことを検証
         self.assertGreater(len(discovered_packages), 0, "ファイル構造からパッケージが抽出されませんでした。")
 
-        # 抽出された全パッケージ（core, core.factory, core.services, models.cnn, models.wav2vec2 等）をインポート検証
         for pkg in sorted(discovered_packages):
             with self.subTest(package=pkg):
                 mod = importlib.import_module(pkg)
                 self.assertIsNotNone(mod, f"パッケージ '{pkg}' のインポートに失敗しました。")
 
-        # 主要サブパッケージが漏れなく抽出されているか検証
         expected_packages = {
-            "core",
-            "core.factory",
-            "core.services",
-            "dataset",
-            "evaluation",
-            "models",
-            "models.cnn",
-            "models.wav2vec2",
-            "preprocessing",
-            "recognizers",
-            "runtime",
+            "voicerecognizer",
+            "voicerecognizer.core",
+            "voicerecognizer.core.factory",
+            "voicerecognizer.core.services",
+            "voicerecognizer.dataset",
+            "voicerecognizer.evaluation",
+            "voicerecognizer.models",
+            "voicerecognizer.models.cnn",
+            "voicerecognizer.models.wav2vec2",
+            "voicerecognizer.preprocessing",
+            "voicerecognizer.recognizers",
+            "voicerecognizer.runtime",
+            "voicerecognizer.utils",
             "script",
-            "test",
             "tests",
-            "utils",
         }
         missing_expected = expected_packages - discovered_packages
         self.assertEqual(
@@ -120,5 +151,3 @@ class TestPackageAPI(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-

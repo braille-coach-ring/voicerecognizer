@@ -7,8 +7,8 @@ import unittest
 import numpy as np
 import torch
 
-from models.wav2vec2.train import build_parser, compute_class_weights
-from preprocessing.audio_augmentor import AudioAugmentor
+from voicerecognizer.models.wav2vec2.train import build_parser, compute_class_weights
+from voicerecognizer.preprocessing.audio_augmentor import AudioAugmentor
 
 
 class TestClassWeightAndAugmentation(unittest.TestCase):

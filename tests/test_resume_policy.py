@@ -1,7 +1,7 @@
 import unittest
 
-from models.cnn.train import build_parser as cnn_build_parser
-from models.wav2vec2.train import build_parser as wav2vec2_build_parser
+from voicerecognizer.models.cnn.train import build_parser as cnn_build_parser
+from voicerecognizer.models.wav2vec2.train import build_parser as wav2vec2_build_parser
 
 
 class TestResumePolicy(unittest.TestCase):

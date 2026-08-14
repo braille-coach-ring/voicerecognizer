@@ -8,7 +8,7 @@ import soundfile as sf
 import torch
 from torch.utils.data import DataLoader
 
-from models.wav2vec2.train import (
+from voicerecognizer.models.wav2vec2.train import (
     Wav2Vec2ClassificationDataset,
     build_collate_fn,
     build_parser,

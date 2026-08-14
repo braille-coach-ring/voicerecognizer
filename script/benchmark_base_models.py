@@ -31,8 +31,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import train_test_split
 
-from config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
-from dataset.hiragana_dataset import HiraganaDataset
+from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
+from voicerecognizer.dataset.hiragana_dataset import HiraganaDataset
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)

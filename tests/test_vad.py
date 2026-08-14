@@ -2,8 +2,8 @@ import unittest
 
 import numpy as np
 
-from config import PreprocessConfig
-from runtime.vad import VoiceActivityDetector
+from voicerecognizer.config import PreprocessConfig
+from voicerecognizer.runtime.vad import VoiceActivityDetector
 
 
 class TestVoiceActivityDetector(unittest.TestCase):

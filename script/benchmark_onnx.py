@@ -28,9 +28,9 @@ if sys.platform == "win32":
 
 import numpy as np
 
-from config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
-from evaluation.evaluator import Evaluator
-from recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
+from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
+from voicerecognizer.evaluation.evaluator import Evaluator
+from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)

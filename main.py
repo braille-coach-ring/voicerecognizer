@@ -13,12 +13,12 @@ from pathlib import Path
 
 import sounddevice as sd
 
-from config import DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG
-from config_labels import HIRAGANA_TO_ROMAJI, ROMAJI_TO_HIRAGANA
-from core.factory.recognizer_factory import RecognizerFactory
-from core.services.audio_pipeline import AudioPipeline
-from core.services.voice_recognizer import VoiceRecognizer
-from runtime.vad import VoiceActivityDetector
+from voicerecognizer.config import DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.config_labels import HIRAGANA_TO_ROMAJI, ROMAJI_TO_HIRAGANA
+from voicerecognizer.core.factory.recognizer_factory import RecognizerFactory
+from voicerecognizer.core.services.audio_pipeline import AudioPipeline
+from voicerecognizer.core.services.voice_recognizer import VoiceRecognizer
+from voicerecognizer.runtime.vad import VoiceActivityDetector
 
 logging.basicConfig(
     level=logging.INFO,

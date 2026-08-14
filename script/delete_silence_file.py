@@ -14,7 +14,7 @@ import numpy as np
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from config import (
+from voicerecognizer.config import (
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,

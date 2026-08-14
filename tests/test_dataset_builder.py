@@ -5,8 +5,8 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 
-from config import DEFAULT_AUDIO_CONFIG
-from preprocessing.dataset_builder import DatasetBuilder
+from voicerecognizer.config import DEFAULT_AUDIO_CONFIG
+from voicerecognizer.preprocessing.dataset_builder import DatasetBuilder
 
 
 class TestDatasetBuilderIsolated(unittest.TestCase):

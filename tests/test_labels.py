@@ -1,7 +1,7 @@
 import unittest
 
-from config import DEFAULT_RECOGNITION_CONFIG, RecognitionConfig
-from config_labels import (
+from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, RecognitionConfig
+from voicerecognizer.config_labels import (
     ALL_HIRAGANA_LABELS,
     DAKUON_LABELS,
     HANDAKUON_LABELS,
