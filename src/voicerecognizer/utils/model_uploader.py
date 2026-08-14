@@ -141,7 +141,7 @@ def upload_weights_to_hf(
     token = cfg.token
     if not token:
         logger.warning(
-            "HF_TOKEN が設定されていません。.env ファイルまたは環境変数に HF_TOKEN を設定してください。"
+            "モデルのアップロードには認証トークンが必要です。環境変数 VOICERECOGNIZER_HF_TOKEN (または HF_TOKEN) を設定してください。"
         )
         return False
 

@@ -13,12 +13,14 @@ from pathlib import Path
 
 import sounddevice as sd
 
-from voicerecognizer.config import DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.config import DEFAULT_PREPROCESS_CONFIG, DEFAULT_RECOGNITION_CONFIG, load_env
 from voicerecognizer.config_labels import HIRAGANA_TO_ROMAJI, ROMAJI_TO_HIRAGANA
 from voicerecognizer.core.factory.recognizer_factory import RecognizerFactory
 from voicerecognizer.core.services.audio_pipeline import AudioPipeline
 from voicerecognizer.core.services.voice_recognizer import VoiceRecognizer
 from voicerecognizer.runtime.vad import VoiceActivityDetector
+
+load_env()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -64,10 +66,10 @@ def build_parser() -> argparse.ArgumentParser:
 def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
     """
     連続対話・人間丸付け（採点）セッション。
-    マイクの音声を聞き取り待機 ➔ 予測テキスト表示 ➔ 録音音声の再生 ➔ 正解ラベル選択・保存 ➔ 繰り返し。
+    マイクの音声を聞き取り待機 -> 予測テキスト表示 -> 録音音声の再生 -> 正解ラベル選択・保存 -> 繰り返し。
     50音・濁音・半濁音・拗音・その他の全105日本語ひらがなラベルに対応。
     """
-    SHORTCUT_CHOICES = {
+    shortcut_choices = {
         "1": "a",
         "2": "i",
         "3": "u",
@@ -171,8 +173,8 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
                 elif user_input == "":
                     ground_truth = predicted_text
                     break
-                elif user_input in SHORTCUT_CHOICES:
-                    ground_truth = SHORTCUT_CHOICES[user_input]
+                elif user_input in shortcut_choices:
+                    ground_truth = shortcut_choices[user_input]
                     break
                 elif raw_input in HIRAGANA_TO_ROMAJI:
                     ground_truth = HIRAGANA_TO_ROMAJI[raw_input]

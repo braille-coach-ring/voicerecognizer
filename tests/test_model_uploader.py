@@ -1,9 +1,16 @@
+import os
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, HuggingFaceConfig
+from voicerecognizer.config import (
+    DEFAULT_RECOGNITION_CONFIG,
+    PUBLIC_DEFAULT_HF_REPO_ID,
+    HuggingFaceConfig,
+)
+from voicerecognizer.recognizers.cnn_recognizer import CNNRecognizer
+from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
 from voicerecognizer.utils.model_uploader import download_latest_team_weights_if_needed, upload_weights_to_hf
 
 
@@ -148,6 +155,57 @@ class TestModelUploader(unittest.TestCase):
             res = upload_weights_to_hf(hf_config=dummy_cfg, weights_dir=weights_dir)
             self.assertFalse(res)
 
+    def test_namespaced_environment_variable_precedence(self):
+        # Test fallback
+        with patch.dict(os.environ, {"HF_TOKEN": "fallback_token", "HF_REPO_ID": "fallback/repo"}, clear=True):
+            cfg = HuggingFaceConfig()
+            self.assertEqual(cfg.token, "fallback_token")
+            self.assertEqual(cfg.repo_id, "fallback/repo")
+
+        # Test namespaced priority
+        with patch.dict(
+            os.environ,
+            {
+                "VOICERECOGNIZER_HF_TOKEN": "primary_token",
+                "HF_TOKEN": "fallback_token",
+                "VOICERECOGNIZER_HF_REPO_ID": "primary/repo",
+                "HF_REPO_ID": "fallback/repo",
+            },
+            clear=True,
+        ):
+            cfg = HuggingFaceConfig()
+            self.assertEqual(cfg.token, "primary_token")
+            self.assertEqual(cfg.repo_id, "primary/repo")
+
+        # Test default public repo
+        with patch.dict(os.environ, {}, clear=True):
+            cfg = HuggingFaceConfig()
+            self.assertEqual(cfg.token, "")
+            self.assertEqual(cfg.repo_id, PUBLIC_DEFAULT_HF_REPO_ID)
+
+    def test_recognizer_parameter_injection(self):
+        with patch("voicerecognizer.recognizers.wav2vec2_recognizer.download_latest_team_weights_if_needed"):
+            w2v = Wav2Vec2Recognizer(
+                model_path="dummy_dir",
+                hf_repo_id="custom/w2v-repo",
+                hf_token="custom_token_123",
+                auto_download=False,
+            )
+            self.assertEqual(w2v.hf_config.repo_id, "custom/w2v-repo")
+            self.assertEqual(w2v.hf_config.token, "custom_token_123")
+
+        with patch("voicerecognizer.recognizers.cnn_recognizer.download_latest_team_weights_if_needed"), \
+             patch.object(CNNRecognizer, "_load_model", return_value=MagicMock()):
+            cnn = CNNRecognizer(
+                model_path="dummy_dir/best_model.pth",
+                hf_repo_id="custom/cnn-repo",
+                hf_token="custom_token_456",
+                auto_download=False,
+            )
+            self.assertEqual(cnn.hf_config.repo_id, "custom/cnn-repo")
+            self.assertEqual(cnn.hf_config.token, "custom_token_456")
+
 
 if __name__ == "__main__":
     unittest.main()
+

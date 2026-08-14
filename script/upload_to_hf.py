@@ -2,7 +2,10 @@ import argparse
 import logging
 import sys
 
+from voicerecognizer.config import load_env
 from voicerecognizer.utils.model_uploader import upload_weights_to_hf
+
+load_env()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
