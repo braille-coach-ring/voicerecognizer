@@ -36,8 +36,13 @@ class Wav2Vec2Processor:
     def prepare_waveform(self, waveform: np.ndarray) -> dict[str, torch.Tensor]:
         self._ensure_feature_extractor()
         if self.feature_extractor is None:
-            logger.error("Wav2Vec2 FeatureExtractor が初期化されていません (None): %s", self.model_name_or_path)
-            raise ModelNotFoundError(f"Wav2Vec2 FeatureExtractor がロードできませんでした: {self.model_name_or_path}")
+            logger.error(
+                "Wav2Vec2 FeatureExtractor が初期化されていません (None): %s",
+                self.model_name_or_path,
+            )
+            raise ModelNotFoundError(
+                f"Wav2Vec2 FeatureExtractor がロードできませんでした: {self.model_name_or_path}"
+            )
         return self.feature_extractor(
             waveform,
             sampling_rate=self.sample_rate,

@@ -5,7 +5,11 @@ from typing import Literal
 
 from huggingface_hub import HfApi, hf_hub_download, login
 
-from voicerecognizer.config import DEFAULT_HUGGINGFACE_CONFIG, DEFAULT_RECOGNITION_CONFIG, HuggingFaceConfig
+from voicerecognizer.config import (
+    DEFAULT_HUGGINGFACE_CONFIG,
+    DEFAULT_RECOGNITION_CONFIG,
+    HuggingFaceConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +66,10 @@ def download_latest_team_weights_if_needed(
         files_to_sync.extend(DEFAULT_RECOGNITION_CONFIG.cnn_essential_filenames)
     elif model_type == "wav2vec2":
         files_to_sync.extend(
-            [f"wav2vec2_best/{fname}" for fname in DEFAULT_RECOGNITION_CONFIG.wav2vec2_essential_filenames]
+            [
+                f"wav2vec2_best/{fname}"
+                for fname in DEFAULT_RECOGNITION_CONFIG.wav2vec2_essential_filenames
+            ]
         )
 
     if not files_to_sync:
@@ -109,7 +116,9 @@ def download_latest_team_weights_if_needed(
         except Exception as e:
             err_str = str(e).lower()
             if "entrynotfounderror" in err_str or "404" in err_str:
-                logger.debug("Hugging Face Hub 上に %s は存在しませんでした (スキップ): %s", rel_path, e)
+                logger.debug(
+                    "Hugging Face Hub 上に %s は存在しませんでした (スキップ): %s", rel_path, e
+                )
             else:
                 logger.warning("モデルファイル (%s) のダウンロードに失敗しました: %s", rel_path, e)
                 if not token:
@@ -175,7 +184,9 @@ def upload_weights_to_hf(
                 remote_sha = remote_sha_map.get(rel_path)
 
                 if not force_upload and remote_sha and remote_sha.lower() == local_sha.lower():
-                    logger.info("[INFO] %s はリモートと一致しているため送信をスキップします。", rel_path)
+                    logger.info(
+                        "[INFO] %s はリモートと一致しているため送信をスキップします。", rel_path
+                    )
                     continue
 
                 logger.info(
@@ -241,7 +252,9 @@ def upload_weights_to_hf(
                 remote_sha = remote_sha_map.get(rel_path)
 
                 if not force_upload and remote_sha and remote_sha.lower() == local_sha.lower():
-                    logger.info("[INFO] %s はリモートと一致しているため送信をスキップします。", rel_path)
+                    logger.info(
+                        "[INFO] %s はリモートと一致しているため送信をスキップします。", rel_path
+                    )
                     continue
 
                 logger.info(

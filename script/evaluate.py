@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(na
 logger = logging.getLogger(__name__)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate Voice Recognizer Model")
     parser.add_argument(
         "--model-type",
@@ -60,23 +60,53 @@ def main():
         default=PROJECT_ROOT / "evaluation_results" / "evaluation_report.html",
         help="Output path for human-friendly HTML dashboard report",
     )
+    parser.add_argument(
+        "--output-review-json",
+        type=Path,
+        default=PROJECT_ROOT / "evaluation_results" / "review_candidates.json",
+        help="Output path for review candidate JSON",
+    )
+    parser.add_argument(
+        "--output-review-html",
+        type=Path,
+        default=PROJECT_ROOT / "evaluation_results" / "review_report.html",
+        help="Output path for browser-based audio quality review report",
+    )
+    parser.add_argument(
+        "--review-decisions",
+        type=Path,
+        default=PROJECT_ROOT / "evaluation_results" / "review_decisions.json",
+        help="Path used to load and save per-audio review decisions",
+    )
 
     args = parser.parse_args()
 
     if args.update_index:
         logger.info("Updating index.csv with latest model predictions (%s)...", args.model_type)
         model = RecognizerFactory.create(args.model_type)
-        evaluator = Evaluator(model=model, dataset_path=args.dataset_dir)
+        evaluator = Evaluator(
+            model=model,
+            dataset_path=args.dataset_dir,
+            review_decisions_path=args.review_decisions,
+        )
         evaluator.update_index_with_predictions()
 
     if args.from_dataset_only:
         logger.info("Evaluating using recorded predicted_text in index.csv...")
-        evaluator = Evaluator(model=None, dataset_path=args.dataset_dir)
+        evaluator = Evaluator(
+            model=None,
+            dataset_path=args.dataset_dir,
+            review_decisions_path=args.review_decisions,
+        )
         result = evaluator.update_from_dataset()
     else:
         logger.info("Loading model (%s) and evaluating on raw audio files...", args.model_type)
         model = RecognizerFactory.create(args.model_type)
-        evaluator = Evaluator(model=model, dataset_path=args.dataset_dir)
+        evaluator = Evaluator(
+            model=model,
+            dataset_path=args.dataset_dir,
+            review_decisions_path=args.review_decisions,
+        )
         result = evaluator.evaluate()
 
     logger.info("--- Evaluation Overall Results ---")
@@ -91,6 +121,16 @@ def main():
     if args.output_html:
         evaluator.export_html(
             args.output_html, title=f"モデル評価レポート ({args.model_type.upper()})"
+        )
+
+    if args.output_review_json:
+        evaluator.export_review_json(args.output_review_json)
+
+    if args.output_review_html:
+        evaluator.export_review_html(
+            args.output_review_html,
+            title=f"Voice Data Quality Review ({args.model_type.upper()})",
+            review_results_path=args.review_decisions,
         )
 
 

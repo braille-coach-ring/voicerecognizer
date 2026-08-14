@@ -12,7 +12,9 @@ from voicerecognizer.config_labels import (
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 load_dotenv(PROJECT_ROOT / ".env")
 
-CACHE_DIR = Path(os.getenv("VOICERECOGNIZER_CACHE_DIR", str(Path.home() / ".cache" / "voicerecognizer")))
+CACHE_DIR = Path(
+    os.getenv("VOICERECOGNIZER_CACHE_DIR", str(Path.home() / ".cache" / "voicerecognizer"))
+)
 DEFAULT_WEIGHTS_DIR = CACHE_DIR / "weights"
 
 
