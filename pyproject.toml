@@ -54,22 +54,9 @@ torchvision = { index = "pytorch-cu124", marker = "sys_platform != 'darwin'" }
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-packages = [
-    "voicerecognizer",
-    "core",
-    "dataset",
-    "evaluation",
-    "models",
-    "preprocessing",
-    "recognizers",
-    "runtime",
-    "script",
-    "test",
-    "tests",
-    "utils",
-]
-
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["*"]
 
 [tool.setuptools.package-dir]
 voicerecognizer = "."
@@ -132,4 +119,6 @@ filterwarnings = [
 
 [tool.pyrefly]
 preset = "strict"
+search-path = ["."]
 baseline = "pyrefly-baseline.json"
+

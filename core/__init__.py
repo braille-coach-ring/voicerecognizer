@@ -1,3 +1,4 @@
+from core import factory, services
 from core.factory.recognizer_factory import RecognizerFactory
 from core.interfaces import RecognitionStrategy
 from core.services.audio_pipeline import AudioPipeline
@@ -8,4 +9,7 @@ __all__ = [
     "RecognitionStrategy",
     "RecognizerFactory",
     "VoiceRecognizer",
+    "factory",
+    "services",
 ]
+
