@@ -14,6 +14,19 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from config import DEFAULT_RECOGNITION_CONFIG  # noqa: E402
 from core.interfaces import RecognitionStrategy  # noqa: E402
+from evaluation.review import (  # noqa: E402
+    DEFAULT_REVIEW_PRIORITY_CONFIG,
+    PredictionCandidate,
+    ReviewCandidate,
+    ReviewDecision,
+    ReviewPriorityConfig,
+    build_review_candidate,
+    ensure_review_decisions_file,
+    generate_review_html_report,
+    load_review_decisions,
+    normalize_filepath,
+    write_review_candidates_json,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +81,8 @@ class Evaluator:
         model: RecognitionStrategy | None = None,
         labels: tuple[str, ...] = DEFAULT_RECOGNITION_CONFIG.labels,
         dataset_path: Path | str = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir,
+        review_decisions_path: Path | str | None = None,
+        review_config: ReviewPriorityConfig = DEFAULT_REVIEW_PRIORITY_CONFIG,
     ):
         """Evaluatorの初期化
 
@@ -80,6 +95,13 @@ class Evaluator:
         self.labels = labels
         self.dataset_path = Path(dataset_path)
         self.index_file = self.dataset_path / "index.csv"
+        self.review_decisions_path = (
+            Path(review_decisions_path) if review_decisions_path is not None else None
+        )
+        self.review_config = review_config
+        self.review_decisions: dict[str, ReviewDecision] = load_review_decisions(
+            self.review_decisions_path
+        )
 
         if not self.dataset_path.exists():
             logger.warning(f"データセットパス {self.dataset_path} が存在しません")
@@ -90,8 +112,9 @@ class Evaluator:
 
         self.y_true: list[str] = []
         self.y_pred: list[str] = []
-        self.confidences: list[float] = []
+        self.confidences: list[float | None] = []
         self.filepaths: list[str] = []
+        self.review_candidates: list[ReviewCandidate] = []
         self.result: EvaluationResult | None = None
 
     def reset(self) -> None:
@@ -100,6 +123,7 @@ class Evaluator:
         self.y_pred.clear()
         self.confidences.clear()
         self.filepaths.clear()
+        self.review_candidates.clear()
         self.result = None
 
     def _add_prediction(
@@ -112,10 +136,8 @@ class Evaluator:
         """1件ごとの推論/評価レコードを追加する共通処理"""
         self.y_true.append(true_label)
         self.y_pred.append(pred_label)
-        if confidence is not None:
-            self.confidences.append(confidence)
-        if filepath is not None:
-            self.filepaths.append(filepath)
+        self.confidences.append(confidence)
+        self.filepaths.append(filepath or "")
 
     def _resolve_audio_path(self, rel_path: str) -> Path:
         p = Path(rel_path)
@@ -126,6 +148,106 @@ class Evaluator:
         if (PROJECT_ROOT / rel_path).exists():
             return PROJECT_ROOT / rel_path
         return self.dataset_path / rel_path
+
+    def _row_value(self, row: dict[str, Any], key: str, default: str = "") -> str:
+        value = row.get(key)
+        if value is None:
+            value = row.get(f"\ufeff{key}", default)
+        return str(value)
+
+    def _coerce_optional_float(self, value: Any) -> float | None:
+        if value is None or value == "":
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _read_last_confidence(self) -> float | None:
+        if self.model is None:
+            return None
+
+        confidence = self._coerce_optional_float(getattr(self.model, "last_confidence", None))
+        if confidence is not None:
+            return confidence
+
+        timing_stats = getattr(self.model, "last_timing_stats", {})
+        if isinstance(timing_stats, dict):
+            return self._coerce_optional_float(timing_stats.get("confidence"))
+        return None
+
+    def _read_quality_stats(self) -> dict[str, float | None]:
+        if self.model is None:
+            return {}
+
+        stats = getattr(self.model, "last_timing_stats", {})
+        if not isinstance(stats, dict) or "speech_duration_ms" not in stats:
+            preprocessor = getattr(self.model, "audio_preprocessor", None)
+            stats = getattr(preprocessor, "last_stats", {})
+
+        if not isinstance(stats, dict):
+            return {}
+
+        return {
+            "onset_ms": self._coerce_optional_float(stats.get("onset_ms")),
+            "offset_ms": self._coerce_optional_float(stats.get("offset_ms")),
+            "speech_duration_ms": self._coerce_optional_float(stats.get("speech_duration_ms")),
+        }
+
+    def _recognize_for_review(
+        self,
+        audio_path: Path,
+        top_k: int = 3,
+    ) -> tuple[str, float | None, list[PredictionCandidate]]:
+        if self.model is None:
+            raise ValueError("Model is not loaded")
+
+        candidates_method = getattr(self.model, "recognize_with_candidates", None)
+        if callable(candidates_method):
+            raw_candidates = candidates_method(str(audio_path), top_k=top_k)
+            candidates: list[PredictionCandidate] = []
+            for item in raw_candidates:
+                if len(item) < 2:
+                    continue
+                confidence = self._coerce_optional_float(item[1])
+                if confidence is None:
+                    continue
+                candidates.append(PredictionCandidate(label=str(item[0]), confidence=confidence))
+
+            if candidates:
+                return candidates[0].label, candidates[0].confidence, candidates
+
+        pred_label = self.model.recognize(str(audio_path))
+        confidence = self._read_last_confidence()
+        candidates = (
+            [PredictionCandidate(label=pred_label, confidence=confidence)]
+            if confidence is not None
+            else []
+        )
+        return pred_label, confidence, candidates
+
+    def _add_review_candidate(
+        self,
+        *,
+        filepath: str,
+        true_label: str,
+        predicted_label: str,
+        confidence: float | None,
+        top_candidates: list[PredictionCandidate] | None = None,
+        quality_stats: dict[str, float | None] | None = None,
+    ) -> None:
+        normalized_path = normalize_filepath(filepath)
+        candidate = build_review_candidate(
+            filepath=normalized_path,
+            true_label=true_label,
+            predicted_label=predicted_label,
+            confidence=confidence,
+            top_candidates=top_candidates,
+            quality_stats=quality_stats,
+            existing_decision=self.review_decisions.get(normalized_path),
+            config=self.review_config,
+        )
+        self.review_candidates.append(candidate)
 
     def evaluate(self) -> EvaluationResult:
         """最新モデルで全データセットに対してリアルタイム推論を実行し、評価する"""
@@ -142,16 +264,16 @@ class Evaluator:
         with open(self.index_file, encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                rel_path = row["filepath"]
-                true_label = str(row["label"])
+                rel_path = self._row_value(row, "filepath")
+                true_label = self._row_value(row, "label")
                 audio_path = self._resolve_audio_path(rel_path)
 
                 if not audio_path.exists():
                     logger.warning(f"音声ファイルが存在しません: {audio_path}")
                     continue
 
-                pred_label = self.model.recognize(str(audio_path))
-                confidence = getattr(self.model, "last_confidence", None)
+                pred_label, confidence, top_candidates = self._recognize_for_review(audio_path)
+                quality_stats = self._read_quality_stats()
 
                 self._add_prediction(
                     true_label=true_label,
@@ -159,14 +281,22 @@ class Evaluator:
                     confidence=confidence,
                     filepath=rel_path,
                 )
+                self._add_review_candidate(
+                    filepath=rel_path,
+                    true_label=true_label,
+                    predicted_label=pred_label,
+                    confidence=confidence,
+                    top_candidates=top_candidates,
+                    quality_stats=quality_stats,
+                )
 
         self.result = self._compute_metrics()
         return self.result
 
     def update_index_with_predictions(self) -> None:
         if self.model is None:
-            logger.warning("繝｢繝・Ν縺後Ο繝ｼ繝峨＆繧後※縺・∪縺帙ｓ")
-            raise ValueError("繝｢繝・Ν縺後Ο繝ｼ繝峨＆繧後※縺・∪縺帙ｓ")
+            logger.warning("モデルがロードされていません")
+            raise ValueError("モデルがロードされていません")
 
         rows: list[dict[str, str]] = []
         with open(self.index_file, encoding="utf-8", newline="") as f:
@@ -176,11 +306,11 @@ class Evaluator:
                 fieldnames.append("predicted_text")
 
             for row in reader:
-                rel_path = row.get("filepath", "")
+                rel_path = self._row_value(row, "filepath")
                 audio_path = self._resolve_audio_path(rel_path)
 
                 if not audio_path.exists():
-                    logger.warning(f"髻ｳ螢ｰ繝輔ぃ繧､繝ｫ縺悟ｭ伜惠縺励∪縺帙ｓ: {audio_path}")
+                    logger.warning("音声ファイルが存在しません: %s", audio_path)
                     row["predicted_text"] = ""
                 else:
                     row["predicted_text"] = self.model.recognize(str(audio_path))
@@ -205,14 +335,22 @@ class Evaluator:
                 if "predicted_text" not in row or not row["predicted_text"]:
                     continue
 
-                true_label = str(row["label"])
+                true_label = self._row_value(row, "label")
                 pred_label = str(row["predicted_text"])
-                rel_path = row.get("filepath", "")
+                rel_path = self._row_value(row, "filepath")
+                confidence = self._coerce_optional_float(row.get("confidence"))
 
                 self._add_prediction(
                     true_label=true_label,
                     pred_label=pred_label,
+                    confidence=confidence,
                     filepath=rel_path,
+                )
+                self._add_review_candidate(
+                    filepath=rel_path,
+                    true_label=true_label,
+                    predicted_label=pred_label,
+                    confidence=confidence,
                 )
 
         self.result = self._compute_metrics()
@@ -323,6 +461,35 @@ class Evaluator:
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(html_content)
         logger.info(f"評価結果HTMLレポートを保存しました: {output_path}")
+        return True
+
+
+    def export_review_json(self, output_path: Path | str) -> bool:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        write_review_candidates_json(output_path, self.review_candidates)
+        logger.info("Review candidates JSON saved: %s", output_path)
+        return True
+
+    def export_review_html(
+        self,
+        output_path: Path | str,
+        title: str = "Voice Data Quality Review",
+        review_results_path: Path | str | None = None,
+    ) -> bool:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        ensure_review_decisions_file(review_results_path)
+        storage_key = f"voice-data-review:{self.dataset_path.resolve()}:{review_results_path or ''}"
+        html_content = generate_review_html_report(
+            self.review_candidates,
+            title=title,
+            review_results_path=review_results_path,
+            storage_key=storage_key,
+        )
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(html_content)
+        logger.info("Review HTML report saved: %s", output_path)
         return True
 
 
@@ -493,7 +660,7 @@ def generate_html_report(
             </tr>
             """
     else:
-        mis_rows_html = "<tr><td colspan='6' style='text-align:center; color:#34d399; padding:20px;'>🎉 誤識別サンプルはありません（全件完全正解）！</td></tr>"
+        mis_rows_html = "<tr><td colspan='6' style='text-align:center; color:#34d399; padding:20px;'>誤識別サンプルはありません (全件完全正解)!</td></tr>"
 
     html = f"""<!DOCTYPE html>
 <html lang="ja">
@@ -777,7 +944,7 @@ def generate_html_report(
             <table>
                 <thead>
                     <tr>
-                        <th>正解 ＼ 予測</th>
+                        <th>正解 / 予測</th>
                         {cm_headers_html}
                     </tr>
                 </thead>
@@ -900,7 +1067,7 @@ def compute_evaluation_result(
 ) -> EvaluationResult:
     """スタンドアロンで y_true と y_pred から EvaluationResult を直接計算するユーティリティ関数"""
     evaluator = object.__new__(Evaluator)
-    evaluator.labels = labels
+    evaluator.labels = tuple(labels)
     evaluator.y_true = list(y_true)
     evaluator.y_pred = list(y_pred)
     evaluator.filepaths = list(filepaths) if filepaths else []
