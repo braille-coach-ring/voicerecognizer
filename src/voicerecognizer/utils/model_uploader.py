@@ -70,23 +70,25 @@ def download_latest_team_weights_if_needed(
 
     logger.info("Hugging Face Hub (%s) より最新モデル重み情報を確認中...", cfg.repo_id)
     remote_sha_map = get_remote_file_sha256_map(api, cfg.repo_id, files_to_sync)
-    if not remote_sha_map:
-        logger.info(
-            "[INFO] リモートリポジトリ %s からメタデータを取得できなかったため、ローカルのまま続行します。",
-            cfg.repo_id,
-        )
-        return True
 
     for rel_path in files_to_sync:
         local_file = target_dir / rel_path
         remote_sha = remote_sha_map.get(rel_path)
 
-        if local_file.exists() and remote_sha:
-            local_sha = calculate_file_sha256(local_file)
-            if local_sha.lower() == remote_sha.lower():
+        if local_file.exists():
+            if remote_sha:
+                local_sha = calculate_file_sha256(local_file)
+                if local_sha.lower() == remote_sha.lower():
+                    logger.debug(
+                        "[INFO] 手元の %s はチーム共有の最新モデルと一致しています。(ダウンロード不要)",
+                        rel_path,
+                    )
+                    continue
+            else:
+                # リモートメタデータが取れなかったがローカルに既に存在する場合はローカルを使用
                 logger.debug(
-                    "[INFO] 手元の %s はチーム共有の最新モデルと一致しています。(ダウンロード不要)",
-                    rel_path,
+                    "[INFO] リモートのメタデータを取得できませんでしたが、ローカルの %s を利用します。",
+                    local_file,
                 )
                 continue
 
@@ -105,11 +107,15 @@ def download_latest_team_weights_if_needed(
                 dst.write(src.read())
             logger.info("%s をローカルキャッシュ (%s) に保存しました。", rel_path, local_file)
         except Exception as e:
-            logger.warning("モデルファイル (%s) のダウンロードに失敗しました: %s", rel_path, e)
-            if not token:
-                logger.debug(
-                    "ヒント: プライベートリポジトリへのアクセスには環境変数 HF_TOKEN が必要です。"
-                )
+            err_str = str(e).lower()
+            if "entrynotfounderror" in err_str or "404" in err_str:
+                logger.debug("Hugging Face Hub 上に %s は存在しませんでした (スキップ): %s", rel_path, e)
+            else:
+                logger.warning("モデルファイル (%s) のダウンロードに失敗しました: %s", rel_path, e)
+                if not token:
+                    logger.debug(
+                        "ヒント: プライベートリポジトリへのアクセスには環境変数 HF_TOKEN が必要です。"
+                    )
 
     return True
 

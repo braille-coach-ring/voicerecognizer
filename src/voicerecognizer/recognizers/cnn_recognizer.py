@@ -9,6 +9,7 @@ import torch
 
 from voicerecognizer.config import (
     DEFAULT_AUDIO_CONFIG,
+    DEFAULT_HUGGINGFACE_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
 )
@@ -38,6 +39,7 @@ class CNNRecognizer(RecognitionStrategy):
         auto_download: bool = True,
     ):
         self.model_path = Path(model_path)
+        self._last_download_error: str | None = None
         if not self.model_path.exists() and auto_download:
             logger.info(
                 "ローカルに CNN モデル重みが見つかりません (%s)。Hugging Face Hub より自動ダウンロードを開始します...",
@@ -51,6 +53,7 @@ class CNNRecognizer(RecognitionStrategy):
                 if self.model_path.exists():
                     logger.info("CNN モデル重みのダウンロードと配置が完了しました: %s", self.model_path)
             except Exception as e:
+                self._last_download_error = str(e)
                 logger.warning("CNN 重みの自動ダウンロード中に例外が発生しました: %s", e)
 
         labels_json_path = self.model_path.parent / DEFAULT_RECOGNITION_CONFIG.labels_filename
@@ -74,18 +77,31 @@ class CNNRecognizer(RecognitionStrategy):
         logger.info("CNNレコグナイザーの初期化完了")
 
     def _build_model_not_found_message(self, err: Exception | None = None) -> str:
-        err_msg = f"\n  詳細エラー: {err}" if err else ""
+        last_err = getattr(self, "_last_download_error", None)
+        download_err_info = (
+            f"\n  ダウンロード例外詳細: {last_err}"
+            if last_err
+            else ""
+        )
+        load_err_info = f"\n  ロード例外詳細: {err}" if err else ""
         return (
-            f"CNN モデル重みファイル ({DEFAULT_RECOGNITION_CONFIG.cnn_model_filename}) のロードに失敗しました。{err_msg}\n\n"
-            f"【確認されたパス】\n"
-            f"  モデルファイル: {self.model_path}\n\n"
-            f"【対処方法・トラブルシューティング】\n"
-            f"  1. [ネットワーク接続] Hugging Face Hub (braille-mate/braille-mate-hiragana-recognizer) へのアクセスを確認してください。\n"
-            f"  2. [認証トークン] リポジトリがプライベート、またはレート制限されている場合は環境変数を設定してください:\n"
-            f"     export HF_TOKEN=\"your_huggingface_token\" (または .env ファイルに記述)\n"
-            f"  3. [手動配置] 以下のファイルを {self.model_path.parent} に配置してください:\n"
-            f"     - {DEFAULT_RECOGNITION_CONFIG.cnn_model_filename}\n"
-            f"     - {DEFAULT_RECOGNITION_CONFIG.labels_filename}\n"
+            f"voicerecognizer の CNN モデル重み ({DEFAULT_RECOGNITION_CONFIG.cnn_model_filename}) が見つかりません。\n\n"
+            "【原因】\n"
+            f"  ローカルパス ({self.model_path}) にモデルが存在せず、\n"
+            f"  Hugging Face Hub ({DEFAULT_HUGGINGFACE_CONFIG.repo_id}) からの自動ダウンロードも完了できませんでした。{download_err_info}{load_err_info}\n\n"
+            "【使い方の確認・解決手順】\n"
+            "  1. [インターネット接続]\n"
+            "     初回実行時は Hugging Face Hub より自動的にモデルがダウンロードされます。\n"
+            "     ネットワーク接続を確認の上、再度実行してください。\n"
+            "  2. [Hugging Face 認証トークン]\n"
+            "     アクセス制限やレートリミットを回避する場合は環境変数を設定してください:\n"
+            "     - Windows (PowerShell): $env:HF_TOKEN = \"your_token\"\n"
+            "     - Linux / macOS (Bash): export HF_TOKEN=\"your_token\"\n"
+            "     - または .env ファイルに HF_TOKEN=your_token を記述\n"
+            "  3. [ローカルモデルの指定]\n"
+            "     ローカルに既にあるモデルファイルを使用したい場合は、初期化時に model_path を渡してください:\n"
+            "     >>> import voicerecognizer as vr\n"
+            "     >>> recognizer = vr.CNNRecognizer(model_path=\"/path/to/your/best_model.pth\")\n"
         )
 
     def recognize(self, audio: Any) -> str:

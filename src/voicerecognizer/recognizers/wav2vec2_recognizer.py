@@ -7,7 +7,7 @@ from typing import Any
 
 import numpy as np
 
-from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.config import DEFAULT_HUGGINGFACE_CONFIG, DEFAULT_RECOGNITION_CONFIG
 from voicerecognizer.core.exceptions import ModelNotFoundError
 from voicerecognizer.core.interfaces import RecognitionStrategy
 from voicerecognizer.preprocessing.audio_preprocessor import AudioPreprocessor
@@ -39,6 +39,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         self.labels = list(labels)
         self.dynamic_trimming = dynamic_trimming
         self.candidate_filenames = tuple(candidate_filenames)
+        self._last_download_error: str | None = None
 
         # ONNX モデルファイルの探索
         self.onnx_model_path = self._find_onnx_model()
@@ -59,6 +60,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
                         self.onnx_model_path,
                     )
             except Exception as e:
+                self._last_download_error = str(e)
                 logger.warning("Wav2Vec2 重みの自動ダウンロード中に例外が発生しました: %s", e)
 
         # 前処理内包型 (model_mel_*) 以外のモデルにフォールバックした場合の警告
@@ -106,20 +108,30 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         return None
 
     def _build_model_not_found_message(self) -> str:
-        candidate_list_str = "\n".join(f"     - {name}" for name in self.candidate_filenames)
+        last_err = getattr(self, "_last_download_error", None)
+        download_err_info = (
+            f"\n  ダウンロード例外詳細: {last_err}"
+            if last_err
+            else ""
+        )
         return (
-            f"Wav2Vec2 ONNX モデルファイル ({DEFAULT_RECOGNITION_CONFIG.wav2vec2_default_onnx_filename} 等) が見つかりません。\n\n"
-            f"【確認されたパス】\n"
-            f"  ローカルモデルディレクトリ: {self.model_path}\n\n"
-            f"【対処方法・トラブルシューティング】\n"
-            f"  1. [ネットワーク接続] Hugging Face Hub (braille-mate/braille-mate-hiragana-recognizer) へのアクセスを確認してください。\n"
-            f"  2. [認証トークン] リポジトリがプライベート、またはレート制限されている場合は環境変数を設定してください:\n"
-            f"     export HF_TOKEN=\"your_huggingface_token\" (または .env ファイルに記述)\n"
-            f"  3. [手動配置] 以下のいずれかの ONNX モデルおよびメタデータを {self.model_path} に配置してください:\n"
-            f"{candidate_list_str}\n"
-            f"     - {DEFAULT_RECOGNITION_CONFIG.labels_filename}\n"
-            f"     - {DEFAULT_RECOGNITION_CONFIG.config_filename}\n"
-            f"     - {DEFAULT_RECOGNITION_CONFIG.preprocessor_config_filename}\n"
+            "voicerecognizer の Wav2Vec2 ONNX モデルが見つかりません。\n\n"
+            "【原因】\n"
+            f"  ローカルパス ({self.model_path}) にモデルが存在せず、\n"
+            f"  Hugging Face Hub ({DEFAULT_HUGGINGFACE_CONFIG.repo_id}) からの自動ダウンロードも完了できませんでした。{download_err_info}\n\n"
+            "【使い方の確認・解決手順】\n"
+            "  1. [インターネット接続]\n"
+            "     初回実行時は Hugging Face Hub より自動的にモデルがダウンロードされます。\n"
+            "     ネットワーク接続を確認の上、再度実行してください。\n"
+            "  2. [Hugging Face 認証トークン]\n"
+            "     アクセス制限やレートリミットを回避する場合は環境変数を設定してください:\n"
+            "     - Windows (PowerShell): $env:HF_TOKEN = \"your_token\"\n"
+            "     - Linux / macOS (Bash): export HF_TOKEN=\"your_token\"\n"
+            "     - または .env ファイルに HF_TOKEN=your_token を記述\n"
+            "  3. [ローカルモデルの指定]\n"
+            "     ローカルに既にあるモデルフォルダを使用したい場合は、初期化時に model_path を渡してください:\n"
+            "     >>> import voicerecognizer as vr\n"
+            "     >>> recognizer = vr.Wav2Vec2Recognizer(model_path=\"/path/to/your/model_dir\")\n"
         )
 
     def _prepare_input_values(self, audio: Any) -> tuple[np.ndarray, float, float]:

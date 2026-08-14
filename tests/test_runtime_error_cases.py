@@ -137,7 +137,7 @@ class TestModelNotFoundTroubleshootingGuidance(unittest.TestCase):
         msg = str(ctx.exception)
         self.assertIn("Hugging Face Hub", msg)
         self.assertIn("HF_TOKEN", msg)
-        self.assertIn("model_int8.onnx", msg)
+        self.assertIn("Wav2Vec2", msg)
 
     def test_cnn_guidance_message(self) -> None:
         rec = CNNRecognizer.__new__(CNNRecognizer)
