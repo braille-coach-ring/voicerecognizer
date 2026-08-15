@@ -62,12 +62,21 @@ class AudioStreamListener:
             raise DeviceNotFoundError(f"マイクデバイスの初期化に失敗しました: {exc}") from exc
 
         self.vad = VoiceActivityDetector(config=preprocess_config or DEFAULT_PREPROCESS_CONFIG)
+        self.speech_settle_seconds = float(
+            getattr(audio_config or DEFAULT_AUDIO_CONFIG, "speech_settle_seconds", 0.3)
+        )
         self._is_listening = False
         self._is_paused = False
         self._last_emitted_text: str | None = None
 
+    def warmup(self) -> None:
+        """認識モデルの事前ロードとウォームアップを実行する。"""
+        if hasattr(self.recognizer, "warmup"):
+            self.recognizer.warmup()
+
     def start(self) -> None:
         """聴取を開始（一時停止状態からの即座再開も含む）"""
+        self.warmup()
         self._is_paused = False
         self._is_listening = True
         if self.audio_capture:
@@ -124,6 +133,11 @@ class AudioStreamListener:
                     self._last_emitted_text = None
                     continue
 
+                # 発声開始を検知後、1文字分の発話全体がバッファに入るまで待機
+                if self.speech_settle_seconds > 0:
+                    await asyncio.sleep(self.speech_settle_seconds)
+                    waveform = self.audio_capture.capture_once()
+
                 # 非同期スレッドで推論を実行（メインのイベントループをブロックしない）
                 result_text = await self.recognizer.recognize_async(waveform)
                 confidence = getattr(self.recognizer, "last_confidence", 1.0)
@@ -159,6 +173,11 @@ class AudioStreamListener:
                 if not self.vad.is_speech(waveform):
                     self._last_emitted_text = None
                     continue
+
+                # 発声開始を検知後、1文字分の発話全体がバッファに入るまで待機
+                if self.speech_settle_seconds > 0:
+                    await asyncio.sleep(self.speech_settle_seconds)
+                    waveform = self.audio_capture.capture_once()
 
                 # 候補リストの取得
                 if hasattr(self.recognizer, "recognize_with_candidates"):

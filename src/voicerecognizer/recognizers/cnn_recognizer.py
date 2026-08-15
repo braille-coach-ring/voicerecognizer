@@ -93,6 +93,16 @@ class CNNRecognizer(RecognitionStrategy):
         self.model: HiraganaCNN | None = None
         logger.info("CNNレコグナイザーの初期化完了")
 
+    def warmup(self, audio_seconds: float = 1.0) -> None:
+        """モデルを明示的にロードし、ダミー波形推論を実行してエンジンをウォームアップする。"""
+        import contextlib
+
+        self._ensure_model_loaded()
+        dummy_audio = np.zeros(int(self.sample_rate * audio_seconds), dtype=np.float32)
+        with contextlib.suppress(Exception):
+            self.recognize(dummy_audio)
+        logger.info("CNNRecognizer のウォームアップが完了しました。")
+
     def _ensure_model_loaded(self) -> None:
         if self.model is not None:
             return
