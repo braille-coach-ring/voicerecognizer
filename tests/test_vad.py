@@ -8,7 +8,11 @@ from voicerecognizer.runtime.vad import VoiceActivityDetector
 
 class TestVoiceActivityDetector(unittest.TestCase):
     def setUp(self) -> None:
-        self.config = PreprocessConfig(vad_min_speech_chunks=1)
+        self.config = PreprocessConfig(
+            vad_min_speech_chunks=1,
+            vad_silence_threshold=0.03,
+            vad_rms_threshold=0.008,
+        )
         self.vad = VoiceActivityDetector(config=self.config)
 
     def test_none_or_empty_audio(self) -> None:

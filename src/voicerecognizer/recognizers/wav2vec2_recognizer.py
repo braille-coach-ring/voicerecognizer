@@ -14,6 +14,7 @@ from voicerecognizer.config import (
     PUBLIC_DEFAULT_HF_REPO_ID,
     HuggingFaceConfig,
 )
+from voicerecognizer.config_labels import LabelFormat, format_label
 from voicerecognizer.core.exceptions import ModelNotFoundError
 from voicerecognizer.core.interfaces import RecognitionStrategy
 from voicerecognizer.preprocessing.audio_preprocessor import AudioPreprocessor
@@ -34,6 +35,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         self,
         model_path: str | Path = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir,
         labels: tuple[str, ...] | list[str] = DEFAULT_RECOGNITION_CONFIG.labels,
+        output_format: LabelFormat = "raw",
         sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
         top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,
@@ -46,6 +48,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
     ):
         self.model_path = Path(model_path)
         self.labels = list(labels)
+        self.output_format: LabelFormat = output_format
         self.dynamic_trimming = dynamic_trimming
         self.candidate_filenames = tuple(candidate_filenames)
         self._last_download_error: str | None = None
@@ -79,7 +82,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
                     )
             except Exception as e:
                 self._last_download_error = str(e)
-                logger.warning("Wav2Vec2 重みの自動ダウンロード中に例外が発生しました: %s", e)
+                logger.warning("Wav2Vec2 ONNX モデルの自動ダウンロードに失敗しました: %s", e)
 
         # 前処理内包型 (model_mel_*) 以外のモデルにフォールバックした場合の警告
         if self.onnx_model_path is not None and not self.onnx_model_path.name.startswith(
@@ -195,7 +198,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         t_prep_end = time.perf_counter()
         return input_values, t_prep_start, t_prep_end
 
-    def recognize(self, audio: Any) -> str:
+    def recognize(self, audio: Any, output_format: LabelFormat | None = None) -> str:
         self._ensure_model_loaded()
         if self.session is None:
             logger.error(
@@ -232,9 +235,14 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         }
 
         logger.debug("Wav2Vec2 ONNX 確率: %s", probabilities)
-        return self._label_for_index(predicted_index)
+        return self._label_for_index(predicted_index, output_format=output_format)
 
-    def recognize_with_candidates(self, audio: Any, top_k: int = 3) -> list[tuple[str, float]]:
+    def recognize_with_candidates(
+        self,
+        audio: Any,
+        top_k: int = 3,
+        output_format: LabelFormat | None = None,
+    ) -> list[tuple[str, float]]:
         """上位 top_k 個の認識候補ラベルと確信度スコアのリストを返します"""
         self._ensure_model_loaded()
         if self.session is None:
@@ -253,10 +261,31 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
 
         top_indices = np.argsort(probabilities)[::-1][:top_k]
         candidates = [
-            (self._label_for_index(int(idx)), float(probabilities[idx])) for idx in top_indices
+            (
+                self._label_for_index(int(idx), output_format=output_format),
+                float(probabilities[idx]),
+            )
+            for idx in top_indices
         ]
         self.last_confidence = candidates[0][1] if candidates else 0.0
         return candidates
+
+    def get_label_probabilities(
+        self, audio: Any, output_format: LabelFormat | None = None
+    ) -> dict[str, float]:
+        """全ラベルに対する確率スコアの辞書を返します"""
+        self._ensure_model_loaded()
+        if self.session is None:
+            raise ModelNotFoundError(f"Wav2Vec2 ONNX セッションがロードされていません: {self.model_path}")
+        input_values, _, _ = self._prepare_input_values(audio)
+        outputs = self.session.run(None, {self.input_name: input_values})
+        logits = outputs[0][0]
+        exp_logits = np.exp(logits - np.max(logits))
+        probabilities = exp_logits / np.sum(exp_logits)
+        return {
+            self._label_for_index(i, output_format=output_format): float(probabilities[i])
+            for i in range(len(probabilities))
+        }
 
     def _ensure_model_loaded(self) -> None:
         if self.session is not None and (
@@ -302,7 +331,9 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
             self.onnx_model_path,
         )
 
-    def _label_for_index(self, index: int) -> str:
+    def _label_for_index(self, index: int, output_format: LabelFormat | None = None) -> str:
+        fmt = output_format or self.output_format
         if 0 <= index < len(self.labels):
-            return self.labels[index]
+            raw_label = self.labels[index]
+            return format_label(raw_label, target_format=fmt)
         return str(index)

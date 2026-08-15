@@ -11,10 +11,6 @@ from voicerecognizer.config import (
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
 )
-from voicerecognizer.preprocessing.threshold_calculator import (
-    AbstractSilenceThresholdCalculator,
-    FixedSilenceThresholdCalculator,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -35,15 +31,11 @@ class AudioPreprocessor:
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
         top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,
         target_rms: float = DEFAULT_PREPROCESS_CONFIG.target_rms,
-        threshold_calculator: AbstractSilenceThresholdCalculator | None = None,
     ):
         self.sample_rate = sample_rate
         self.target_length_seconds = target_length_seconds
         self.top_db = top_db
         self.target_rms = target_rms
-        self.threshold_calculator = threshold_calculator or FixedSilenceThresholdCalculator(
-            top_db=float(top_db)
-        )
         logger.info(
             "AudioPreprocessorの初期化完了 (RMSダイナミックレンジ補正 + お(o)ブツ切れ防止適用)"
         )
@@ -63,18 +55,10 @@ class AudioPreprocessor:
     ) -> np.ndarray:
         t_prep_start = time.perf_counter()
         waveform = self.load(audio)
-        self.threshold_calculator.update(waveform)
-        current_top_db = self.threshold_calculator.get_silence_threshold()
 
-        # 1. 音声セグメント分離用の適正 top_db 算出 (最大40dBにクランプし雑音や過大ピークによる語尾切りを防止)
-        split_top_db = (
-            min(float(current_top_db), 40.0) if current_top_db > 40.0 else float(current_top_db)
-        )
-
-        # 無音境界の検索 (frame_length=1024, hop_length=256 で基本周波数の低周波成分を精密補足)
         intervals = librosa.effects.split(
             waveform,
-            top_db=split_top_db,
+            top_db=self.top_db,
             frame_length=1024,
             hop_length=256,
         )
@@ -89,15 +73,15 @@ class AudioPreprocessor:
             offset_ms = float(end_idx / self.sample_rate * 1000.0)
             speech_duration_ms = float((end_idx - start_idx) / self.sample_rate * 1000.0)
 
-            # 2. 「頭切れ・語尾切れ」絶対防止マージン (先頭120ms / 末尾150ms の安全余白)
-            start_margin = int(self.sample_rate * 0.12)  # 120ms
-            end_margin = int(self.sample_rate * 0.15)  # 150ms
+            # 「頭切れ・語尾切れ」防止マージン (先頭120ms / 末尾150ms)
+            start_margin = int(self.sample_rate * 0.12)
+            end_margin = int(self.sample_rate * 0.15)
             start_idx = max(0, start_idx - start_margin)
             end_idx = min(len(waveform), end_idx + end_margin)
             waveform = waveform[start_idx:end_idx]
 
-        # 3. 低周波音(100Hz/周期10ms)の波形不連続ノイズ（ブツッ音）を抑える 20ms Raised-Cosine フェード処理
-        fade_samples = int(self.sample_rate * 0.020)  # 20ms (100Hz波形の2周期分を完全にカバー)
+        # Raised-Cosine フェード処理
+        fade_samples = int(self.sample_rate * 0.020)
         if len(waveform) > fade_samples * 2:
             fade_in = 0.5 * (
                 1.0 - np.cos(np.pi * np.linspace(0, 1, fade_samples, dtype=np.float32))
@@ -108,7 +92,6 @@ class AudioPreprocessor:
             waveform[:fade_samples] *= fade_in
             waveform[-fade_samples:] *= fade_out
 
-        # 4. RMSベースのダイナミックレンジ補正 ＆ tanh ソフトクリッピング
         waveform = self._normalize_volume(waveform)
         result_waveform = self._fit_length(
             waveform,

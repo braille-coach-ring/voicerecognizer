@@ -21,6 +21,15 @@ Voice Recognizer Package API
       print(f"認識文字: {result.text} (確信度: {result.confidence:.2f})")
 """
 
+from voicerecognizer.config_labels import (
+    HIRAGANA_TO_ROMAJI,
+    ROMAJI_TO_HIRAGANA,
+    LabelFormat,
+    format_label,
+    to_hiragana,
+    to_katakana,
+    to_romaji,
+)
 from voicerecognizer.core.exceptions import (
     AudioPreprocessingError,
     DeviceNotFoundError,
@@ -35,13 +44,20 @@ from voicerecognizer.runtime.stream_listener import AudioStreamListener, Recogni
 __version__ = "0.1.0"
 
 __all__ = [
+    "HIRAGANA_TO_ROMAJI",
+    "ROMAJI_TO_HIRAGANA",
     "AudioPreprocessingError",
     "AudioStreamListener",
     "CNNRecognizer",
     "DeviceNotFoundError",
+    "LabelFormat",
     "ModelNotFoundError",
     "RecognitionResult",
     "RecognitionStrategy",
     "VoiceRecognizerError",
     "Wav2Vec2Recognizer",
+    "format_label",
+    "to_hiragana",
+    "to_katakana",
+    "to_romaji",
 ]

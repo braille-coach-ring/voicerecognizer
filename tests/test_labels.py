@@ -51,6 +51,50 @@ class TestLabelsSystem(unittest.TestCase):
         self.assertEqual(ROMAJI_TO_HIRAGANA["tu"], "つ")
         self.assertEqual(ROMAJI_TO_HIRAGANA["zi"], "じ")
         self.assertEqual(ROMAJI_TO_HIRAGANA["hu"], "ふ")
+        self.assertEqual(ROMAJI_TO_HIRAGANA["tya"], "ちゃ")
+        self.assertEqual(ROMAJI_TO_HIRAGANA["nn"], "ん")
+
+    def test_to_hiragana_function(self):
+        from voicerecognizer.config_labels import to_hiragana
+
+        self.assertEqual(to_hiragana("ka"), "か")
+        self.assertEqual(to_hiragana("sha"), "しゃ")
+        self.assertEqual(to_hiragana("tya"), "ちゃ")
+        self.assertEqual(to_hiragana("カ"), "か")
+        self.assertEqual(to_hiragana("キャ"), "きゃ")
+        self.assertEqual(to_hiragana("あ"), "あ")
+        self.assertEqual(to_hiragana("other"), "other")
+        self.assertEqual(to_hiragana(""), "")
+        self.assertEqual(to_hiragana(None), "")
+
+    def test_to_katakana_function(self):
+        from voicerecognizer.config_labels import to_katakana
+
+        self.assertEqual(to_katakana("ka"), "カ")
+        self.assertEqual(to_katakana("sha"), "シャ")
+        self.assertEqual(to_katakana("か"), "カ")
+        self.assertEqual(to_katakana("きゃ"), "キャ")
+        self.assertEqual(to_katakana("other"), "other")
+
+    def test_to_romaji_function(self):
+        from voicerecognizer.config_labels import to_romaji
+
+        self.assertEqual(to_romaji("か"), "ka")
+        self.assertEqual(to_romaji("しゃ"), "sha")
+        self.assertEqual(to_romaji("カ"), "ka")
+        self.assertEqual(to_romaji("キャ"), "kya")
+        self.assertEqual(to_romaji("si"), "shi")
+        self.assertEqual(to_romaji("other"), "other")
+
+    def test_format_label_function(self):
+        from voicerecognizer.config_labels import format_label
+
+        self.assertEqual(format_label("ka", "hiragana"), "か")
+        self.assertEqual(format_label("ka", "katakana"), "カ")
+        self.assertEqual(format_label("か", "romaji"), "ka")
+        self.assertEqual(format_label("ka", "raw"), "ka")
+        with self.assertRaises(ValueError):
+            format_label("ka", "invalid")  # type: ignore
 
     def test_config_default_labels_integration(self):
         """DEFAULT_RECOGNITION_CONFIG の labels が ALL_HIRAGANA_LABELS と一致することを検証"""

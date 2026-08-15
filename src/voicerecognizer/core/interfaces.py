@@ -16,6 +16,7 @@ class RecognitionStrategy(ABC):
     def warmup(self, audio_seconds: float = 1.0) -> None:
         """モデルを事前読み込みし、ダミー波形で推論エンジンをウォームアップする。"""
         import contextlib
+
         import numpy as np
 
         sample_rate = getattr(self, "sample_rate", 16000)

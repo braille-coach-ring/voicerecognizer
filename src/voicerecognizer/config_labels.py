@@ -10,6 +10,13 @@ Issue #20: ラベル体系の拡大（50音 ＋ 濁音 ＋ 半濁音 ＋ 拗音 
 計 105 ラベル
 """
 
+from __future__ import annotations
+
+import unicodedata
+from typing import Literal
+
+LabelFormat = Literal["raw", "hiragana", "katakana", "romaji"]
+
 # 1. 清音 (Seion: 46 labels)
 SEION_LABELS: tuple[str, ...] = (
     "a",
@@ -377,10 +384,97 @@ ROMAJI_TO_HIRAGANA: dict[str, str] = {
     "cya": "ちゃ",
     "cyu": "ちゅ",
     "cyo": "ちょ",
+    "tya": "ちゃ",
+    "tyu": "ちゅ",
+    "tyo": "ちょ",
     "zya": "じゃ",
     "zyu": "じゅ",
     "zyo": "じょ",
     "jya": "じゃ",
     "jyu": "じゅ",
     "jyo": "じょ",
+    "nn": "ん",
 }
+
+
+def to_hiragana(text: str | None) -> str:
+    """文字列をひらがなに変換・正規化する。
+
+    ローマ字（例: 'ka' -> 'か', 'sha' -> 'しゃ'）や
+    カタカナ（例: 'カ' -> 'か', 'キャ' -> 'きゃ'）をひらがなに変換します。
+    """
+    if text is None:
+        return ""
+    normalized = unicodedata.normalize("NFKC", str(text)).strip().lower()
+    if not normalized:
+        return ""
+
+    if normalized in ROMAJI_TO_HIRAGANA:
+        return ROMAJI_TO_HIRAGANA[normalized]
+
+    # カタカナ -> ひらがな
+    chars: list[str] = []
+    for c in normalized:
+        code = ord(c)
+        if 0x30A1 <= code <= 0x30F6:  # ァ 〜 ヶ
+            chars.append(chr(code - 0x60))
+        else:
+            chars.append(c)
+    result = "".join(chars)
+
+    if result in ROMAJI_TO_HIRAGANA:
+        return ROMAJI_TO_HIRAGANA[result]
+
+    return result
+
+
+def to_katakana(text: str | None) -> str:
+    """文字列をカタカナに変換・正規化する。
+
+    ローマ字やひらがなをカタカナに変換します。
+    """
+    hiragana = to_hiragana(text)
+    if not hiragana:
+        return ""
+    if hiragana == "other":
+        return "other"
+    chars: list[str] = []
+    for c in hiragana:
+        code = ord(c)
+        if 0x3041 <= code <= 0x3096:  # ぁ 〜 ゖ
+            chars.append(chr(code + 0x60))
+        else:
+            chars.append(c)
+    return "".join(chars)
+
+
+def to_romaji(text: str | None) -> str:
+    """文字列を標準ローマ字（ヘボン式/プロジェクト標準識別子）に変換・正規化する。
+
+    ひらがなやカタカナ（例: 'か'/'カ' -> 'ka', 'しゃ'/'シャ' -> 'sha'）をローマ字に変換します。
+    """
+    if text is None:
+        return ""
+    hiragana = to_hiragana(text)
+    if not hiragana:
+        return ""
+    if hiragana in HIRAGANA_TO_ROMAJI:
+        return HIRAGANA_TO_ROMAJI[hiragana]
+    return hiragana
+
+
+def format_label(label: str, target_format: LabelFormat = "hiragana") -> str:
+    """指定されたフォーマット（hiragana, katakana, romaji, raw）にラベルを変換する。"""
+    if target_format == "hiragana":
+        return to_hiragana(label)
+    if target_format == "katakana":
+        return to_katakana(label)
+    if target_format == "romaji":
+        return to_romaji(label)
+    if target_format == "raw":
+        return label
+    raise ValueError(
+        f"未知の target_format です: {target_format} (有効値: 'raw', 'hiragana', 'katakana', 'romaji')"
+    )
+
+
