@@ -185,6 +185,74 @@ def export_and_benchmark(
             json.dump(labels, f, ensure_ascii=False, indent=2)
         logger.info("labels.json を修復・保存しました: %s", labels_file)
 
+class WaveformPrependedWav2Vec2(torch.nn.Module):
+    """生音声波形 (1D tensor) への正規化前処理を内包した Wav2Vec2 統合ラッパーモジュール"""
+
+    def __init__(self, base_model: torch.nn.Module):
+        super().__init__()
+        self.base_model = base_model
+
+    def forward(self, waveform: torch.Tensor) -> torch.Tensor:
+        """
+        Args:
+            waveform: (batch_size, num_samples) の raw audio float32 波形
+        Returns:
+            logits: (batch_size, num_classes) の推論ログ確率
+        """
+        mean = waveform.mean(dim=-1, keepdim=True)
+        var = waveform.var(dim=-1, keepdim=True, unbiased=False)
+        normalized_input = (waveform - mean) / torch.sqrt(var + 1e-7)
+        outputs = self.base_model(normalized_input)
+        return outputs.logits
+
+
+def export_mel_prepended_onnx(
+    model: torch.nn.Module,
+    output_fp32_path: Path,
+    sample_rate: int = DEFAULT_RECOGNITION_CONFIG.sample_rate,
+    target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
+) -> None:
+    """前処理内包型 Wav2Vec2 モデルを ONNX フォーマットへエクスポートします。"""
+    model.eval()
+    prepended_model = WaveformPrependedWav2Vec2(model)
+    prepended_model.eval()
+
+    num_samples = int(sample_rate * target_length_seconds)
+    dummy_waveform = torch.randn(1, num_samples, dtype=torch.float32)
+
+    logger.info("前処理内包型 ONNX モデルを出力中: %s", output_fp32_path)
+    torch.onnx.export(
+        prepended_model,
+        (dummy_waveform,),
+        str(output_fp32_path),
+        export_params=True,
+        opset_version=14,
+        do_constant_folding=True,
+        input_names=["waveform"],
+        output_names=["logits"],
+        dynamic_axes={
+            "waveform": {0: "batch_size", 1: "num_samples"},
+            "logits": {0: "batch_size"},
+        },
+        dynamo=False,
+    )
+    logger.info(
+        "前処理内包型 FP32 ONNX エクスポート完了: %s (%.2f MB)",
+        output_fp32_path,
+        output_fp32_path.stat().st_size / (1024 * 1024),
+    )
+
+
+def export_and_benchmark(
+    model_dir: Path | str = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir,
+    export_int8: bool = True,
+    skip_benchmark: bool = False,
+) -> Path:
+    from transformers import AutoFeatureExtractor, Wav2Vec2ForSequenceClassification
+
+    labels = DEFAULT_RECOGNITION_CONFIG.labels
+    model_path = Path(model_dir)
+
     try:
         feature_extractor = AutoFeatureExtractor.from_pretrained(model_path)
     except Exception:
@@ -200,37 +268,47 @@ def export_and_benchmark(
         ignore_mismatched_sizes=True,
     )
 
+    # 1. 前処理内包型 ONNX (model_mel_*.onnx - 最速・最優先モデル) の生成
+    mel_fp32_onnx_path = model_path / DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_fp32_onnx_filename
+    mel_int8_onnx_path = model_path / DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_int8_onnx_filename
+    export_mel_prepended_onnx(model, mel_fp32_onnx_path)
+    if export_int8:
+        quantize_onnx_int8(mel_fp32_onnx_path, mel_int8_onnx_path)
+
+    # 2. 通常 ONNX (model_*.onnx - 汎用フォールバック) の生成
     fp32_onnx_path = model_path / "model_fp32.onnx"
     export_to_onnx(model, fp32_onnx_path)
-
     int8_onnx_path: Path | None = None
     if export_int8:
         int8_onnx_path = model_path / "model_int8.onnx"
         quantize_onnx_int8(fp32_onnx_path, int8_onnx_path)
 
-    pt_time, onnx_fp32_time, onnx_int8_time = run_benchmark(model, fp32_onnx_path, int8_onnx_path)
+    primary_onnx_path = mel_int8_onnx_path if (export_int8 and mel_int8_onnx_path.exists()) else mel_fp32_onnx_path
 
-    times = [("ONNX FP32", onnx_fp32_time)]
-    if onnx_int8_time is not None:
-        times.append(("ONNX INT8", onnx_int8_time))
-    fastest_name, fastest_time = min(times, key=lambda x: x[1])
-    speedup = pt_time / max(fastest_time, 1e-6)
+    if not skip_benchmark:
+        pt_time, onnx_fp32_time, onnx_int8_time = run_benchmark(model, mel_fp32_onnx_path, mel_int8_onnx_path)
 
-    print("\n=======================================================")
-    print("  Wav2Vec2 ONNX ベンチマーク結果")
-    print("=======================================================")
-    print(f" モデルディレクトリ: {model_path}")
-    print("-------------------------------------------------------")
-    print(f" PyTorch FP32 CPU レイテンシ: {pt_time:.2f} ms")
-    print(f" ONNX FP32 CPU レイテンシ   : {onnx_fp32_time:.2f} ms")
-    if onnx_int8_time is not None:
-        print(f" ONNX INT8 CPU レイテンシ   : {onnx_int8_time:.2f} ms")
-    print("-------------------------------------------------------")
-    print(f" 最速構成                   : {fastest_name} ({fastest_time:.2f} ms)")
-    print(f" PyTorch 比高速化倍率       : {speedup:.2f}x")
-    print("=======================================================\n")
+        times = [("ONNX FP32 (mel)", onnx_fp32_time)]
+        if onnx_int8_time is not None:
+            times.append(("ONNX INT8 (mel)", onnx_int8_time))
+        fastest_name, fastest_time = min(times, key=lambda x: x[1])
+        speedup = pt_time / max(fastest_time, 1e-6)
 
-    return int8_onnx_path if int8_onnx_path and int8_onnx_path.exists() else fp32_onnx_path
+        print("\n=======================================================")
+        print("  Wav2Vec2 ONNX ベンチマーク結果 (前処理内包型)")
+        print("=======================================================")
+        print(f" モデルディレクトリ: {model_path}")
+        print("-------------------------------------------------------")
+        print(f" PyTorch FP32 CPU レイテンシ: {pt_time:.2f} ms")
+        print(f" ONNX FP32 CPU レイテンシ   : {onnx_fp32_time:.2f} ms")
+        if onnx_int8_time is not None:
+            print(f" ONNX INT8 CPU レイテンシ   : {onnx_int8_time:.2f} ms")
+        print("-------------------------------------------------------")
+        print(f" 最速構成                   : {fastest_name} ({fastest_time:.2f} ms)")
+        print(f" PyTorch 比高速化倍率       : {speedup:.2f}x")
+        print("=======================================================\n")
+
+    return primary_onnx_path
 
 
 def main() -> None:

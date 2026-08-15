@@ -981,6 +981,7 @@ def train(args: argparse.Namespace) -> None:
         "val_acc": [],
         "val_macro_f1": [],
     }
+    run_best_macro_f1 = -1.0
     is_best_updated = False
     scaler = GradScaler() if device.type == "cuda" else None
 
@@ -1026,6 +1027,22 @@ def train(args: argparse.Namespace) -> None:
                 macro_f1,
             )
 
+            # 今回の学習ランにおける最高精度 (Last Training Best) を更新した場合
+            if macro_f1 > run_best_macro_f1:
+                run_best_macro_f1 = macro_f1
+                save_pretrained_model(
+                    model,
+                    feature_extractor,
+                    last_model_path,
+                    dataset.labels,
+                )
+                logger.info(
+                    "今回の学習ランの最高精度モデル (Last) を更新・保存しました: %s (Val Macro-F1: %.4f)",
+                    last_model_path,
+                    run_best_macro_f1,
+                )
+
+            # チーム共有・歴代最高精度 (Global Best) を更新した場合
             if macro_f1 > best_macro_f1:
                 best_macro_f1 = macro_f1
                 is_best_updated = True
@@ -1037,7 +1054,7 @@ def train(args: argparse.Namespace) -> None:
                     dataset.labels,
                 )
                 logger.info(
-                    "Best Wav2Vec2 model saved: %s (Val Macro-F1: %.4f, Val Acc: %.4f)",
+                    "歴代最高精度モデル (Best) を更新・保存しました: %s (Val Macro-F1: %.4f, Val Acc: %.4f)",
                     best_model_path,
                     best_macro_f1,
                     val_acc,
@@ -1046,8 +1063,9 @@ def train(args: argparse.Namespace) -> None:
                 patience_counter += 1
                 if patience > 0 and patience_counter >= patience:
                     logger.info(
-                        "Early stopping: Validation Macro-F1 が %d エポック連続で向上しなかったため、頭打ちと判断して学習を自動終了します (Best Macro-F1: %.4f)",
+                        "Early stopping: Validation Macro-F1 が %d エポック連続で向上しなかったため、頭打ちと判断して学習を自動終了します (Run Best: %.4f, Global Best: %.4f)",
                         patience,
+                        run_best_macro_f1,
                         best_macro_f1,
                     )
                     break
@@ -1062,14 +1080,15 @@ def train(args: argparse.Namespace) -> None:
     except KeyboardInterrupt:
         interrupted = True
         logger.warning("ユーザー操作 (Ctrl+C / SIGINT) により学習が途中で中断されました。")
+        if run_best_macro_f1 < 0:
+            # 1エポックも完了前に中断された場合は現在モデルを保存
+            save_pretrained_model(
+                model,
+                feature_extractor,
+                last_model_path,
+                dataset.labels,
+            )
 
-    logger.info("チェックポイント保存中: 最新のモデル状態を %s に保存します...", last_model_path)
-    save_pretrained_model(
-        model,
-        feature_extractor,
-        last_model_path,
-        dataset.labels,
-    )
     if history["train_loss"]:
         save_history_plots(
             history=history,
@@ -1093,14 +1112,45 @@ def train(args: argparse.Namespace) -> None:
 
     # ONNX 自動エクスポート ＆ 量子化
     no_onnx_export = getattr(args, "no_onnx_export", False)
-    if not no_onnx_export and best_model_path and best_model_path.exists():
-        try:
-            logger.info("学習完了後の Wav2Vec2 ONNX エクスポート ＆ INT8 量子化を開始します...")
-            from voicerecognizer.models.wav2vec2.export_onnx import export_and_benchmark
+    if not no_onnx_export:
+        import filecmp
+        import shutil
+        from voicerecognizer.models.wav2vec2.export_onnx import export_and_benchmark
 
-            export_and_benchmark(model_dir=best_model_path)
-        except Exception as e:
-            logger.error("ONNX 自動エクスポート中にエラーが発生しました: %s", e)
+        # 1. ベストモデルのエクスポート ＆ ベンチマーク実行（1回のみ）
+        if best_model_path and best_model_path.exists():
+            try:
+                logger.info("学習完了後の Wav2Vec2 ONNX (best) エクスポート ＆ INT8 量子化を開始します...")
+                export_and_benchmark(model_dir=best_model_path)
+            except Exception as e:
+                logger.error("ONNX 自動エクスポート (best) 中にエラーが発生しました: %s", e)
+
+        # 2. 最終チェックポイント (last) のスマート同期
+        if last_model_path and last_model_path.exists() and last_model_path != best_model_path:
+            best_safetensors = best_model_path / "model.safetensors"
+            last_safetensors = last_model_path / "model.safetensors"
+
+            is_identical = (
+                best_safetensors.exists()
+                and last_safetensors.exists()
+                and filecmp.cmp(best_safetensors, last_safetensors, shallow=False)
+            )
+
+            if is_identical:
+                logger.info(
+                    "wav2vec2_best と wav2vec2_last の重みが同一のため、ONNX 成果物をコピーして即時同期します..."
+                )
+                for onnx_file in best_model_path.glob("*.onnx"):
+                    shutil.copy2(onnx_file, last_model_path / onnx_file.name)
+                logger.info("wav2vec2_last への ONNX ファイルの高速同期が完了しました。")
+            else:
+                try:
+                    logger.info(
+                        "wav2vec2_last の重みが best と異なるため、個別に ONNX エクスポートを実行します..."
+                    )
+                    export_and_benchmark(model_dir=last_model_path, skip_benchmark=True)
+                except Exception as e:
+                    logger.error("ONNX 自動エクスポート (last) 中にエラーが発生しました: %s", e)
 
     # Hugging Face 自動アップロード判定 (チーム最高精度を更新した場合のみ)
     if is_best_updated:

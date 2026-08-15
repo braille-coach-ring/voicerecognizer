@@ -27,10 +27,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate Voice Recognizer Model")
     parser.add_argument(
         "--model-type",
+        "--model",
+        dest="model_type",
         type=str,
         default="cnn",
         choices=RecognizerFactory.available_strategies(),
         help="Model strategy to evaluate",
+    )
+    parser.add_argument(
+        "--use-last",
+        action="store_true",
+        help="Evaluate using the last epoch checkpoint (last_model.pth / wav2vec2_last)",
+    )
+    parser.add_argument(
+        "--model-path",
+        type=Path,
+        default=None,
+        help="Explicit path to model file or directory to evaluate",
     )
     parser.add_argument(
         "--dataset-dir",
@@ -81,9 +94,17 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    checkpoint_label = "LAST" if args.use_last else ("CUSTOM" if args.model_path else "BEST")
+
     if args.update_index:
-        logger.info("Updating index.csv with latest model predictions (%s)...", args.model_type)
-        model = RecognizerFactory.create(args.model_type)
+        logger.info(
+            "Updating index.csv with latest model predictions (%s, checkpoint=%s)...",
+            args.model_type,
+            checkpoint_label,
+        )
+        model = RecognizerFactory.create(
+            args.model_type, use_last=args.use_last, model_path=args.model_path
+        )
         evaluator = Evaluator(
             model=model,
             dataset_path=args.dataset_dir,
@@ -100,8 +121,14 @@ def main() -> None:
         )
         result = evaluator.update_from_dataset()
     else:
-        logger.info("Loading model (%s) and evaluating on raw audio files...", args.model_type)
-        model = RecognizerFactory.create(args.model_type)
+        logger.info(
+            "Loading model (%s, checkpoint=%s) and evaluating on raw audio files...",
+            args.model_type,
+            checkpoint_label,
+        )
+        model = RecognizerFactory.create(
+            args.model_type, use_last=args.use_last, model_path=args.model_path
+        )
         evaluator = Evaluator(
             model=model,
             dataset_path=args.dataset_dir,
@@ -120,7 +147,8 @@ def main() -> None:
 
     if args.output_html:
         evaluator.export_html(
-            args.output_html, title=f"モデル評価レポート ({args.model_type.upper()})"
+            args.output_html,
+            title=f"モデル評価レポート ({args.model_type.upper()} - {checkpoint_label})",
         )
 
     if args.output_review_json:
@@ -129,7 +157,7 @@ def main() -> None:
     if args.output_review_html:
         evaluator.export_review_html(
             args.output_review_html,
-            title=f"Voice Data Quality Review ({args.model_type.upper()})",
+            title=f"Voice Data Quality Review ({args.model_type.upper()} - {checkpoint_label})",
             review_results_path=args.review_decisions,
         )
 
