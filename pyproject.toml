@@ -120,5 +120,3 @@ filterwarnings = [
 preset = "strict"
 search-path = ["src", "."]
 baseline = "pyrefly-baseline.json"
-
-

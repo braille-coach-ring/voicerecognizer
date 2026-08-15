@@ -39,7 +39,8 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,
         dynamic_trimming: bool = True,
         auto_download: bool = True,
-        candidate_filenames: tuple[str, ...] | list[str] = DEFAULT_RECOGNITION_CONFIG.wav2vec2_onnx_candidate_filenames,
+        candidate_filenames: tuple[str, ...]
+        | list[str] = DEFAULT_RECOGNITION_CONFIG.wav2vec2_onnx_candidate_filenames,
         hf_repo_id: str | None = None,
         hf_token: str | None = None,
     ):
@@ -81,7 +82,9 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
                 logger.warning("Wav2Vec2 重みの自動ダウンロード中に例外が発生しました: %s", e)
 
         # 前処理内包型 (model_mel_*) 以外のモデルにフォールバックした場合の警告
-        if self.onnx_model_path is not None and not self.onnx_model_path.name.startswith("model_mel_"):
+        if self.onnx_model_path is not None and not self.onnx_model_path.name.startswith(
+            "model_mel_"
+        ):
             logger.warning(
                 "前処理内包型 ONNX モデル (%s) が見つかりませんでした。通常モデル (%s) にフォールバックして推論を実行します。(前処理オーバーヘッドが増加する可能性があります)",
                 DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_int8_onnx_filename,
@@ -126,11 +129,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
 
     def _build_model_not_found_message(self) -> str:
         last_err = getattr(self, "_last_download_error", None)
-        download_err_info = (
-            f"\n  ダウンロード例外詳細: {last_err}"
-            if last_err
-            else ""
-        )
+        download_err_info = f"\n  ダウンロード例外詳細: {last_err}" if last_err else ""
         repo_id = getattr(self, "hf_config", None)
         repo_id_str = repo_id.repo_id if repo_id else PUBLIC_DEFAULT_HF_REPO_ID
         return (
@@ -150,7 +149,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
             "  3. [ローカルモデルの指定]\n"
             "     ローカルに既にあるモデルフォルダを使用したい場合は、初期化時に model_path を渡してください:\n"
             "     >>> import voicerecognizer as vr\n"
-            "     >>> recognizer = vr.Wav2Vec2Recognizer(model_path=\"/path/to/your/model_dir\")\n"
+            '     >>> recognizer = vr.Wav2Vec2Recognizer(model_path="/path/to/your/model_dir")\n'
         )
 
     def _prepare_input_values(self, audio: Any) -> tuple[np.ndarray, float, float]:
@@ -168,8 +167,13 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
                 input_values = waveform.astype(np.float32)
         else:
             if self.feature_extractor is None:
-                logger.error("Wav2Vec2 FeatureExtractor が初期化されていません (None)。モデルパスを確認してください: %s", self.model_path)
-                raise ModelNotFoundError(f"Wav2Vec2 FeatureExtractor がロードされていません: {self.model_path}")
+                logger.error(
+                    "Wav2Vec2 FeatureExtractor が初期化されていません (None)。モデルパスを確認してください: %s",
+                    self.model_path,
+                )
+                raise ModelNotFoundError(
+                    f"Wav2Vec2 FeatureExtractor がロードされていません: {self.model_path}"
+                )
             # 従来型 ONNX: FeatureExtractor を呼び出し
             inputs = self.feature_extractor(
                 waveform,
@@ -184,8 +188,13 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
     def recognize(self, audio: Any) -> str:
         self._ensure_model_loaded()
         if self.session is None:
-            logger.error("Wav2Vec2 ONNX セッション (session) がロードされていません (None)。モデルパスを確認してください: %s", self.model_path)
-            raise ModelNotFoundError(f"Wav2Vec2 ONNX セッションがロードされていません: {self.model_path}")
+            logger.error(
+                "Wav2Vec2 ONNX セッション (session) がロードされていません (None)。モデルパスを確認してください: %s",
+                self.model_path,
+            )
+            raise ModelNotFoundError(
+                f"Wav2Vec2 ONNX セッションがロードされていません: {self.model_path}"
+            )
         t_start = time.perf_counter()
 
         input_values, t_prep_start, t_prep_end = self._prepare_input_values(audio)
@@ -219,8 +228,13 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         """上位 top_k 個の認識候補ラベルと確信度スコアのリストを返します"""
         self._ensure_model_loaded()
         if self.session is None:
-            logger.error("Wav2Vec2 ONNX セッション (session) がロードされていません (None)。モデルパスを確認してください: %s", self.model_path)
-            raise ModelNotFoundError(f"Wav2Vec2 ONNX セッションがロードされていません: {self.model_path}")
+            logger.error(
+                "Wav2Vec2 ONNX セッション (session) がロードされていません (None)。モデルパスを確認してください: %s",
+                self.model_path,
+            )
+            raise ModelNotFoundError(
+                f"Wav2Vec2 ONNX セッションがロードされていません: {self.model_path}"
+            )
         input_values, _, _ = self._prepare_input_values(audio)
         outputs = self.session.run(None, {self.input_name: input_values})
         logits = outputs[0][0]

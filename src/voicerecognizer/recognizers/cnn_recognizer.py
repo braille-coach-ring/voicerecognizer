@@ -66,7 +66,9 @@ class CNNRecognizer(RecognitionStrategy):
                     weights_dir=self.model_path.parent,
                 )
                 if self.model_path.exists():
-                    logger.info("CNN モデル重みのダウンロードと配置が完了しました: %s", self.model_path)
+                    logger.info(
+                        "CNN モデル重みのダウンロードと配置が完了しました: %s", self.model_path
+                    )
             except Exception as e:
                 self._last_download_error = str(e)
                 logger.warning("CNN 重みの自動ダウンロード中に例外が発生しました: %s", e)
@@ -110,11 +112,7 @@ class CNNRecognizer(RecognitionStrategy):
 
     def _build_model_not_found_message(self, err: Exception | None = None) -> str:
         last_err = getattr(self, "_last_download_error", None)
-        download_err_info = (
-            f"\n  ダウンロード例外詳細: {last_err}"
-            if last_err
-            else ""
-        )
+        download_err_info = f"\n  ダウンロード例外詳細: {last_err}" if last_err else ""
         load_err_info = f"\n  ロード例外詳細: {err}" if err else ""
         repo_id = getattr(self, "hf_config", None)
         repo_id_str = repo_id.repo_id if repo_id else PUBLIC_DEFAULT_HF_REPO_ID
@@ -129,13 +127,14 @@ class CNNRecognizer(RecognitionStrategy):
             "     ネットワーク接続を確認の上、再度実行してください。\n"
             "  2. [Hugging Face 認証トークン]\n"
             "     アクセス制限やレートリミットを回避する場合は環境変数を設定してください:\n"
-            "     - Windows (PowerShell): $env:VOICERECOGNIZER_HF_TOKEN = \"your_token\"\n"
-            "     - Linux / macOS (Bash): export VOICERECOGNIZER_HF_TOKEN=\"your_token\"\n"
-            "     - または環境変数 HF_TOKEN (フォールバック) を設定\n"
+
+            '     - Windows (PowerShell): $env:HF_TOKEN = "your_token"\n'
+            '     - Linux / macOS (Bash): export HF_TOKEN="your_token"\n'
+            "     - または .env ファイルに HF_TOKEN=your_token を記述\n"
             "  3. [ローカルモデルの指定]\n"
             "     ローカルに既にあるモデルファイルを使用したい場合は、初期化時に model_path を渡してください:\n"
             "     >>> import voicerecognizer as vr\n"
-            "     >>> recognizer = vr.CNNRecognizer(model_path=\"/path/to/your/best_model.pth\")\n"
+            '     >>> recognizer = vr.CNNRecognizer(model_path="/path/to/your/best_model.pth")\n'
         )
 
     def recognize(self, audio: Any) -> str:

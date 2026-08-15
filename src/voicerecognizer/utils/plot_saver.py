@@ -145,7 +145,10 @@ def record_and_plot_cumulative_progress(
                 fontweight="bold",
                 color="darkred",
                 bbox={
-                    "boxstyle": "round,pad=0.2", "facecolor": "yellow", "alpha": 0.3, "edgecolor": "goldenrod"
+                    "boxstyle": "round,pad=0.2",
+                    "facecolor": "yellow",
+                    "alpha": 0.3,
+                    "edgecolor": "goldenrod",
                 },
             )
 

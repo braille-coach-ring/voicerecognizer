@@ -203,6 +203,7 @@ def train(args: argparse.Namespace) -> None:
 
     patience = getattr(args, "patience", 10)
     patience_counter = 0
+    run_best_macro_f1 = -1.0
 
     for epoch in range(args.epochs):
         train_loss, train_acc = train_epoch(
@@ -237,6 +238,18 @@ def train(args: argparse.Namespace) -> None:
             macro_f1,
         )
 
+        # 今回の学習ランにおける最高精度 (Last Training Best) を更新した場合
+        if macro_f1 > run_best_macro_f1:
+            run_best_macro_f1 = macro_f1
+            if last_model_path:
+                torch.save(model.state_dict(), last_model_path)
+                logger.info(
+                    "今回の学習ランの最高精度モデル (Last) を更新・保存しました: %s (Val Macro-F1: %.4f)",
+                    last_model_path,
+                    run_best_macro_f1,
+                )
+
+        # チーム共有・歴代最高精度 (Global Best) を更新した場合
         if macro_f1 > best_macro_f1:
             best_macro_f1 = macro_f1
             is_best_updated = True
@@ -247,7 +260,7 @@ def train(args: argparse.Namespace) -> None:
                 with open(labels_path, "w", encoding="utf-8") as f:
                     json.dump(list(dataset.labels), f, ensure_ascii=False, indent=2)
                 logger.info(
-                    "Best model saved: %s (Val Macro-F1: %.4f, Val Acc: %.4f)",
+                    "歴代最高精度モデル (Best) を更新・保存しました: %s (Val Macro-F1: %.4f, Val Acc: %.4f)",
                     best_model_path,
                     best_macro_f1,
                     val_acc,
@@ -256,8 +269,9 @@ def train(args: argparse.Namespace) -> None:
             patience_counter += 1
             if patience > 0 and patience_counter >= patience:
                 logger.info(
-                    "Early stopping: Validation Macro-F1 が %d エポック連続で向上しなかったため、頭打ちと判断して学習を自動終了します (Best Macro-F1: %.4f)",
+                    "Early stopping: Validation Macro-F1 が %d エポック連続で向上しなかったため、頭打ちと判断して学習を自動終了します (Run Best: %.4f, Global Best: %.4f)",
                     patience,
+                    run_best_macro_f1,
                     best_macro_f1,
                 )
                 break
@@ -266,8 +280,6 @@ def train(args: argparse.Namespace) -> None:
             logger.info("Target validation accuracy reached: %.2f%%", target_acc * 100)
             break
 
-    if last_model_path:
-        torch.save(model.state_dict(), last_model_path)
     save_history_plots(
         history=history,
         model_name="cnn",
