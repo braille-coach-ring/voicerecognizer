@@ -35,7 +35,11 @@ from torch.cuda.amp import GradScaler, autocast
 from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
 from tqdm import tqdm
 
-from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.config import (
+    DEFAULT_AUDIO_CONFIG,
+    DEFAULT_PREPROCESS_CONFIG,
+    DEFAULT_RECOGNITION_CONFIG,
+)
 from voicerecognizer.dataset.hiragana_dataset import HiraganaDataset
 from voicerecognizer.evaluation.evaluator import compute_evaluation_result
 from voicerecognizer.models.wav2vec2.export_onnx import export_and_benchmark
@@ -766,11 +770,11 @@ def train(args: argparse.Namespace) -> None:
         if DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir.exists()
         else DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir
     )
-    sample_rate = getattr(args, "sample_rate", DEFAULT_RECOGNITION_CONFIG.sample_rate)
+    sample_rate = getattr(args, "sample_rate", DEFAULT_AUDIO_CONFIG.sample_rate)
     target_length_seconds = getattr(
         args, "target_length_seconds", DEFAULT_RECOGNITION_CONFIG.target_length_seconds
     )
-    top_db = getattr(args, "top_db", DEFAULT_RECOGNITION_CONFIG.top_db)
+    top_db = getattr(args, "top_db", DEFAULT_PREPROCESS_CONFIG.top_db)
     val_rate = getattr(args, "val_rate", 0.2)
     target_acc = getattr(args, "target_acc", 0.97)
     num_workers_arg = getattr(args, "num_workers", None)

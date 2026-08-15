@@ -5,7 +5,11 @@ from typing import Any
 import numpy as np
 import torch
 
-from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.config import (
+    DEFAULT_AUDIO_CONFIG,
+    DEFAULT_PREPROCESS_CONFIG,
+    DEFAULT_RECOGNITION_CONFIG,
+)
 from voicerecognizer.core.exceptions import ModelNotFoundError
 from voicerecognizer.preprocessing.audio_preprocessor import AudioPreprocessor
 
@@ -16,9 +20,9 @@ class Wav2Vec2Processor:
     def __init__(
         self,
         model_name_or_path: str | Path = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir,
-        sample_rate: int = DEFAULT_RECOGNITION_CONFIG.sample_rate,
+        sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
-        top_db: float = DEFAULT_RECOGNITION_CONFIG.top_db,
+        top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,
     ):
         self.model_name_or_path = model_name_or_path
         self.sample_rate = sample_rate

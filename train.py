@@ -16,6 +16,10 @@ Model Training Dispatcher Script
 import argparse
 from collections.abc import Sequence
 
+from voicerecognizer.config import load_env
+
+load_env()
+
 TRAINABLE_MODELS = ("cnn", "wav2vec2")
 
 

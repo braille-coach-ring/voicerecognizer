@@ -10,19 +10,21 @@
 uv sync
 ```
 
-`uv run python ...` が使えない環境では、仮想環境の Python を直接使えます。
+リポジトリ初期化・モデル取得・ディレクトリおよびデータセットの準備を一括実行します。
 
 ```powershell
-.\.venv\Scripts\python.exe --version
-.\.venv\Scripts\python.exe main.py --help
+uv run python setup_env.py
 ```
 
-Hugging Face へモデルをアップロードする場合だけ、`.env.example` を参考に `.env` を設定します。
+※ 個別にモデル重みのみをダウンロード・同期したい場合:
+```powershell
+uv run python script\download_from_hf.py --type all
+```
+
+Hugging Face へモデルをアップロードする場合だけ、`.env.example` を参考に `.env` を設定します（リポジトリ ID は `config.py` で固定されているため、トークンのみで動作します）。
 
 ```text
 HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
-HF_REPO_ID=braille-mate/braille-mate-hiragana-recognizer
-HF_AUTO_UPLOAD=false
 ```
 
 ## 2. まず動かす
@@ -249,7 +251,7 @@ uv run python models\cnn\export.py
 uv run python models\cnn\export.py --model-path weights\best_model.pth --output-path weights\hiragana_cnn.pt
 ```
 
-Hugging Face Hub へモデルをアップロードします。`.env` の `HF_TOKEN` と `HF_REPO_ID` が必要です。
+Hugging Face Hub へモデルをアップロードします。`.env` に `HF_TOKEN`（Write 権限付き）が設定されている必要があります。
 
 ```powershell
 uv run python script\upload_to_hf.py --type cnn

@@ -20,7 +20,6 @@ import numpy as np
 from voicerecognizer.config import (
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
-    DEFAULT_RECOGNITION_CONFIG,
     PROJECT_ROOT,
 )
 
@@ -395,12 +394,8 @@ def update_config_file(config_path: Path, result: CalibrationResult) -> None:
         "min_top_db": format_config_float(result.min_top_db),
         "max_top_db": format_config_float(result.max_top_db),
     }
-    recognition_values = {
-        "top_db": format_config_float(result.top_db),
-    }
 
     text = replace_class_defaults(text, "PreprocessConfig", preprocess_values)
-    text = replace_class_defaults(text, "RecognitionConfig", recognition_values)
     config_path.write_text(text, encoding="utf-8")
 
 
@@ -532,7 +527,6 @@ def main() -> None:
         f"{DEFAULT_PREPROCESS_CONFIG.vad_silence_threshold}"
     )
     print(f"  PreprocessConfig.vad_rms_threshold: {DEFAULT_PREPROCESS_CONFIG.vad_rms_threshold}")
-    print(f"  RecognitionConfig.top_db: {DEFAULT_RECOGNITION_CONFIG.top_db}")
 
     if args.dry_run:
         print("\nDry run: config.py was not updated.")

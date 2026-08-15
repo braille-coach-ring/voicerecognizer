@@ -34,7 +34,7 @@ def record_and_plot_cumulative_progress(
 ) -> Path:
     """
     これまでの全学習ランの成績推移 (Val Acc, Val Macro-F1, Val Weighted-F1, Val Loss) を
-    `experiment_history.json` に累積記録し、Best Model 更新点 (★) を明示した自己改善トレンドグラフ
+    `experiment_history.json` に累積記録し、Best Model 更新点を明示した自己改善トレンドグラフ
     `long_term_progress_trend.png` を生成・更新します。
     """
     model_plot_dir = PROJECT_ROOT / "plots" / model_name
@@ -118,7 +118,7 @@ def record_and_plot_cumulative_progress(
         label="Val Weighted-F1",
     )
 
-    # Best Model 更新ランのゴールドスター (★) ハイライト
+    # Best Model 更新ランのハイライト
     best_runs = [r for r in records if r.get("is_best_updated", False)]
     if best_runs:
         best_x = [r["run_id"] for r in best_runs]
@@ -132,11 +132,11 @@ def record_and_plot_cumulative_progress(
             edgecolors="darkred",
             linewidth=1.5,
             zorder=6,
-            label="Best Model Updated (★)",
+            label="Best Model Updated",
         )
         for r in best_runs:
             ax1.annotate(
-                f"★ Run #{r['run_id']}\n({r['val_macro_f1']:.4f})",
+                f"Best Run #{r['run_id']}\n({r['val_macro_f1']:.4f})",
                 xy=(r["run_id"], r["val_macro_f1"]),
                 xytext=(0, 12),
                 textcoords="offset points",

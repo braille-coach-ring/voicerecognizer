@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 from pathlib import Path
 from typing import Any
 
@@ -9,9 +10,10 @@ import torch
 
 from voicerecognizer.config import (
     DEFAULT_AUDIO_CONFIG,
-    DEFAULT_HUGGINGFACE_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
+    PUBLIC_DEFAULT_HF_REPO_ID,
+    HuggingFaceConfig,
 )
 from voicerecognizer.core.exceptions import ModelNotFoundError
 from voicerecognizer.core.interfaces import RecognitionStrategy
@@ -37,10 +39,22 @@ class CNNRecognizer(RecognitionStrategy):
         device: torch.device | None = None,
         threshold_calculator: AbstractSilenceThresholdCalculator | None = None,
         auto_download: bool = True,
+        hf_repo_id: str | None = None,
+        hf_token: str | None = None,
     ):
         self.model_path = Path(model_path)
+        self.auto_download = auto_download
         self._last_download_error: str | None = None
-        if not self.model_path.exists() and auto_download:
+        if hf_repo_id is not None and hf_token is not None:
+            self.hf_config = HuggingFaceConfig(repo_id=hf_repo_id, token=hf_token)
+        elif hf_repo_id is not None:
+            self.hf_config = HuggingFaceConfig(repo_id=hf_repo_id)
+        elif hf_token is not None:
+            self.hf_config = HuggingFaceConfig(token=hf_token)
+        else:
+            self.hf_config = HuggingFaceConfig()
+
+        if not self.model_path.exists() and self.auto_download:
             logger.info(
                 "ローカルに CNN モデル重みが見つかりません (%s)。Hugging Face Hub より自動ダウンロードを開始します...",
                 self.model_path,
@@ -48,6 +62,7 @@ class CNNRecognizer(RecognitionStrategy):
             try:
                 download_latest_team_weights_if_needed(
                     model_type="cnn",
+                    hf_config=self.hf_config,
                     weights_dir=self.model_path.parent,
                 )
                 if self.model_path.exists():
@@ -75,24 +90,44 @@ class CNNRecognizer(RecognitionStrategy):
         self.n_mels = n_mels
         self.n_fft = n_fft
         self.hop_length = hop_length
-        self.model = self._load_model()
+        self.model: HiraganaCNN | None = None
         logger.info("CNNレコグナイザーの初期化完了")
+
+    def _ensure_model_loaded(self) -> None:
+        if self.model is not None:
+            return
+        if not self.model_path.exists():
+            if self.auto_download:
+                try:
+                    download_latest_team_weights_if_needed(
+                        model_type="cnn",
+                        hf_config=self.hf_config,
+                        weights_dir=self.model_path.parent,
+                    )
+                except Exception as e:
+                    self._last_download_error = str(e)
+            if not self.model_path.exists():
+                raise ModelNotFoundError(self._build_model_not_found_message())
+        self.model = self._load_model()
 
     def _build_model_not_found_message(self, err: Exception | None = None) -> str:
         last_err = getattr(self, "_last_download_error", None)
         download_err_info = f"\n  ダウンロード例外詳細: {last_err}" if last_err else ""
         load_err_info = f"\n  ロード例外詳細: {err}" if err else ""
+        repo_id = getattr(self, "hf_config", None)
+        repo_id_str = repo_id.repo_id if repo_id else PUBLIC_DEFAULT_HF_REPO_ID
         return (
             f"voicerecognizer の CNN モデル重み ({DEFAULT_RECOGNITION_CONFIG.cnn_model_filename}) が見つかりません。\n\n"
             "【原因】\n"
             f"  ローカルパス ({self.model_path}) にモデルが存在せず、\n"
-            f"  Hugging Face Hub ({DEFAULT_HUGGINGFACE_CONFIG.repo_id}) からの自動ダウンロードも完了できませんでした。{download_err_info}{load_err_info}\n\n"
+            f"  Hugging Face Hub ({repo_id_str}) からの自動ダウンロードも完了できませんでした。{download_err_info}{load_err_info}\n\n"
             "【使い方の確認・解決手順】\n"
             "  1. [インターネット接続]\n"
             "     初回実行時は Hugging Face Hub より自動的にモデルがダウンロードされます。\n"
             "     ネットワーク接続を確認の上、再度実行してください。\n"
             "  2. [Hugging Face 認証トークン]\n"
             "     アクセス制限やレートリミットを回避する場合は環境変数を設定してください:\n"
+
             '     - Windows (PowerShell): $env:HF_TOKEN = "your_token"\n'
             '     - Linux / macOS (Bash): export HF_TOKEN="your_token"\n'
             "     - または .env ファイルに HF_TOKEN=your_token を記述\n"
@@ -103,8 +138,7 @@ class CNNRecognizer(RecognitionStrategy):
         )
 
     def recognize(self, audio: Any) -> str:
-        import time
-
+        self._ensure_model_loaded()
         t_start = time.perf_counter()
 
         t_prep_start = time.perf_counter()
@@ -130,8 +164,8 @@ class CNNRecognizer(RecognitionStrategy):
             "confidence": confidence,
         }
 
-        logger.info(f"推論結果: {probabilities}")
-        return self._postprocess(probabilities)
+        logger.debug("CNN 推論確率: %s", probabilities)
+        return self._label_for_index(predicted_index)
 
     def _load_model(self) -> HiraganaCNN:
         try:
@@ -161,10 +195,13 @@ class CNNRecognizer(RecognitionStrategy):
         return torch.tensor(mel, dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(self.device)
 
     def _predict(self, mel_tensor: torch.Tensor) -> torch.Tensor:
+        if self.model is None:
+            raise ModelNotFoundError(self._build_model_not_found_message())
         with torch.no_grad():
             logits = self.model(mel_tensor)
             return torch.softmax(logits, dim=1)[0]
 
-    def _postprocess(self, probabilities: torch.Tensor) -> str:
-        predicted_index = int(torch.argmax(probabilities).item())
-        return self.labels[predicted_index]
+    def _label_for_index(self, index: int) -> str:
+        if 0 <= index < len(self.labels):
+            return self.labels[index]
+        return str(index)

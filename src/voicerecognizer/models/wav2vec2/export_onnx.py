@@ -30,7 +30,7 @@ if sys.platform == "win32":
 import numpy as np
 import torch
 
-from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.config import DEFAULT_AUDIO_CONFIG, DEFAULT_RECOGNITION_CONFIG
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 def export_to_onnx(
     model: torch.nn.Module,
     output_onnx_path: Path,
-    sample_rate: int = DEFAULT_RECOGNITION_CONFIG.sample_rate,
+    sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
     target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
 ) -> None:
     """PyTorch Wav2Vec2 モデルを ONNX 形式にエクスポートします。"""
@@ -169,7 +169,7 @@ class WaveformPrependedWav2Vec2(torch.nn.Module):
 def export_mel_prepended_onnx(
     model: torch.nn.Module,
     output_fp32_path: Path,
-    sample_rate: int = DEFAULT_RECOGNITION_CONFIG.sample_rate,
+    sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
     target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
 ) -> None:
     """前処理内包型 Wav2Vec2 モデルを ONNX フォーマットへエクスポートします。"""

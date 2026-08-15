@@ -34,7 +34,7 @@ class TestMeasureAudioLevel(unittest.TestCase):
         self.assertGreater(result.top_db, 10.0)
         self.assertGreater(result.snr_db, 10.0)
 
-    def test_update_config_file_rewrites_preprocess_and_recognition_values(self):
+    def test_update_config_file_rewrites_preprocess_values(self):
         config_text = """from dataclasses import dataclass
 
 
@@ -45,11 +45,6 @@ class PreprocessConfig:
     vad_rms_threshold: float = 0.008
     min_top_db: float = 36.0
     max_top_db: float = 52.0
-
-
-@dataclass(frozen=True)
-class RecognitionConfig:
-    top_db: float = 20
 """
         result = CalibrationResult(
             top_db=31.2,

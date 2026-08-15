@@ -34,16 +34,18 @@ class AudioPreprocessor:
         sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
         top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,
+        target_rms: float = DEFAULT_PREPROCESS_CONFIG.target_rms,
         threshold_calculator: AbstractSilenceThresholdCalculator | None = None,
     ):
         self.sample_rate = sample_rate
         self.target_length_seconds = target_length_seconds
         self.top_db = top_db
+        self.target_rms = target_rms
         self.threshold_calculator = threshold_calculator or FixedSilenceThresholdCalculator(
             top_db=float(top_db)
         )
         logger.info(
-            "AudioPreprocessorの初期化完了 (RMSダイナミックレンジ補正 ＋ お(o)ブツ切れ防止適用)"
+            "AudioPreprocessorの初期化完了 (RMSダイナミックレンジ補正 + お(o)ブツ切れ防止適用)"
         )
 
     def load(self, audio: str | Path | np.ndarray) -> np.ndarray:
@@ -134,7 +136,7 @@ class AudioPreprocessor:
             return waveform
 
         rms = np.sqrt(np.mean(waveform**2) + 1e-8)
-        target_rms = 0.12  # 適正目標RMSレベル (-18 dBFS 相当)
+        target_rms = self.target_rms
 
         if rms > 1e-5:
             gain = target_rms / rms

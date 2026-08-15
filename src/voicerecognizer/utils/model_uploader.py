@@ -5,11 +5,7 @@ from typing import Literal
 
 from huggingface_hub import HfApi, hf_hub_download, login
 
-from voicerecognizer.config import (
-    DEFAULT_HUGGINGFACE_CONFIG,
-    DEFAULT_RECOGNITION_CONFIG,
-    HuggingFaceConfig,
-)
+from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, HuggingFaceConfig, load_env
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +72,7 @@ def download_latest_team_weights_if_needed(
     学習開始時等に呼ぶことで、Hugging Face リモートのチーム共有最新モデルと手元のモデルの SHA-256 を比較し、
     手元が古い場合や未存在の場合のみ高速ダウンロードして同期します。
     """
-    cfg = hf_config or DEFAULT_HUGGINGFACE_CONFIG
+    cfg = hf_config or HuggingFaceConfig()
     target_dir = weights_dir or DEFAULT_RECOGNITION_CONFIG.weights_dir
     target_dir.mkdir(parents=True, exist_ok=True)
 
@@ -101,6 +97,7 @@ def download_latest_team_weights_if_needed(
     remote_sha_map = get_remote_file_sha256_map(api, cfg.repo_id, files_to_sync)
     downloaded_any = False
 
+    any_failed = False
     for rel_path in files_to_sync:
         local_file = target_dir / rel_path
         remote_sha = remote_sha_map.get(rel_path)
@@ -124,12 +121,30 @@ def download_latest_team_weights_if_needed(
         # リモートからダウンロード
         logger.info("モデルファイル (%s) を Hugging Face Hub よりダウンロード中...", rel_path)
         try:
-            downloaded_path = hf_hub_download(
-                repo_id=cfg.repo_id,
-                filename=rel_path,
-                repo_type="model",
-                token=token,
-            )
+            try:
+                downloaded_path = hf_hub_download(
+                    repo_id=cfg.repo_id,
+                    filename=rel_path,
+                    repo_type="model",
+                    token=token,
+                )
+            except Exception as first_exc:
+                err_lower = str(first_exc).lower()
+                if token and ("401" in err_lower or "403" in err_lower or "unauthorized" in err_lower or "invalid" in err_lower):
+                    logger.warning(
+                        "設定された Hugging Face トークンが無効です。公開モデルのためトークンなしでもダウンロード可能ですが、設定を確認・修正してください: %s",
+                        first_exc,
+                    )
+                    # トークンなしで再試行
+                    downloaded_path = hf_hub_download(
+                        repo_id=cfg.repo_id,
+                        filename=rel_path,
+                        repo_type="model",
+                        token=None,
+                    )
+                else:
+                    raise first_exc
+
             local_file.parent.mkdir(parents=True, exist_ok=True)
             # ダウンロードしたファイルを target_dir に配置
             with open(downloaded_path, "rb") as src, open(local_file, "wb") as dst:
@@ -144,10 +159,7 @@ def download_latest_team_weights_if_needed(
                 )
             else:
                 logger.warning("モデルファイル (%s) のダウンロードに失敗しました: %s", rel_path, e)
-                if not token:
-                    logger.debug(
-                        "ヒント: プライベートリポジトリへのアクセスには環境変数 HF_TOKEN が必要です。"
-                    )
+                any_failed = True
 
     # Wav2Vec2 の場合: ダウンロード完了後、全バリエーションの ONNX がローカルに存在しない、またはダウンロードがあった場合に自動生成
     if model_type == "wav2vec2":
@@ -172,7 +184,7 @@ def download_latest_team_weights_if_needed(
             except Exception as e:
                 logger.warning("ダウンロード後の ONNX 自動生成中にエラーが発生しました: %s", e)
 
-    return True
+    return not any_failed
 
 
 def upload_weights_to_hf(
@@ -186,8 +198,18 @@ def upload_weights_to_hf(
     指定されたモデルのベスト成果物を Hugging Face Hub へスマートにアップロードします。
     ローカルとリモートで差分がないファイルは送信を自動スキップします。
     """
-    cfg = hf_config or DEFAULT_HUGGINGFACE_CONFIG
-    target_dir = weights_dir or DEFAULT_RECOGNITION_CONFIG.weights_dir
+    if hf_config is not None:
+        cfg = hf_config
+    else:
+        load_env()
+        cfg = HuggingFaceConfig()
+
+    if weights_dir is not None:
+        target_dir = Path(weights_dir)
+    elif Path("weights").exists():
+        target_dir = Path("weights")
+    else:
+        target_dir = DEFAULT_RECOGNITION_CONFIG.weights_dir
 
     if not target_dir.exists():
         logger.error("アップロード対象の weights ディレクトリが存在しません: %s", target_dir)
@@ -196,7 +218,7 @@ def upload_weights_to_hf(
     token = cfg.token
     if not token:
         logger.warning(
-            "HF_TOKEN が設定されていません。.env ファイルまたは環境変数に HF_TOKEN を設定してください。"
+            "モデルのアップロードには認証トークンが必要です。環境変数 VOICERECOGNIZER_HF_TOKEN (または HF_TOKEN) を設定してください。"
         )
         return False
 

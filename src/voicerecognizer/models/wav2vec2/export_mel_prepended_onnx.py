@@ -20,7 +20,7 @@ import torch
 import torch.nn as nn
 from transformers import AutoConfig, Wav2Vec2ForSequenceClassification
 
-from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.config import DEFAULT_AUDIO_CONFIG, DEFAULT_RECOGNITION_CONFIG
 
 if sys.platform == "win32":
     if isinstance(sys.stdout, io.TextIOWrapper):
@@ -60,7 +60,7 @@ class WaveformPrependedWav2Vec2(nn.Module):
 def export_mel_prepended_onnx(
     model_dir: Path,
     output_fp32_path: Path,
-    sample_rate: int = DEFAULT_RECOGNITION_CONFIG.sample_rate,
+    sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
     target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
 ) -> None:
     """前処理内包型 Wav2Vec2 モデルを ONNX フォーマットへエクスポートします。"""
@@ -124,7 +124,29 @@ def quantize_onnx_int8(fp32_onnx_path: Path, int8_onnx_path: Path) -> None:
 
 
 def main() -> None:
-    model_dir = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Export Wav2Vec2 to Waveform-prepended ONNX format"
+    )
+    parser.add_argument(
+        "--model-dir",
+        type=Path,
+        default=None,
+        help="Path to wav2vec2 model directory containing model.safetensors and config.json",
+    )
+    args = parser.parse_args()
+
+    model_dir = args.model_dir
+    if model_dir is None:
+        local_weights_dir = Path("weights/wav2vec2_best")
+        if (local_weights_dir / "model.safetensors").exists() or (
+            local_weights_dir / "config.json"
+        ).exists():
+            model_dir = local_weights_dir
+        else:
+            model_dir = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir
+
     fp32_path = model_dir / DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_fp32_onnx_filename
     int8_path = model_dir / DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_int8_onnx_filename
 

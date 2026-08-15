@@ -1,448 +1,163 @@
-# voicelibrary 現在の構成と実行方法
+# voicerecognizer
 
-## このプログラムについて
+日本語ひらがな105クラス対応の超軽量・低遅延音声認識ライブラリ。  
+Wav2Vec2 + ONNX INT8 量子化モデルおよび軽量 CNN モデルを内包し、CPU 環境（Raspberry Pi / ノートPC）でもリアルタイムに動作します。
 
-`voicelibrary` は、音声入力を受け取り、選択した認識アルゴリズムで推論し、認識した文字列を返すための音声認識ライブラリです。
+公開 Hugging Face Hub リポジトリ（`braille-mate/braille-mate-hiragana-recognizer`）と統合されており、環境変数の設定なし（ゼロコンフィグ）で即座にモデルを自動ダウンロードして推論を実行できます。
 
-現在は Strategy Pattern を中心にして、次の認識方式を切り替えられる構造になっています。
+---
 
-- CNN: ゼロから学習したひらがな母音認識モデル。現在動作する実装です。
-- Wav2Vec2 Fine-tuning: Hugging Face Wav2Vec2 に分類ヘッドを載せてファインチューニングする実装です。
-- Whisper: 今後実装予定の空実装です。
+## 主な特徴
 
-モデルの重み管理および Hugging Face Hub 同期設定については、[モデル管理ガイド (Docs/MODEL_HUB_GUIDE.md)](Docs/MODEL_HUB_GUIDE.md) を参照してください。
-他プロジェクトへの導入およびモジュール利用方法の詳細は、[外部モジュール導入・利用ガイド (Docs/MODULE_USAGE_GUIDE.md)](Docs/MODULE_USAGE_GUIDE.md) を参照してください。
+- ゼロコンフィグ（設定不要）: トークンや設定ファイル不要で、公開モデルを自動取得して即座に推論開始。
+- 超高速推論 (ONNX INT8): ONNX Runtime + INT8 量子化により、CPU 環境でも数ミリ秒オーダーの超低遅延認識。
+- 105文字ひらがな全音対応: 清音・濁音・半濁音・拗音を含む全105ラベルの母音・発音認識。
+- 非同期リアルタイムストリーミング: `AudioStreamListener` によるマイク入力の常時非同期監視と文字認識。
+- コードからの明示的設定注入: Python コードから直接カスタムリポジトリやローカル重みパス、認証トークンを注入可能。
 
-### 📦 外部プロジェクトでの利用クイックスタート
+---
+
+## インストール
+
+### pip でのインストール
 
 ```bash
-# 1. GitHub から 1 行でインストール
+pip install git+https://github.com/braille-coach-ring/voicerecognizer.git
+```
+
+### uv でのインストール
+
+```bash
 uv add git+https://github.com/braille-coach-ring/voicerecognizer.git
 ```
 
+### リポジトリをクローンして開発する場合の初期セットアップ
+
+```bash
+# 依存関係のインストール
+uv sync
+
+# モデル取得・ディレクトリ準備・データセット統合を一括実行
+uv run python setup_env.py
+```
+
+※ モデル重みのみを個別同期したい場合:
+```bash
+uv run python script/download_from_hf.py --type all
+```
+
+## クイックスタート
+
+### 1. Wav2Vec2 ONNX による音声認識（デフォルト・推奨）
+
 ```python
-# 2. 任意の Python コードから利用
 import voicerecognizer as vr
 
-# ワンライナー認識
-text = vr.recognize("sample.wav")
+# 初回実行時に Hugging Face Hub より自動ダウンロードされます
+recognizer = vr.Wav2Vec2Recognizer()
 
-# リアルタイム非同期マイクストリーミング
-async for character in vr.AudioStreamListener().listen():
-    print(f"認識: {character}")
+# 音声ファイル（wav）または NumPy 波形配列を渡して認識
+text = recognizer.recognize("sample.wav")
+print(f"認識結果: {text}")
+
+# 候補と確信度スコアの取得
+candidates = recognizer.recognize_with_candidates("sample.wav", top_k=3)
+for label, score in candidates:
+    print(f"候補: {label} (確信度: {score:.4f})")
 ```
 
+### 2. 非同期マイクストリーミング（リアルタイム認識）
 
-実行時の依存関係は次の形です。
+```python
+import asyncio
+import voicerecognizer as vr
 
-```text
-main.py
-↓
-AudioPipeline
-↓
-VoiceRecognizer
-↓
-RecognitionStrategy
-↓
-CNNRecognizer / Wav2Vec2Recognizer / WhisperRecognizer
+
+async def main():
+    recognizer = vr.Wav2Vec2Recognizer()
+    listener = vr.AudioStreamListener(recognizer=recognizer)
+
+    print("マイク音声の監視を開始します (Ctrl+C で停止)...")
+    async for result in listener.listen():
+        print(f"認識文字: {result.text} (確信度: {result.confidence:.2f})")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-`AudioPipeline` は具体的な認識モデルを知りません。`VoiceRecognizer.recognize(audio)` だけを呼び出します。
+### 3. CNN 認識器の利用
 
-Recognizerの切り替えは `RecognizerFactory` だけが担当します。`if` 文による切り替えも `core/factory/recognizer_factory.py` のみにあります。
+```python
+import voicerecognizer as vr
 
-## 主要クラス
-
-| クラス | ファイル | 役割 |
-| --- | --- | --- |
-| `RecognitionStrategy` | `core/interfaces.py` | すべての認識方式が実装する共通インターフェース |
-| `VoiceRecognizer` | `core/services/voice_recognizer.py` | Strategyを受け取り、`recognize(audio)` を呼ぶ薄いサービス |
-| `RecognizerFactory` | `core/factory/recognizer_factory.py` | `cnn`, `wav2vec2`, `whisper` からRecognizerを生成 |
-| `AudioPipeline` | `core/services/audio_pipeline.py` | 録音、認識、結果表示の流れを制御 |
-| `CNNRecognizer` | `recognizers/cnn_recognizer.py` | CNN用のモデルロード、前処理、Mel変換、推論、後処理 |
-| `Wav2Vec2Recognizer` | `recognizers/wav2vec2_recognizer.py` | Wav2Vec2用のモデルロード、FeatureExtractor前処理、推論、後処理 |
-| `WhisperRecognizer` | `recognizers/whisper_recognizer.py` | Whisper用の将来実装枠 |
-| `AudioPreprocessor` | `preprocessing/audio_preprocessor.py` | 録音データの共通波形処理 |
-
-## ディレクトリ構成
-
-```text
-voicelibrary/
-  main.py
-  config.py
-
-  core/
-    interfaces.py
-    factory/
-      recognizer_factory.py
-    services/
-      audio_pipeline.py
-      voice_recognizer.py
-
-  recognizers/
-    cnn_recognizer.py
-    wav2vec2_recognizer.py
-    whisper_recognizer.py
-
-  models/
-    cnn/
-      hiragana_cnn.py
-      train.py
-      evaluate.py
-      export.py
-    wav2vec2/
-      processor.py
-      train.py
-      evaluate.py
-      export_onnx.py
-      quantize.py
-      vocab_builder.py
-
-  preprocessing/
-    audio_preprocessor.py
-    collect.py
-    dataset_builder.py
-    text_normalizer.py
-
-  runtime/
-    audio_capture.py
-    vad.py
-    inference_worker.py
-    output_worker.py
-    queues.py
-
-  dataset/
-    hiragana_dataset.py
-    json_dataset.py
-
-  utils/
-    audio.py
-    logger.py
-    metrics.py
-
-  weights/
-    best_model.pth
-    last_model.pth
-
-  tests/
-    test_architecture.py
+cnn_recognizer = vr.CNNRecognizer()
+text = cnn_recognizer.recognize("sample.wav")
+print(f"CNN 認識結果: {text}")
 ```
 
-## セットアップ
+### 4. 明示的なパラメータ注入（カスタムリポジトリ / ローカルモデル）
 
-依存関係は `uv` で管理しています。
+```python
+import voicerecognizer as vr
 
-```powershell
-uv sync
+# 独自のリポジトリやローカルパスを指定
+custom_recognizer = vr.Wav2Vec2Recognizer(
+    model_path="./my_local_model_dir",
+    hf_repo_id="my-org/my-voice-model",
+    hf_token="optional_token",
+)
 ```
 
-`python` がPATHに入っていない環境では、直接仮想環境のPythonを使えます。
+---
 
-```powershell
-.\.venv\Scripts\python.exe --version
+## 環境変数設定
+
+公開モデルの利用においては設定不要ですが、プライベートリポジトリの利用やモデルの自動アップロードを行う場合は以下の環境変数を設定できます。
+
+| 環境変数名 | フォールバック | デフォルト値 | 説明 |
+| --- | --- | --- | --- |
+| `VOICERECOGNIZER_HF_REPO_ID` | `HF_REPO_ID` | `braille-mate/braille-mate-hiragana-recognizer` | Hugging Face Hub のリポジトリ ID |
+| `VOICERECOGNIZER_HF_TOKEN` | `HF_TOKEN` | `""` (空) | Hugging Face 認証トークン (モデル公開時は不要) |
+| `VOICERECOGNIZER_HF_AUTO_UPLOAD` | `HF_AUTO_UPLOAD` | `false` | 学習時に最良モデルを自動アップロードするかどうか |
+| `VOICERECOGNIZER_CACHE_DIR` | なし | `~/.cache/voicerecognizer` | モデル重みファイルのキャッシュ保存先 |
+
+設定ファイル（`.env`）を使用する場合は、リポジトリ直下の `.env.example` を `.env` にコピーして設定してください。
+
+---
+
+## 開発・学習手順
+
+### リポジトリのクローンと環境構築
+
+```bash
+git clone https://github.com/braille-coach-ring/voicerecognizer.git
+cd voicerecognizer
+uv sync --all-extras --dev
 ```
 
-## 音声ファイルを認識する
+### モデルの学習
 
-CNNでwavファイルを認識します。
-
-```powershell
-uv run python main.py dataset\mikeryu\a\001.wav --model cnn
-```
-
-PATHの都合で `uv run python` が使えない場合は次の形でも実行できます。
-
-```powershell
-.\.venv\Scripts\python.exe main.py dataset\mikeryu\a\001.wav --model cnn
-```
-
-出力例:
-
-```text
-a
-```
-
-## マイクから録音して認識する
-
-音声ファイルを省略すると、マイクから1回録音して認識します。
-
-```powershell
-uv run python main.py --model cnn
-```
-
-現在のデフォルト設定は次の通りです。
-
-- サンプリングレート: `16000`
-- 録音長: `1.0` 秒
-- VADしきい値: `0.02`
-- VAD最小アクティブ比率（閾値超えサンプル比）: `0.02`
-- モデル重み: `weights/best_model.pth`
-
-## 認識方式を切り替える
-
-指定できる値は次の3つです。
-
-```powershell
-uv run python main.py --model cnn
-uv run python main.py --model wav2vec2
-uv run python main.py --model whisper
-```
-
-`wav2vec2` は事前にファインチューニング済みモデルを作成してから使います。デフォルトでは `weights/wav2vec2_best/` を読み込みます。`whisper` は将来実装用の空実装です。
-
-## CNNモデルを学習する
-
-学習済みデータは `processed_dataset/` を使います。
-
-```powershell
-uv run python -m models.cnn.train
-```
-
-共通入口からもCNNを学習できます。
-
-```powershell
+```bash
+# CNN モデルの学習 (自動前処理込み)
 uv run python train.py --model cnn
-```
 
-主なオプション:
-
-```powershell
-uv run python -m models.cnn.train `
-  --root-dir processed_dataset `
-  --epochs 150 `
-  --batch-size 8 `
-  --learning-rate 0.001 `
-  --best-model-path weights\best_model.pth `
-  --last-model-path weights\last_model.pth
-```
-
-学習後は次のファイルが更新されます。
-
-- `weights/best_model.pth`
-- `weights/last_model.pth`
-- `loss.png`
-- `accuracy.png`
-
-## Wav2Vec2モデルを学習する
-
-`--model wav2vec2` を指定すると、Wav2Vec2をラベル分類用にファインチューニングし、検証Macro-F1が最も高いモデルを `weights/wav2vec2_best/` に保存します。
-
-```powershell
+# Wav2Vec2 モデルのファインチューニング
 uv run python train.py --model wav2vec2
 ```
 
-主なオプション:
+### テストおよび品質ゲートの実行
 
-```powershell
-uv run python train.py --model wav2vec2 `
-  --root-dir processed_dataset `
-  --epochs 30 `
-  --batch-size 4 `
-  --learning-rate 0.00003 `
-  --best-model-path weights\wav2vec2_best `
-  --last-model-path weights\wav2vec2_last
+```bash
+# Pytest 全テスト実行
+uv run pytest
+
+# 静的解析・フォーマット・型チェック
+uv run python script/check_quality_gate.py
 ```
-
-学習後は次のファイル・ディレクトリが更新されます。
-
-- `weights/wav2vec2_best/`
-- `weights/wav2vec2_last/`
-- `wav2vec2_loss.png`
-- `wav2vec2_accuracy.png`
-
-学習済みモデルを使った推論:
-
-```powershell
-uv run python main.py dataset\mikeryu\a\001.wav --model wav2vec2
-```
-
-## CNNモデルを評価する
-
-```powershell
-uv run python -m models.cnn.evaluate
-```
-
-モデルパスや評価データを指定する場合:
-
-```powershell
-uv run python -m models.cnn.evaluate `
-  --root-dir processed_dataset `
-  --model-path weights\best_model.pth
-```
-
-## 音声データを収集する
-
-マイクから短い音声サンプルを収集します。
-
-```powershell
-uv run python -m preprocessing.collect speaker_id
-```
-
-例:
-
-```powershell
-uv run python -m preprocessing.collect rinry --repeat 10
-```
-
-保存先は `dataset/<speaker_id>/<label>/` です。
-
-## テストとチェック
-
-設計テスト:
-
-```powershell
-uv run python -m unittest discover -s tests
-```
-
-構文チェック:
-
-```powershell
-uv run python -m compileall -q main.py config.py core recognizers models preprocessing runtime dataset utils tests
-```
-
-Ruff:
-
-```powershell
-uv run python -m ruff check main.py config.py core recognizers models preprocessing runtime dataset utils tests
-```
-
-## 今後実装する箇所
-
-Wav2Vec2では、次の処理を `Wav2Vec2Recognizer` 内に実装する予定です。
-
-- Processor
-- ONNX Runtime
-- CTC Decode
-
-Whisperでは、次の処理を `WhisperRecognizer` 内に実装する予定です。
-
-- log-mel変換
-- decode
-- 必要に応じたモデルロード
-## 学習データを追加して再学習する
-
-新しい音声データを追加したい場合は、以下の流れで作業します。
-
-### 1. 音声を収集する
-
-既存データを消さずに、新しい音声だけを追加します。
-
-```powershell
-uv run python -m preprocessing.collect rinry --repeat 20
-```
-
-保存先は次のようになります。
-
-```text
-dataset/
-└── rinry/
-    ├── a/
-    │   ├── 001.wav
-    │   ├── 002.wav
-    │   ├── ...
-    │   ├── 021.wav
-    │   └── 022.wav
-    ├── i/
-    ├── u/
-    ├── e/
-    └── o/
-```
-
-同じ `speaker_id` を指定すると、既存の音声は保持したまま続き番号で保存されます。
-
-別の話者を追加する場合は、新しい `speaker_id` を指定します。
-
-```powershell
-uv run python -m preprocessing.collect yamada --repeat 20
-```
-
-すると
-
-```text
-dataset/
-├── rinry/
-└── yamada/
-```
-
-のように話者ごとに管理されます。
 
 ---
 
-### 2. 学習用データセットを更新する
+## ライセンス
 
-収集した音声を学習用データへ変換します。
-
-```powershell
-uv run python -m preprocessing.dataset_builder
-```
-
-必要に応じて入力・出力ディレクトリも指定できます。
-
-```powershell
-uv run python -m preprocessing.dataset_builder `
-    --input dataset `
-    --output processed_dataset
-```
-
-この処理では
-
-- リサンプリング
-- 正規化
-- 無音区間除去
-- メルスペクトログラム生成（必要な場合）
-
-など、学習に必要な前処理を行い `processed_dataset/` を更新します。
-
----
-
-### 3. モデルを再学習する
-
-前処理が終わったら学習を実行します。
-
-```powershell
-uv run python -m models.cnn.train
-```
-
-学習が終了すると
-
-```text
-weights/
-    best_model.pth
-    last_model.pth
-```
-
-が更新されます。
-
----
-
-### データ追加時の流れ
-
-```text
-collect.py
-        │
-        ▼
-dataset/
-        │
-        ▼
-dataset_builder.py
-        │
-        ▼
-processed_dataset/
-        │
-        ▼
-models.cnn.train
-        │
-        ▼
-weights/
-        │
-        ▼
-main.py
-```
-
-この流れを繰り返すことで、学習データを増やしながらモデルの認識精度を向上させることができます。
-
-# voicelibrary
-パッケージ管理: uv
-
-uv syncで必要なライブラリがインストールされる
-uv run python "スクリプト名" で実行
+本プロジェクトは [MIT License](LICENSE) の下で公開されています。

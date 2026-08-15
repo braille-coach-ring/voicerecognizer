@@ -7,7 +7,13 @@ from typing import Any
 
 import numpy as np
 
-from voicerecognizer.config import DEFAULT_HUGGINGFACE_CONFIG, DEFAULT_RECOGNITION_CONFIG
+from voicerecognizer.config import (
+    DEFAULT_AUDIO_CONFIG,
+    DEFAULT_PREPROCESS_CONFIG,
+    DEFAULT_RECOGNITION_CONFIG,
+    PUBLIC_DEFAULT_HF_REPO_ID,
+    HuggingFaceConfig,
+)
 from voicerecognizer.core.exceptions import ModelNotFoundError
 from voicerecognizer.core.interfaces import RecognitionStrategy
 from voicerecognizer.preprocessing.audio_preprocessor import AudioPreprocessor
@@ -28,19 +34,29 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         self,
         model_path: str | Path = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir,
         labels: tuple[str, ...] | list[str] = DEFAULT_RECOGNITION_CONFIG.labels,
-        sample_rate: int = DEFAULT_RECOGNITION_CONFIG.sample_rate,
+        sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
-        top_db: float = DEFAULT_RECOGNITION_CONFIG.top_db,
+        top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,
         dynamic_trimming: bool = True,
         auto_download: bool = True,
         candidate_filenames: tuple[str, ...]
         | list[str] = DEFAULT_RECOGNITION_CONFIG.wav2vec2_onnx_candidate_filenames,
+        hf_repo_id: str | None = None,
+        hf_token: str | None = None,
     ):
         self.model_path = Path(model_path)
         self.labels = list(labels)
         self.dynamic_trimming = dynamic_trimming
         self.candidate_filenames = tuple(candidate_filenames)
         self._last_download_error: str | None = None
+        if hf_repo_id is not None and hf_token is not None:
+            self.hf_config = HuggingFaceConfig(repo_id=hf_repo_id, token=hf_token)
+        elif hf_repo_id is not None:
+            self.hf_config = HuggingFaceConfig(repo_id=hf_repo_id)
+        elif hf_token is not None:
+            self.hf_config = HuggingFaceConfig(token=hf_token)
+        else:
+            self.hf_config = HuggingFaceConfig()
 
         # ONNX モデルファイルの探索
         self.onnx_model_path = self._find_onnx_model()
@@ -52,6 +68,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
             try:
                 download_latest_team_weights_if_needed(
                     model_type="wav2vec2",
+                    hf_config=self.hf_config,
                     weights_dir=self.model_path.parent,
                 )
                 self.onnx_model_path = self._find_onnx_model()
@@ -113,20 +130,22 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
     def _build_model_not_found_message(self) -> str:
         last_err = getattr(self, "_last_download_error", None)
         download_err_info = f"\n  ダウンロード例外詳細: {last_err}" if last_err else ""
+        repo_id = getattr(self, "hf_config", None)
+        repo_id_str = repo_id.repo_id if repo_id else PUBLIC_DEFAULT_HF_REPO_ID
         return (
             "voicerecognizer の Wav2Vec2 ONNX モデルが見つかりません。\n\n"
             "【原因】\n"
             f"  ローカルパス ({self.model_path}) にモデルが存在せず、\n"
-            f"  Hugging Face Hub ({DEFAULT_HUGGINGFACE_CONFIG.repo_id}) からの自動ダウンロードも完了できませんでした。{download_err_info}\n\n"
+            f"  Hugging Face Hub ({repo_id_str}) からの自動ダウンロードも完了できませんでした。{download_err_info}\n\n"
             "【使い方の確認・解決手順】\n"
             "  1. [インターネット接続]\n"
             "     初回実行時は Hugging Face Hub より自動的にモデルがダウンロードされます。\n"
             "     ネットワーク接続を確認の上、再度実行してください。\n"
             "  2. [Hugging Face 認証トークン]\n"
             "     アクセス制限やレートリミットを回避する場合は環境変数を設定してください:\n"
-            '     - Windows (PowerShell): $env:HF_TOKEN = "your_token"\n'
-            '     - Linux / macOS (Bash): export HF_TOKEN="your_token"\n'
-            "     - または .env ファイルに HF_TOKEN=your_token を記述\n"
+            "     - Windows (PowerShell): $env:VOICERECOGNIZER_HF_TOKEN = \"your_token\"\n"
+            "     - Linux / macOS (Bash): export VOICERECOGNIZER_HF_TOKEN=\"your_token\"\n"
+            "     - または環境変数 HF_TOKEN (フォールバック) を設定\n"
             "  3. [ローカルモデルの指定]\n"
             "     ローカルに既にあるモデルフォルダを使用したい場合は、初期化時に model_path を渡してください:\n"
             "     >>> import voicerecognizer as vr\n"

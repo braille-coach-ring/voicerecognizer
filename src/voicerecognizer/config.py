@@ -3,19 +3,35 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
-from dotenv import load_dotenv
-
 from voicerecognizer.config_labels import (
     ALL_HIRAGANA_LABELS,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-load_dotenv(PROJECT_ROOT / ".env")
+
+
+def load_env(dotenv_path: str | Path | None = None) -> bool:
+    """明示的に .env ファイルをロードするためのヘルパー関数。
+
+    ライブラリインポート時の自動実行は行わず、CLI や呼び出し元から任意で実行可能にします。
+    """
+    try:
+        from dotenv import load_dotenv
+
+        target = Path(dotenv_path) if dotenv_path is not None else (PROJECT_ROOT / ".env")
+        if target.exists():
+            return load_dotenv(target)
+        return False
+    except Exception:
+        return False
+
 
 CACHE_DIR = Path(
     os.getenv("VOICERECOGNIZER_CACHE_DIR", str(Path.home() / ".cache" / "voicerecognizer"))
 )
 DEFAULT_WEIGHTS_DIR = CACHE_DIR / "weights"
+PUBLIC_DEFAULT_HF_REPO_ID = "braille-mate/braille-mate-hiragana-recognizer"
+
 
 
 @dataclass(frozen=True)
@@ -26,6 +42,7 @@ class AudioConfig:
     channels: int = 1
     callback_blocksize_seconds: float = 0.05
     warmup_sleep_ms: int = 500
+    speech_settle_seconds: float = 0.3
 
 
 @dataclass(frozen=True)
@@ -34,6 +51,7 @@ class PreprocessConfig:
     n_fft: int = 400
     hop_length: int = 160
     top_db: float = 19.7
+    target_rms: float = 0.12
     vad_silence_threshold: float = 0.021067
     vad_rms_threshold: float = 0.007772
     vad_min_speech_chunks: int = 2
@@ -44,18 +62,13 @@ class PreprocessConfig:
     noise_update_rate: float = 0.005
 
 
-RecognizerType = Literal["cnn", "wav2vec2", "whisper"]
+RecognizerType = Literal["cnn", "wav2vec2"]
 
 
 @dataclass(frozen=True)
 class RecognitionConfig:
-    sample_rate: int = 16000
-    model_type: RecognizerType = "cnn"
+    model_type: RecognizerType = "wav2vec2"
     target_length_seconds: float = 0.6
-    top_db: float = 19.7
-    n_mels: int = 64
-    n_fft: int = 400
-    hop_length: int = 160
     labels: tuple[str, ...] = field(default_factory=lambda: ALL_HIRAGANA_LABELS)
     weights_dir: Path = DEFAULT_WEIGHTS_DIR
 
@@ -109,18 +122,29 @@ class RecognitionConfig:
 
 @dataclass(frozen=True)
 class HuggingFaceConfig:
-    token: str = field(default_factory=lambda: os.getenv("HF_TOKEN", ""))
+    token: str = field(
+        default_factory=lambda: os.getenv("VOICERECOGNIZER_HF_TOKEN", os.getenv("HF_TOKEN", ""))
+    )
     repo_id: str = field(
         default_factory=lambda: os.getenv(
-            "HF_REPO_ID", "braille-mate/braille-mate-hiragana-recognizer"
+            "VOICERECOGNIZER_HF_REPO_ID",
+            os.getenv("HF_REPO_ID", PUBLIC_DEFAULT_HF_REPO_ID),
         )
     )
     auto_upload: bool = field(
-        default_factory=lambda: os.getenv("HF_AUTO_UPLOAD", "false").lower() == "true"
+        default_factory=lambda: os.getenv(
+            "VOICERECOGNIZER_HF_AUTO_UPLOAD",
+            os.getenv("HF_AUTO_UPLOAD", "false"),
+        ).lower()
+        == "true"
     )
+
+
+def get_huggingface_config() -> HuggingFaceConfig:
+    """呼び出し時点の環境変数を動的に評価して HuggingFaceConfig を生成します。"""
+    return HuggingFaceConfig()
 
 
 DEFAULT_AUDIO_CONFIG = AudioConfig()
 DEFAULT_PREPROCESS_CONFIG = PreprocessConfig()
 DEFAULT_RECOGNITION_CONFIG = RecognitionConfig()
-DEFAULT_HUGGINGFACE_CONFIG = HuggingFaceConfig()
