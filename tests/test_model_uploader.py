@@ -84,7 +84,7 @@ class TestModelUploader(unittest.TestCase):
             )
             self.assertTrue(res)
             mock_login.assert_called_once_with(token="dummy_token_123")
-            self.assertEqual(mock_api_instance.upload_file.call_count, 2)
+            mock_api_instance.upload_folder.assert_called_once()
 
     @patch("voicerecognizer.utils.model_uploader.login")
     @patch("voicerecognizer.utils.model_uploader.HfApi")
@@ -109,7 +109,7 @@ class TestModelUploader(unittest.TestCase):
                 model_type="cnn", hf_config=dummy_cfg, weights_dir=weights_dir, force_upload=False
             )
             self.assertTrue(res)
-            self.assertEqual(mock_api_instance.upload_file.call_count, 0)
+            mock_api_instance.upload_folder.assert_not_called()
 
     @patch("voicerecognizer.utils.model_uploader.login")
     @patch("voicerecognizer.utils.model_uploader.HfApi")
@@ -146,8 +146,10 @@ class TestModelUploader(unittest.TestCase):
                 force_upload=True,
             )
             self.assertTrue(res)
-            # 存在する必須ファイル数（4件）と一致することを厳密に検証
-            self.assertEqual(mock_api_instance.upload_file.call_count, 4)
+            # 存在する必須ファイル数（4件）と一致することを検証
+            mock_api_instance.upload_folder.assert_called_once()
+            _, kwargs = mock_api_instance.upload_folder.call_args
+            self.assertEqual(len(kwargs["allow_patterns"]), 4)
 
     def test_upload_weights_missing_token(self):
         dummy_cfg = HuggingFaceConfig(token="", repo_id="dummy/repo-id")

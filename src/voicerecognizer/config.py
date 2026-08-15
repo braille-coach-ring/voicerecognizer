@@ -83,18 +83,17 @@ class RecognitionConfig:
     wav2vec2_int8_onnx_filename: str = "model_int8.onnx"
     wav2vec2_fp32_onnx_filename: str = "model_fp32.onnx"
 
-    # 推論時 ONNX 候補探索順序（前処理内包版 INT8 -> 前処理内包版 FP32 -> 通常 INT8 -> 通常 FP32 -> model.onnx）
+    # 推論時 ONNX 候補探索順序（前処理内包版 INT8 最優先 -> 通常 INT8 -> 前処理内包 FP32 -> 通常 FP32 -> model.onnx）
     wav2vec2_onnx_candidate_filenames: tuple[str, ...] = (
         "model_mel_int8.onnx",
-        "model_mel_fp32.onnx",
         "model_int8.onnx",
+        "model_mel_fp32.onnx",
         "model_fp32.onnx",
         "model.onnx",
     )
-    # Hugging Face 同期対象のファイル一覧
+    # Hugging Face 同期対象のファイル一覧（HF容量節約のため ONNX は含めず model.safetensors と設定 JSON のみ）
     wav2vec2_essential_filenames: tuple[str, ...] = (
-        "model_mel_int8.onnx",
-        "model_int8.onnx",
+        "model.safetensors",
         "labels.json",
         "config.json",
         "preprocessor_config.json",

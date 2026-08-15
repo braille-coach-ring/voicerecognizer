@@ -25,8 +25,28 @@ def calculate_file_sha256(file_path: Path) -> str:
     return sha256.hexdigest()
 
 
+def calculate_file_git_sha1(file_path: Path) -> str:
+    """ローカルファイルの Git blob SHA-1 ハッシュ値を計算します。"""
+    sha1 = hashlib.sha1()
+    file_size = file_path.stat().st_size
+    sha1.update(f"blob {file_size}\0".encode())
+    with open(file_path, "rb") as f:
+        while chunk := f.read(65536):
+            sha1.update(chunk)
+    return sha1.hexdigest()
+
+
+def is_file_identical_to_remote(local_file: Path, remote_sha: str) -> bool:
+    """ローカルファイルがリモートハッシュ（SHA-256またはgit_sha1）と一致しているかチェックします。"""
+    if remote_sha.startswith("git_sha1:"):
+        expected_git_sha1 = remote_sha.split("git_sha1:", 1)[1]
+        return calculate_file_git_sha1(local_file).lower() == expected_git_sha1.lower()
+    local_sha = calculate_file_sha256(local_file)
+    return local_sha.lower() == remote_sha.lower()
+
+
 def get_remote_file_sha256_map(api: HfApi, repo_id: str, paths: list[str]) -> dict[str, str]:
-    """Hugging Face リモートリポジトリ内の指定ファイルの SHA-256 (または LFS oid) を取得します。"""
+    """Hugging Face リモートリポジトリ内の指定ファイルの SHA-256 (LFS) または Git SHA-1 (blob_id) を取得します。"""
     remote_map = {}
     try:
         paths_info = api.get_paths_info(repo_id=repo_id, repo_type="model", paths=paths)
@@ -40,6 +60,8 @@ def get_remote_file_sha256_map(api: HfApi, repo_id: str, paths: list[str]) -> di
             )
             if sha:
                 remote_map[rpath] = sha
+            elif hasattr(info, "blob_id") and info.blob_id:
+                remote_map[rpath] = f"git_sha1:{info.blob_id}"
     except Exception as e:
         logger.debug("リモートファイルメタデータの取得をスキップしました: %s", e)
     return remote_map
@@ -77,6 +99,7 @@ def download_latest_team_weights_if_needed(
 
     logger.info("Hugging Face Hub (%s) より最新モデル重み情報を確認中...", cfg.repo_id)
     remote_sha_map = get_remote_file_sha256_map(api, cfg.repo_id, files_to_sync)
+    downloaded_any = False
 
     for rel_path in files_to_sync:
         local_file = target_dir / rel_path
@@ -84,8 +107,7 @@ def download_latest_team_weights_if_needed(
 
         if local_file.exists():
             if remote_sha:
-                local_sha = calculate_file_sha256(local_file)
-                if local_sha.lower() == remote_sha.lower():
+                if is_file_identical_to_remote(local_file, remote_sha):
                     logger.debug(
                         "[INFO] 手元の %s はチーム共有の最新モデルと一致しています。(ダウンロード不要)",
                         rel_path,
@@ -113,6 +135,7 @@ def download_latest_team_weights_if_needed(
             with open(downloaded_path, "rb") as src, open(local_file, "wb") as dst:
                 dst.write(src.read())
             logger.info("%s をローカルキャッシュ (%s) に保存しました。", rel_path, local_file)
+            downloaded_any = True
         except Exception as e:
             err_str = str(e).lower()
             if "entrynotfounderror" in err_str or "404" in err_str:
@@ -125,6 +148,29 @@ def download_latest_team_weights_if_needed(
                     logger.debug(
                         "ヒント: プライベートリポジトリへのアクセスには環境変数 HF_TOKEN が必要です。"
                     )
+
+    # Wav2Vec2 の場合: ダウンロード完了後、全バリエーションの ONNX がローカルに存在しない、またはダウンロードがあった場合に自動生成
+    if model_type == "wav2vec2":
+        w2v_best_dir = target_dir / "wav2vec2_best"
+        safetensors_path = w2v_best_dir / "model.safetensors"
+        required_onnx_files = [
+            w2v_best_dir / DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_int8_onnx_filename,
+            w2v_best_dir / DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_fp32_onnx_filename,
+            w2v_best_dir / DEFAULT_RECOGNITION_CONFIG.wav2vec2_int8_onnx_filename,
+            w2v_best_dir / DEFAULT_RECOGNITION_CONFIG.wav2vec2_fp32_onnx_filename,
+        ]
+        is_any_onnx_missing = any(not f.exists() for f in required_onnx_files)
+
+        if safetensors_path.exists() and (is_any_onnx_missing or downloaded_any):
+            try:
+                logger.info(
+                    "ダウンロードした Wav2Vec2 モデルから全バリエーションのローカル ONNX (model_mel_int8 / model_mel_fp32 / model_int8 / model_fp32) を自動生成中..."
+                )
+                from voicerecognizer.models.wav2vec2.export_onnx import export_and_benchmark
+
+                export_and_benchmark(model_dir=w2v_best_dir, skip_benchmark=True)
+            except Exception as e:
+                logger.warning("ダウンロード後の ONNX 自動生成中にエラーが発生しました: %s", e)
 
     return True
 
@@ -171,44 +217,51 @@ def upload_weights_to_hf(
                 logger.warning("CNN モデルのアップロード対象ファイルが見つかりません。")
                 return True
 
-            # 事前差分判定（リモートの SHA-256 と比較）
+            # 事前差分判定（リモートの SHA-256 / Git SHA-1 と比較）
             remote_sha_map = (
                 {}
                 if force_upload
                 else get_remote_file_sha256_map(api, cfg.repo_id, [r for r, _ in files_to_check])
             )
-            uploaded_any = False
+            files_to_upload = []
 
             for rel_path, local_file in files_to_check:
-                local_sha = calculate_file_sha256(local_file)
                 remote_sha = remote_sha_map.get(rel_path)
 
-                if not force_upload and remote_sha and remote_sha.lower() == local_sha.lower():
-                    logger.info(
+                if (
+                    not force_upload
+                    and remote_sha
+                    and is_file_identical_to_remote(local_file, remote_sha)
+                ):
+                    logger.debug(
                         "[INFO] %s はリモートと一致しているため送信をスキップします。", rel_path
                     )
                     continue
+                files_to_upload.append(rel_path)
 
+            if not files_to_upload:
                 logger.info(
-                    "Hugging Face Hub (%s) へ %s をアップロード中...", cfg.repo_id, rel_path
+                    "すべての CNN ベストモデルファイルは既にリモートと最新同期されています。送信をスキップします。"
                 )
-                api.upload_file(
-                    path_or_fileobj=str(local_file),
-                    path_in_repo=rel_path,
-                    repo_id=cfg.repo_id,
-                    repo_type="model",
-                )
-                uploaded_any = True
+                return True
 
-            if not uploaded_any:
-                logger.info(
-                    "すべての CNN ベストモデルファイルは既にリモートと最新同期されています。"
-                )
-            else:
-                logger.info(
-                    "CNN ベストモデルのアップロードが完了しました: https://huggingface.co/%s",
-                    cfg.repo_id,
-                )
+            logger.info(
+                "Hugging Face Hub (%s) へ CNN ベストモデル成果物 (%d 件) を一括アップロード中...",
+                cfg.repo_id,
+                len(files_to_upload),
+            )
+            allow_patterns = [Path(rel_path).name for rel_path in files_to_upload]
+            api.upload_folder(
+                folder_path=str(target_dir),
+                repo_id=cfg.repo_id,
+                repo_type="model",
+                allow_patterns=allow_patterns,
+                commit_message=f"Update CNN best model weights ({len(files_to_upload)} files)",
+            )
+            logger.info(
+                "CNN ベストモデルのアップロードが完了しました: https://huggingface.co/%s",
+                cfg.repo_id,
+            )
 
         elif model_type == "wav2vec2":
             wav2vec2_best_dir = target_dir / "wav2vec2_best"
@@ -218,18 +271,15 @@ def upload_weights_to_hf(
                 )
                 return True
 
-            essential_filenames = list(
-                dict.fromkeys(
-                    (
-                        *DEFAULT_RECOGNITION_CONFIG.wav2vec2_essential_filenames,
-                        DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_fp32_onnx_filename,
-                        DEFAULT_RECOGNITION_CONFIG.wav2vec2_fp32_onnx_filename,
-                        "model.safetensors",
-                        "vocab.json",
-                        "tokenizer_config.json",
-                    )
-                )
-            )
+            # HF容量節約のため、ONNX はアップロードせず、オリジナルの model.safetensors と設定 JSON のみをアップロード
+            essential_filenames = [
+                "model.safetensors",
+                "labels.json",
+                "config.json",
+                "preprocessor_config.json",
+                "vocab.json",
+                "tokenizer_config.json",
+            ]
             files_to_check = []
             for fname in essential_filenames:
                 fpath = wav2vec2_best_dir / fname
@@ -245,38 +295,46 @@ def upload_weights_to_hf(
                 if force_upload
                 else get_remote_file_sha256_map(api, cfg.repo_id, [r for r, _ in files_to_check])
             )
-            uploaded_any = False
+            files_to_upload = []
 
             for rel_path, local_file in files_to_check:
-                local_sha = calculate_file_sha256(local_file)
                 remote_sha = remote_sha_map.get(rel_path)
 
-                if not force_upload and remote_sha and remote_sha.lower() == local_sha.lower():
-                    logger.info(
+                if (
+                    not force_upload
+                    and remote_sha
+                    and is_file_identical_to_remote(local_file, remote_sha)
+                ):
+                    logger.debug(
                         "[INFO] %s はリモートと一致しているため送信をスキップします。", rel_path
                     )
                     continue
+                files_to_upload.append(rel_path)
 
+            if not files_to_upload:
                 logger.info(
-                    "Hugging Face Hub (%s) へ %s をアップロード中...", cfg.repo_id, rel_path
+                    "すべての Wav2Vec2 ベストモデルファイルは既にリモートと最新同期されています。送信をスキップします。"
                 )
-                api.upload_file(
-                    path_or_fileobj=str(local_file),
-                    path_in_repo=rel_path,
-                    repo_id=cfg.repo_id,
-                    repo_type="model",
-                )
-                uploaded_any = True
+                return True
 
-            if not uploaded_any:
-                logger.info(
-                    "すべての Wav2Vec2 ベストモデルファイルは既にリモートと最新同期されています。"
-                )
-            else:
-                logger.info(
-                    "Wav2Vec2 ベストモデルのアップロードが完了しました: https://huggingface.co/%s",
-                    cfg.repo_id,
-                )
+            logger.info(
+                "Hugging Face Hub (%s) へ Wav2Vec2 ベストモデル成果物 (%d 件) を一括アップロード中...",
+                cfg.repo_id,
+                len(files_to_upload),
+            )
+            allow_patterns = [Path(rel_path).name for rel_path in files_to_upload]
+            api.upload_folder(
+                folder_path=str(wav2vec2_best_dir),
+                path_in_repo="wav2vec2_best",
+                repo_id=cfg.repo_id,
+                repo_type="model",
+                allow_patterns=allow_patterns,
+                commit_message=f"Update Wav2Vec2 best model weights ({len(files_to_upload)} files)",
+            )
+            logger.info(
+                "Wav2Vec2 ベストモデルのアップロードが完了しました: https://huggingface.co/%s",
+                cfg.repo_id,
+            )
 
         else:
             logger.warning(
