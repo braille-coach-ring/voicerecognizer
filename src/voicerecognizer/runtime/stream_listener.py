@@ -22,6 +22,7 @@ from voicerecognizer.config import (
     AudioConfig,
     PreprocessConfig,
 )
+from voicerecognizer.config_labels import to_hiragana, to_katakana, to_romaji
 from voicerecognizer.core.exceptions import DeviceNotFoundError
 from voicerecognizer.core.interfaces import RecognitionStrategy
 from voicerecognizer.runtime.audio_capture import AudioCapture
@@ -38,6 +39,21 @@ class RecognitionResult:
     confidence: float
     top3_candidates: list[tuple[str, float]] = field(default_factory=list)
     timing_stats: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def hiragana(self) -> str:
+        """認識結果をひらがな文字列で取得（例: 'ka' -> 'か'）"""
+        return to_hiragana(self.text)
+
+    @property
+    def romaji(self) -> str:
+        """認識結果をローマ字文字列で取得（例: 'か' -> 'ka'）"""
+        return to_romaji(self.text)
+
+    @property
+    def katakana(self) -> str:
+        """認識結果をカタカナ文字列で取得（例: 'ka' -> 'カ'）"""
+        return to_katakana(self.text)
 
 
 class AudioStreamListener:
@@ -76,25 +92,24 @@ class AudioStreamListener:
 
     def start(self) -> None:
         """聴取を開始（一時停止状態からの即座再開も含む）"""
-        self.warmup()
-        self._is_paused = False
         self._is_listening = True
-        if self.audio_capture:
-            self.audio_capture.start()
-        logger.info("リアルタイム非同期リスニングを開始/再開しました。")
+        self._is_paused = False
+        logger.debug("AudioStreamListener: 聴取を開始しました。")
 
     def pause(self) -> None:
-        """マイクとモデルは保持したまま、聴取のみ一時停止（再開コストゼロ）"""
+        """マイク聴取を一時停止する（モデルやマイク接続は保持）"""
         self._is_paused = True
-        logger.info("リアルタイム非同期リスニングを一時停止しました（モデル・マイクは保持）。")
+        logger.debug("AudioStreamListener: 聴取を一時停止しました。")
 
     def close(self) -> None:
-        """マイクを完全に閉じ、全リソースを解放・終了（Context Manager 対応）"""
+        """リスナーを停止し、リソースを解放する。"""
         self._is_listening = False
         self._is_paused = True
-        if self.audio_capture:
+        try:
             self.audio_capture.stop()
-        logger.info("リアルタイム非同期リスニングをクローズ・リソース解放しました。")
+        except Exception as exc:
+            logger.debug("マイクデバイスのクローズ時に例外が発生しました: %s", exc)
+        logger.debug("AudioStreamListener: リソースを解放しました。")
 
     def __enter__(self) -> "AudioStreamListener":
         self.start()
@@ -112,8 +127,8 @@ class AudioStreamListener:
 
     async def listen(self) -> AsyncGenerator[str]:
         """
-        マイクからの録音ストリームを非同期監視し、
-        文字が認識されたタイミングでのみ「ひらがな文字」を yield 返却します。
+        マイク音声をリアルタイムに監視し、発話が認識されるたびに
+        認識文字列 (str) を yield 返却する非同期ジェネレータ
         """
         self.start()
         try:
@@ -182,7 +197,9 @@ class AudioStreamListener:
                 # 候補リストの取得
                 if hasattr(self.recognizer, "recognize_with_candidates"):
                     candidates = await asyncio.to_thread(
-                        self.recognizer.recognize_with_candidates, waveform, 3
+                        self.recognizer.recognize_with_candidates,
+                        waveform,
+                        3,
                     )
                     result_text = candidates[0][0] if candidates else ""
                     confidence = candidates[0][1] if candidates else 0.0

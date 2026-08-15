@@ -15,11 +15,11 @@ from voicerecognizer.config import (
     PUBLIC_DEFAULT_HF_REPO_ID,
     HuggingFaceConfig,
 )
+from voicerecognizer.config_labels import LabelFormat, format_label
 from voicerecognizer.core.exceptions import ModelNotFoundError
 from voicerecognizer.core.interfaces import RecognitionStrategy
 from voicerecognizer.models.cnn.hiragana_cnn import HiraganaCNN
 from voicerecognizer.preprocessing.audio_preprocessor import AudioPreprocessor
-from voicerecognizer.preprocessing.threshold_calculator import AbstractSilenceThresholdCalculator
 from voicerecognizer.utils.model_uploader import download_latest_team_weights_if_needed
 
 logger = logging.getLogger(__name__)
@@ -30,6 +30,7 @@ class CNNRecognizer(RecognitionStrategy):
         self,
         model_path: str | Path = DEFAULT_RECOGNITION_CONFIG.cnn_weight_path,
         labels: tuple[str, ...] | list[str] = DEFAULT_RECOGNITION_CONFIG.labels,
+        output_format: LabelFormat = "raw",
         sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
         top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,
@@ -37,12 +38,13 @@ class CNNRecognizer(RecognitionStrategy):
         n_fft: int = DEFAULT_PREPROCESS_CONFIG.n_fft,
         hop_length: int = DEFAULT_PREPROCESS_CONFIG.hop_length,
         device: torch.device | None = None,
-        threshold_calculator: AbstractSilenceThresholdCalculator | None = None,
         auto_download: bool = True,
         hf_repo_id: str | None = None,
         hf_token: str | None = None,
     ):
         self.model_path = Path(model_path)
+        self.labels = list(labels)
+        self.output_format: LabelFormat = output_format
         self.auto_download = auto_download
         self._last_download_error: str | None = None
         if hf_repo_id is not None and hf_token is not None:
@@ -84,7 +86,6 @@ class CNNRecognizer(RecognitionStrategy):
             sample_rate=sample_rate,
             target_length_seconds=target_length_seconds,
             top_db=top_db,
-            threshold_calculator=threshold_calculator,
         )
         self.sample_rate = sample_rate
         self.n_mels = n_mels
@@ -147,7 +148,7 @@ class CNNRecognizer(RecognitionStrategy):
             '     >>> recognizer = vr.CNNRecognizer(model_path="/path/to/your/best_model.pth")\n'
         )
 
-    def recognize(self, audio: Any) -> str:
+    def recognize(self, audio: Any, output_format: LabelFormat | None = None) -> str:
         self._ensure_model_loaded()
         t_start = time.perf_counter()
 
@@ -175,7 +176,7 @@ class CNNRecognizer(RecognitionStrategy):
         }
 
         logger.debug("CNN 推論確率: %s", probabilities)
-        return self._label_for_index(predicted_index)
+        return self._label_for_index(predicted_index, output_format=output_format)
 
     def _load_model(self) -> HiraganaCNN:
         try:
@@ -211,7 +212,9 @@ class CNNRecognizer(RecognitionStrategy):
             logits = self.model(mel_tensor)
             return torch.softmax(logits, dim=1)[0]
 
-    def _label_for_index(self, index: int) -> str:
+    def _label_for_index(self, index: int, output_format: LabelFormat | None = None) -> str:
+        fmt = output_format or self.output_format
         if 0 <= index < len(self.labels):
-            return self.labels[index]
+            raw_label = self.labels[index]
+            return format_label(raw_label, target_format=fmt)
         return str(index)

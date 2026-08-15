@@ -15,6 +15,7 @@ class VoiceActivityDetector:
         config: PreprocessConfig | None = None,
         silence_threshold: float | None = None,
         rms_threshold: float | None = None,
+        adaptive: bool = True,
     ):
         cfg = config or DEFAULT_PREPROCESS_CONFIG
         self.silence_threshold = (
@@ -25,7 +26,10 @@ class VoiceActivityDetector:
         )
         self.min_speech_chunks = max(1, int(cfg.vad_min_speech_chunks))
         self.min_active_ratio = min(1.0, max(0.0, float(cfg.vad_min_active_ratio)))
+        self.adaptive = adaptive
         self._speech_streak = 0
+        self.noise_rms_floor: float | None = None
+        self.noise_peak_floor: float | None = None
 
     def is_speech(self, audio: np.ndarray | None) -> bool:
         if audio is None:
@@ -41,40 +45,62 @@ class VoiceActivityDetector:
         max_vol = float(np.max(abs_audio))
         rms_vol = float(np.sqrt(np.mean(audio**2)))
 
-        if max_vol < self.silence_threshold:
-            logger.info(
-                f"入力された音声データの最大値({max_vol:.4f})が無音閾値({self.silence_threshold:.4f})未満です"
+        # 動的適応閾値の算出 (暗騒音に基づくが、無音時の誤爆や大声時の検知不能を防ぐため厳格に狭い範囲でクランプ)
+        if (
+            self.adaptive
+            and self.noise_rms_floor is not None
+            and self.noise_peak_floor is not None
+        ):
+            raw_silence_th = self.noise_peak_floor * 1.5
+            raw_rms_th = self.noise_rms_floor * 1.8
+            eff_silence_th = float(
+                np.clip(
+                    raw_silence_th,
+                    self.silence_threshold * 0.80,
+                    self.silence_threshold * 1.25,
+                )
             )
+            eff_rms_th = float(
+                np.clip(
+                    raw_rms_th,
+                    self.rms_threshold * 0.80,
+                    self.rms_threshold * 1.25,
+                )
+            )
+        else:
+            eff_silence_th = self.silence_threshold
+            eff_rms_th = self.rms_threshold
+
+        if max_vol < eff_silence_th:
+            self._update_noise_floor(rms_vol, max_vol)
             self._speech_streak = 0
             return False
 
-        active_ratio = float(np.mean(abs_audio >= self.silence_threshold))
+        active_ratio = float(np.mean(abs_audio >= eff_silence_th))
         if active_ratio < self.min_active_ratio:
-            logger.info(
-                "閾値超えサンプル率が不足しています (%.4f < %.4f)",
-                active_ratio,
-                self.min_active_ratio,
-            )
+            self._update_noise_floor(rms_vol, max_vol)
             self._speech_streak = 0
             return False
 
-        if rms_vol < self.rms_threshold:
-            logger.info(
-                f"入力された音声データのRMS値({rms_vol:.4f})がRMS閾値({self.rms_threshold:.4f})未満です（ノイズスパイクと判定）"
-            )
+        if rms_vol < eff_rms_th:
+            self._update_noise_floor(rms_vol, max_vol)
             self._speech_streak = 0
             return False
 
         self._speech_streak += 1
-        if self._speech_streak < self.min_speech_chunks:
-            logger.info(
-                "発話候補を検知しましたが確定待ちです (%d/%d)",
-                self._speech_streak,
-                self.min_speech_chunks,
-            )
-            return False
+        return self._speech_streak >= self.min_speech_chunks
 
-        return True
+    def _update_noise_floor(self, rms: float, peak: float) -> None:
+        """非発話フレーム時の暗騒音フロアを EMA で更新"""
+        if not self.adaptive:
+            return
+        alpha = 0.05
+        if self.noise_rms_floor is None or self.noise_peak_floor is None:
+            self.noise_rms_floor = rms
+            self.noise_peak_floor = peak
+        else:
+            self.noise_rms_floor = (1 - alpha) * self.noise_rms_floor + alpha * rms
+            self.noise_peak_floor = (1 - alpha) * self.noise_peak_floor + alpha * peak
 
     def run(
         self,
