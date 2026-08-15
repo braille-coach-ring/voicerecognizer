@@ -11,12 +11,14 @@ Wav2Vec2 Fine-Tuning Script with Layer Freezing and Lazy Disk Loading
 """
 
 import argparse
+import filecmp
 import gc
 import importlib.util
 import json
 import logging
 import os
 import random
+import shutil
 import sys
 from collections import Counter
 from pathlib import Path
@@ -36,6 +38,7 @@ from tqdm import tqdm
 from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
 from voicerecognizer.dataset.hiragana_dataset import HiraganaDataset
 from voicerecognizer.evaluation.evaluator import compute_evaluation_result
+from voicerecognizer.models.wav2vec2.export_onnx import export_and_benchmark
 from voicerecognizer.preprocessing.audio_augmentor import AudioAugmentor
 from voicerecognizer.preprocessing.dataset_builder import ensure_merged_and_preprocessed
 from voicerecognizer.utils.plot_saver import save_history_plots
@@ -1113,14 +1116,12 @@ def train(args: argparse.Namespace) -> None:
     # ONNX 自動エクスポート ＆ 量子化
     no_onnx_export = getattr(args, "no_onnx_export", False)
     if not no_onnx_export:
-        import filecmp
-        import shutil
-        from voicerecognizer.models.wav2vec2.export_onnx import export_and_benchmark
-
         # 1. ベストモデルのエクスポート ＆ ベンチマーク実行（1回のみ）
         if best_model_path and best_model_path.exists():
             try:
-                logger.info("学習完了後の Wav2Vec2 ONNX (best) エクスポート ＆ INT8 量子化を開始します...")
+                logger.info(
+                    "学習完了後の Wav2Vec2 ONNX (best) エクスポート ＆ INT8 量子化を開始します..."
+                )
                 export_and_benchmark(model_dir=best_model_path)
             except Exception as e:
                 logger.error("ONNX 自動エクスポート (best) 中にエラーが発生しました: %s", e)

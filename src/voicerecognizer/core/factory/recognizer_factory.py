@@ -48,7 +48,9 @@ class RecognizerFactory:
             target_path = (
                 Path(model_path)
                 if model_path is not None
-                else (config.wav2vec2_last_model_dir if use_last else config.wav2vec2_best_model_dir)
+                else (
+                    config.wav2vec2_last_model_dir if use_last else config.wav2vec2_best_model_dir
+                )
             )
             return Wav2Vec2Recognizer(
                 model_path=target_path,

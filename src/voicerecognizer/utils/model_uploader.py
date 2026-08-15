@@ -29,7 +29,7 @@ def calculate_file_git_sha1(file_path: Path) -> str:
     """ローカルファイルの Git blob SHA-1 ハッシュ値を計算します。"""
     sha1 = hashlib.sha1()
     file_size = file_path.stat().st_size
-    sha1.update(f"blob {file_size}\0".encode("utf-8"))
+    sha1.update(f"blob {file_size}\0".encode())
     with open(file_path, "rb") as f:
         while chunk := f.read(65536):
             sha1.update(chunk)

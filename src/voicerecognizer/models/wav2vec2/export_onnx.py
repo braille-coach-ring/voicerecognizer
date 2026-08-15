@@ -19,6 +19,7 @@ import os
 import sys
 import time
 from pathlib import Path
+from typing import override
 
 if sys.platform == "win32":
     if isinstance(sys.stdout, io.TextIOWrapper):
@@ -143,55 +144,14 @@ def run_benchmark(
     return pt_time, onnx_fp32_time, onnx_int8_time
 
 
-def export_and_benchmark(
-    model_dir: Path | str = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir,
-    export_int8: bool = True,
-) -> Path:
-    """Wav2Vec2 チェックポイントを ONNX 化 (FP32 & INT8) し、labels.json を自動生成・修復します。"""
-    model_path = Path(model_dir)
-    if not model_path.exists():
-        raise FileNotFoundError(f"Wav2Vec2 モデルディレクトリが存在しません: {model_path}")
-
-    try:
-        from transformers import AutoFeatureExtractor, Wav2Vec2ForSequenceClassification
-    except ImportError as exc:
-        raise ImportError("Wav2Vec2 エクスポートには 'transformers' が必要です。") from exc
-
-    labels_file = model_path / "labels.json"
-    labels = None
-
-    if labels_file.exists():
-        try:
-            with open(labels_file, encoding="utf-8") as f:
-                labels = json.load(f)
-        except Exception:
-            pass
-
-    if not labels:
-        # hiragana_dataset から学習時のラベルを自動復元・保存
-        try:
-            from voicerecognizer.dataset.hiragana_dataset import HiraganaDataset
-
-            ds = HiraganaDataset(
-                root_dir=DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir, sample_rate=16000
-            )
-            labels = list(ds.labels)
-            logger.info("HiraganaDataset からラベルリスト (%d 件) を復元しました。", len(labels))
-        except Exception:
-            labels = list(DEFAULT_RECOGNITION_CONFIG.labels)
-
-        # labels.json を保存
-        with open(labels_file, "w", encoding="utf-8") as f:
-            json.dump(labels, f, ensure_ascii=False, indent=2)
-        logger.info("labels.json を修復・保存しました: %s", labels_file)
-
 class WaveformPrependedWav2Vec2(torch.nn.Module):
     """生音声波形 (1D tensor) への正規化前処理を内包した Wav2Vec2 統合ラッパーモジュール"""
 
-    def __init__(self, base_model: torch.nn.Module):
+    def __init__(self, base_model: torch.nn.Module) -> None:
         super().__init__()
         self.base_model = base_model
 
+    @override
     def forward(self, waveform: torch.Tensor) -> torch.Tensor:
         """
         Args:
@@ -250,8 +210,35 @@ def export_and_benchmark(
 ) -> Path:
     from transformers import AutoFeatureExtractor, Wav2Vec2ForSequenceClassification
 
-    labels = DEFAULT_RECOGNITION_CONFIG.labels
     model_path = Path(model_dir)
+    if not model_path.exists():
+        raise FileNotFoundError(f"Wav2Vec2 モデルディレクトリが存在しません: {model_path}")
+
+    labels_file = model_path / "labels.json"
+    labels: list[str] | None = None
+
+    if labels_file.exists():
+        try:
+            with open(labels_file, encoding="utf-8") as f:
+                labels = json.load(f)
+        except Exception:
+            pass
+
+    if not labels:
+        try:
+            from voicerecognizer.dataset.hiragana_dataset import HiraganaDataset
+
+            ds = HiraganaDataset(
+                root_dir=DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir, sample_rate=16000
+            )
+            labels = list(ds.labels)
+            logger.info("HiraganaDataset からラベルリスト (%d 件) を復元しました。", len(labels))
+        except Exception:
+            labels = list(DEFAULT_RECOGNITION_CONFIG.labels)
+
+        with open(labels_file, "w", encoding="utf-8") as f:
+            json.dump(labels, f, ensure_ascii=False, indent=2)
+        logger.info("labels.json を修復・保存しました: %s", labels_file)
 
     try:
         feature_extractor = AutoFeatureExtractor.from_pretrained(model_path)
@@ -283,16 +270,24 @@ def export_and_benchmark(
         int8_onnx_path = model_path / "model_int8.onnx"
         quantize_onnx_int8(fp32_onnx_path, int8_onnx_path)
 
-    primary_onnx_path = mel_int8_onnx_path if (export_int8 and mel_int8_onnx_path.exists()) else mel_fp32_onnx_path
+    primary_onnx_path = (
+        mel_int8_onnx_path if (export_int8 and mel_int8_onnx_path.exists()) else mel_fp32_onnx_path
+    )
 
     if not skip_benchmark:
-        pt_time, onnx_fp32_time, onnx_int8_time = run_benchmark(model, mel_fp32_onnx_path, mel_int8_onnx_path)
+        pt_time, onnx_fp32_time, onnx_int8_time = run_benchmark(
+            model, mel_fp32_onnx_path, mel_int8_onnx_path
+        )
 
-        times = [("ONNX FP32 (mel)", onnx_fp32_time)]
+        times: list[tuple[str, float | None]] = [("ONNX FP32 (mel)", onnx_fp32_time)]
         if onnx_int8_time is not None:
             times.append(("ONNX INT8 (mel)", onnx_int8_time))
-        fastest_name, fastest_time = min(times, key=lambda x: x[1])
-        speedup = pt_time / max(fastest_time, 1e-6)
+
+        def _get_item_time(item: tuple[str, float | None]) -> float:
+            return item[1] if item[1] is not None else float("inf")
+
+        fastest_name, fastest_time = min(times, key=_get_item_time)
+        speedup = pt_time / max(fastest_time or 1e-6, 1e-6)
 
         print("\n=======================================================")
         print("  Wav2Vec2 ONNX ベンチマーク結果 (前処理内包型)")
@@ -304,7 +299,7 @@ def export_and_benchmark(
         if onnx_int8_time is not None:
             print(f" ONNX INT8 CPU レイテンシ   : {onnx_int8_time:.2f} ms")
         print("-------------------------------------------------------")
-        print(f" 最速構成                   : {fastest_name} ({fastest_time:.2f} ms)")
+        print(f" 最速構成                   : {fastest_name} ({(fastest_time or 0.0):.2f} ms)")
         print(f" PyTorch 比高速化倍率       : {speedup:.2f}x")
         print("=======================================================\n")
 
