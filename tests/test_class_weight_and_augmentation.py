@@ -6,8 +6,13 @@ import unittest
 
 import numpy as np
 import torch
+from torch.utils.data import Subset
 
-from voicerecognizer.models.wav2vec2.train import build_parser, compute_class_weights
+from voicerecognizer.models.wav2vec2.train import (
+    AugmentedSubset,
+    build_parser,
+    compute_class_weights,
+)
 from voicerecognizer.preprocessing.audio_augmentor import AudioAugmentor
 
 
@@ -43,6 +48,7 @@ class TestClassWeightAndAugmentation(unittest.TestCase):
         self.assertTrue(args_default.use_class_weights)
         self.assertTrue(args_default.augment)
         self.assertTrue(args_default.use_balanced_sampler)
+        self.assertEqual(args_default.split_mode, "speaker")
         self.assertEqual(args_default.class_weight_power, 0.5)
 
         args_opt_out = parser.parse_args(
@@ -58,6 +64,22 @@ class TestClassWeightAndAugmentation(unittest.TestCase):
         self.assertFalse(args_opt_out.augment)
         self.assertFalse(args_opt_out.use_balanced_sampler)
         self.assertEqual(args_opt_out.class_weight_power, 1.0)
+
+    def test_augmented_subset_applies_augmentor(self) -> None:
+        base_waveform = np.ones(8, dtype=np.float32)
+        base_dataset = [(base_waveform, 0)]
+
+        class DoubleAugmentor(AudioAugmentor):
+            def augment(self, waveform: np.ndarray) -> np.ndarray:
+                return waveform * 2
+
+        subset = Subset(base_dataset, [0])
+        augmented = AugmentedSubset(subset, DoubleAugmentor())
+
+        waveform, label = augmented[0]
+
+        self.assertEqual(label, 0)
+        np.testing.assert_array_equal(waveform, base_waveform * 2)
 
 
 if __name__ == "__main__":

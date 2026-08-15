@@ -78,6 +78,7 @@ class TestWav2Vec2LazyDataset(unittest.TestCase):
             self.assertEqual(tuple(dataset.labels), labels)
             self.assertFalse(hasattr(dataset, "cached_data"))
             self.assertIsInstance(dataset.data[0][0], Path)
+            self.assertEqual(dataset.speaker_ids, ["unknown"] * 4)
             pickle.dumps(dataset)
 
             waveform, label_idx = dataset[0]
@@ -101,6 +102,7 @@ class TestWav2Vec2LazyDataset(unittest.TestCase):
         args = build_parser().parse_args(["--epoch", "1"])
 
         self.assertEqual(args.epochs, 1)
+        self.assertEqual(args.split_mode, "speaker")
 
     def test_streaming_safetensors_loader_copies_matching_tensors(self) -> None:
         from safetensors.torch import save_file

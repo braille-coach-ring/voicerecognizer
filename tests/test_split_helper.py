@@ -1,6 +1,6 @@
 import unittest
 
-from voicerecognizer.utils.split_helper import safe_stratified_split
+from voicerecognizer.utils.split_helper import safe_group_split, safe_stratified_split
 
 
 class TestSplitHelper(unittest.TestCase):
@@ -25,6 +25,28 @@ class TestSplitHelper(unittest.TestCase):
         self.assertIn(ga_idx, train_idx)
         self.assertNotIn(kya_idx, val_idx)
         self.assertNotIn(ga_idx, val_idx)
+
+    def test_group_split_keeps_speakers_disjoint(self):
+        labels = ["a", "i"] * 6
+        groups = ["speaker1"] * 4 + ["speaker2"] * 4 + ["speaker3"] * 4
+
+        train_idx, val_idx = safe_group_split(labels, groups, val_rate=0.34, seed=42)
+
+        train_groups = {groups[index] for index in train_idx}
+        val_groups = {groups[index] for index in val_idx}
+
+        self.assertTrue(train_idx)
+        self.assertTrue(val_idx)
+        self.assertTrue(train_groups.isdisjoint(val_groups))
+
+    def test_group_split_falls_back_when_speakers_are_unknown(self):
+        labels = ["a"] * 10 + ["i"] * 10
+        groups = ["unknown"] * len(labels)
+
+        train_idx, val_idx = safe_group_split(labels, groups, val_rate=0.2, seed=42)
+
+        self.assertEqual(len(train_idx) + len(val_idx), len(labels))
+        self.assertEqual(len(val_idx), 4)
 
 
 if __name__ == "__main__":

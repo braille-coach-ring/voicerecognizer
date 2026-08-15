@@ -29,10 +29,10 @@ import soundfile as sf
 import torch
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
-from sklearn.model_selection import train_test_split
 
 from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, PROJECT_ROOT
 from voicerecognizer.dataset.hiragana_dataset import HiraganaDataset
+from voicerecognizer.utils.split_helper import safe_group_split, safe_stratified_split
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -50,16 +50,17 @@ DEFAULT_MODEL_CANDIDATES = [
 
 def load_dataset_audio_and_labels(
     dataset_dir: Path, sample_rate: int = 16000, target_length_seconds: float = 0.6
-) -> tuple[list[np.ndarray], list[int], list[str]]:
+) -> tuple[list[np.ndarray], list[int], list[str], list[str]]:
     """データセットから全音声データとラベルインデックスを読み込む"""
     dataset = HiraganaDataset(root_dir=dataset_dir, sample_rate=sample_rate, cache_in_memory=False)
     target_samples = int(target_length_seconds * sample_rate)
 
     waveforms = []
     labels = []
+    speaker_ids = []
     label_names = dataset.labels
 
-    for wav_path, label in dataset.data:
+    for index, (wav_path, label) in enumerate(dataset.data):
         waveform, sr = sf.read(wav_path, dtype="float32", always_2d=False)
         waveform = np.asarray(waveform, dtype=np.float32)
         if waveform.ndim > 1:
@@ -81,8 +82,11 @@ def load_dataset_audio_and_labels(
 
         waveforms.append(waveform)
         labels.append(label)
+        speaker_ids.append(
+            dataset.speaker_ids[index] if index < len(dataset.speaker_ids) else "unknown"
+        )
 
-    return waveforms, labels, list(label_names)
+    return waveforms, labels, list(label_names), speaker_ids
 
 
 def extract_features_for_model(
@@ -126,11 +130,23 @@ def extract_features_for_model(
     return np.concatenate(all_embeddings, axis=0)
 
 
-def evaluate_linear_probe(features: np.ndarray, y: list[int], seed: int = 42) -> dict[str, float]:
+def evaluate_linear_probe(
+    features: np.ndarray,
+    y: list[int],
+    speaker_ids: list[str],
+    split_mode: str,
+    seed: int = 42,
+) -> dict[str, float]:
     """抽出した特徴量に対して線形分類器 (Logistic Regression) を学習・評価する"""
-    features_train, features_test, y_train, y_test = train_test_split(
-        features, y, test_size=0.2, random_state=seed, stratify=y
-    )
+    if split_mode == "speaker":
+        train_idx, test_idx = safe_group_split(y, speaker_ids, val_rate=0.2, seed=seed)
+    else:
+        train_idx, test_idx = safe_stratified_split(y, val_rate=0.2, seed=seed)
+
+    features_train = features[train_idx]
+    features_test = features[test_idx]
+    y_train = [y[index] for index in train_idx]
+    y_test = [y[index] for index in test_idx]
 
     clf = LogisticRegression(max_iter=1000, C=1.0, random_state=seed)
     clf.fit(features_train, y_train)
@@ -171,6 +187,15 @@ def main():
         default=PROJECT_ROOT / "evaluation_results" / "base_model_benchmark.json",
         help="Output path for benchmark results JSON",
     )
+    parser.add_argument(
+        "--split-mode",
+        choices=("speaker", "stratified"),
+        default="speaker",
+        help=(
+            "Evaluation split strategy. 'speaker' keeps held-out speakers unseen by "
+            "the linear probe; 'stratified' uses the previous random label split."
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -182,7 +207,9 @@ def main():
     logger.info("Using device: %s", device)
 
     logger.info("Loading audio files from %s ...", args.dataset_dir)
-    waveforms, labels, label_names = load_dataset_audio_and_labels(dataset_dir=args.dataset_dir)
+    waveforms, labels, label_names, speaker_ids = load_dataset_audio_and_labels(
+        dataset_dir=args.dataset_dir
+    )
     logger.info("Loaded %d audio samples across %d classes.", len(waveforms), len(label_names))
 
     results: list[dict[str, Any]] = []
@@ -200,7 +227,12 @@ def main():
             embeddings = extract_features_for_model(
                 model_name=model_name, waveforms=waveforms, device=device
             )
-            metrics = evaluate_linear_probe(features=embeddings, y=labels)
+            metrics = evaluate_linear_probe(
+                features=embeddings,
+                y=labels,
+                speaker_ids=speaker_ids,
+                split_mode=args.split_mode,
+            )
             elapsed = time.time() - start_time
 
             res = {

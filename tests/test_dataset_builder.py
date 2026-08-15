@@ -1,3 +1,4 @@
+import csv
 import tempfile
 import unittest
 from pathlib import Path
@@ -29,11 +30,20 @@ class TestDatasetBuilderIsolated(unittest.TestCase):
 
             # Test merge_by_label generating index.csv without copying wav files
             builder.merge_by_label(source_root=raw_root, output_root=merged_root)
-            self.assertTrue((merged_root / "index.csv").exists())
+            merged_index = merged_root / "index.csv"
+            self.assertTrue(merged_index.exists())
+            with open(merged_index, encoding="utf-8", newline="") as f:
+                rows = list(csv.DictReader(f))
+            self.assertEqual(rows[0]["speaker_id"], "speaker1")
 
             # Test preprocess_dataset reading directly from index.csv
             builder.preprocess_dataset(input_root=merged_root, output_root=processed_root)
             self.assertTrue((processed_root / "a" / "001.wav").exists())
+            processed_index = processed_root / "index.csv"
+            self.assertTrue(processed_index.exists())
+            with open(processed_index, encoding="utf-8", newline="") as f:
+                processed_rows = list(csv.DictReader(f))
+            self.assertEqual(processed_rows[0]["speaker_id"], "speaker1")
 
             # Verify saved audio format
             data, sr = sf.read(processed_root / "a" / "001.wav")
@@ -70,6 +80,10 @@ class TestDatasetBuilderIsolated(unittest.TestCase):
             content = index_path.read_text(encoding="utf-8")
             self.assertIn("100_2.wav", content)
             self.assertNotIn("100_1.wav", content)
+            with open(index_path, encoding="utf-8", newline="") as f:
+                rows = list(csv.DictReader(f))
+            target_row = next(row for row in rows if row["filepath"].endswith("100_2.wav"))
+            self.assertEqual(target_row["speaker_id"], "collected")
 
     def test_merge_collected_dataset_with_subdirectories(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -92,6 +106,10 @@ class TestDatasetBuilderIsolated(unittest.TestCase):
             index_path = merged_root / "index.csv"
             self.assertTrue(index_path.exists())
             self.assertIn("200_1.wav", index_path.read_text(encoding="utf-8"))
+            with open(index_path, encoding="utf-8", newline="") as f:
+                rows = list(csv.DictReader(f))
+            target_row = next(row for row in rows if row["filepath"].endswith("200_1.wav"))
+            self.assertEqual(target_row["speaker_id"], "pc_12345678")
 
 
 if __name__ == "__main__":

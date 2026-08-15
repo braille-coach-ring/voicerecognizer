@@ -46,7 +46,7 @@ from voicerecognizer.models.wav2vec2.export_onnx import export_and_benchmark
 from voicerecognizer.preprocessing.audio_augmentor import AudioAugmentor
 from voicerecognizer.preprocessing.dataset_builder import ensure_merged_and_preprocessed
 from voicerecognizer.utils.plot_saver import save_history_plots
-from voicerecognizer.utils.split_helper import safe_stratified_split
+from voicerecognizer.utils.split_helper import safe_group_split, safe_stratified_split
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -67,6 +67,7 @@ class Wav2Vec2ClassificationDataset(Dataset):
         )
         self.labels = source_dataset.labels
         self.data = source_dataset.data
+        self.speaker_ids: list[str] = list(source_dataset.speaker_ids)
         self.sample_rate = sample_rate
         self.target_samples = int(target_length_seconds * sample_rate)
 
@@ -140,10 +141,21 @@ def fix_seed(seed: int) -> None:
 
 
 def split_dataset(
-    dataset: Wav2Vec2ClassificationDataset, val_rate: float, seed: int
+    dataset: Wav2Vec2ClassificationDataset,
+    val_rate: float,
+    seed: int,
+    split_mode: str = "speaker",
 ) -> tuple[Subset, Subset]:
     labels = [label for _, label in dataset.data]
-    train_idx, val_idx = safe_stratified_split(labels, val_rate=val_rate, seed=seed)
+    if split_mode == "speaker":
+        train_idx, val_idx = safe_group_split(
+            labels,
+            dataset.speaker_ids,
+            val_rate=val_rate,
+            seed=seed,
+        )
+    else:
+        train_idx, val_idx = safe_stratified_split(labels, val_rate=val_rate, seed=seed)
     return Subset(dataset, train_idx), Subset(dataset, val_idx)
 
 
@@ -776,6 +788,7 @@ def train(args: argparse.Namespace) -> None:
     )
     top_db = getattr(args, "top_db", DEFAULT_PREPROCESS_CONFIG.top_db)
     val_rate = getattr(args, "val_rate", 0.2)
+    split_mode = getattr(args, "split_mode", "speaker")
     target_acc = getattr(args, "target_acc", 0.97)
     num_workers_arg = getattr(args, "num_workers", None)
     num_workers = determine_optimal_num_workers(num_workers_arg)
@@ -807,7 +820,7 @@ def train(args: argparse.Namespace) -> None:
         target_length_seconds=target_length_seconds,
         top_db=top_db,
     )
-    train_dataset, val_dataset = split_dataset(dataset, val_rate, seed)
+    train_dataset, val_dataset = split_dataset(dataset, val_rate, seed, split_mode=split_mode)
 
     use_class_weights = getattr(args, "use_class_weights", True)
     augment = getattr(args, "augment", True)
@@ -900,7 +913,7 @@ def train(args: argparse.Namespace) -> None:
     persistent_workers = num_workers > 0
 
     train_loader = DataLoader(
-        train_dataset,
+        train_augmented_subset,
         batch_size=args.batch_size,
         shuffle=(train_sampler is None),
         sampler=train_sampler,
@@ -1235,6 +1248,15 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=0.5,
         help="Power exponent for smooth inverse class weighting (default: 0.5)",
+    )
+    parser.add_argument(
+        "--split-mode",
+        choices=("speaker", "stratified"),
+        default="speaker",
+        help=(
+            "Validation split strategy. 'speaker' keeps each speaker fully in either "
+            "train or validation; 'stratified' uses the previous label-stratified split."
+        ),
     )
     parser.add_argument(
         "--skip-prep",

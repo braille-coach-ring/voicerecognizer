@@ -1,3 +1,4 @@
+import csv
 import logging
 import shutil
 from pathlib import Path
@@ -11,6 +12,7 @@ from voicerecognizer.config import (
     PROJECT_ROOT,
 )
 from voicerecognizer.preprocessing.audio_preprocessor import AudioPreprocessor
+from voicerecognizer.utils.speaker import normalize_speaker_id
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +72,7 @@ class DatasetBuilder:
         output_root.mkdir(parents=True, exist_ok=True)
         index_file = output_root / "index.csv"
 
-        entries: list[tuple[str, str, str]] = []
+        entries: list[tuple[str, str, str, str]] = []
 
         # 1. Rawデータの収集 (dataset/<person>/<label>/*.wav)
         if raw_root.exists():
@@ -81,7 +83,7 @@ class DatasetBuilder:
                     input_folder = person / label
                     if input_folder.is_dir():
                         for wav_path in sorted(input_folder.glob("*.wav")):
-                            entries.append((_to_rel_path(wav_path), label, ""))
+                            entries.append((_to_rel_path(wav_path), label, "", person.name))
 
         # 2. Collectedデータの収集 (dataset/collected/pc_xxxxxxxx/metadata.csv)
         if collected_dir.exists():
@@ -107,14 +109,30 @@ class DatasetBuilder:
                             wav_path = folder / filename
                             if wav_path.exists():
                                 entries.append(
-                                    (_to_rel_path(wav_path), ground_truth, predicted_text)
+                                    (
+                                        _to_rel_path(wav_path),
+                                        ground_truth,
+                                        predicted_text,
+                                        folder.name,
+                                    )
                                 )
 
         # 3. index.csv の書き出し
-        with open(index_file, "w", encoding="utf-8") as f:
-            f.write("filepath,label,predicted_text\n")
-            for filepath, label, pred_text in entries:
-                f.write(f"{filepath},{label},{pred_text}\n")
+        with open(index_file, "w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(
+                f,
+                fieldnames=["filepath", "label", "predicted_text", "speaker_id"],
+            )
+            writer.writeheader()
+            for filepath, label, pred_text, speaker_id in entries:
+                writer.writerow(
+                    {
+                        "filepath": filepath,
+                        "label": label,
+                        "predicted_text": pred_text,
+                        "speaker_id": speaker_id,
+                    }
+                )
 
         logger.info("インデックスファイルを作成しました: %s (全 %d 件)", index_file, len(entries))
         return index_file
@@ -149,35 +167,66 @@ class DatasetBuilder:
         if index_file.exists() and index_file.is_file():
             # インデックス CSV ファイルから直接読み込んで前処理
             counts: dict[str, int] = {}
-            with open(index_file, encoding="utf-8") as f:
-                _ = f.readline()
-                for line in f:
-                    parts = [p.strip() for p in line.strip().split(",")]
-                    if len(parts) < 2 or not parts[0]:
+            processed_entries: list[tuple[str, str, str, str]] = []
+            with open(index_file, encoding="utf-8", newline="") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    raw_filepath = (row.get("filepath") or "").strip()
+                    if not raw_filepath:
                         continue
-                    wav_path = Path(parts[0])
+                    wav_path = Path(raw_filepath)
                     if not wav_path.is_absolute():
                         wav_path = PROJECT_ROOT / wav_path
-                    label = parts[1]
+                    label = (row.get("label") or "").strip()
 
-                    if not wav_path.exists():
+                    if not label or not wav_path.exists():
                         continue
 
                     label_dir = output_root / label
                     label_dir.mkdir(parents=True, exist_ok=True)
 
                     count = counts.get(label, 1)
+                    output_path = label_dir / f"{count:03d}.wav"
                     waveform = self.preprocessor.preprocess_waveform(wav_path)
                     sf.write(
-                        label_dir / f"{count:03d}.wav",
+                        output_path,
                         waveform,
                         self.preprocessor.sample_rate,
                     )
+                    speaker_id = normalize_speaker_id(
+                        row.get("speaker_id") or row.get("machine_id"),
+                        raw_filepath,
+                    )
+                    processed_entries.append(
+                        (
+                            _to_rel_path(output_path),
+                            label,
+                            row.get("predicted_text") or "",
+                            speaker_id,
+                        )
+                    )
                     counts[label] = count + 1
+
+            processed_index_file = output_root / "index.csv"
+            with open(processed_index_file, "w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(
+                    f,
+                    fieldnames=["filepath", "label", "predicted_text", "speaker_id"],
+                )
+                writer.writeheader()
+                for filepath, label, pred_text, speaker_id in processed_entries:
+                    writer.writerow(
+                        {
+                            "filepath": filepath,
+                            "label": label,
+                            "predicted_text": pred_text,
+                            "speaker_id": speaker_id,
+                        }
+                    )
 
             logger.info(
                 "index.csv から全 %d 件の音声データを前処理して %s に出力しました",
-                sum(counts.values()),
+                len(processed_entries),
                 output_root,
             )
             return

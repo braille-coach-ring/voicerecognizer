@@ -1,3 +1,4 @@
+import csv
 import logging
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from voicerecognizer.config import (
     DEFAULT_RECOGNITION_CONFIG,
 )
 from voicerecognizer.preprocessing.audio_preprocessor import AudioPreprocessor
+from voicerecognizer.utils.speaker import normalize_speaker_id
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +60,7 @@ class HiraganaDataset(Dataset):
             self.labels = sorted(path.name for path in self.root.iterdir() if path.is_dir())
 
         self.label_to_idx = {label: idx for idx, label in enumerate(self.labels)}
+        self.speaker_ids: list[str] = []
         self.data = self._collect_files()
 
         self.cached_mels: list[tuple[torch.Tensor, torch.Tensor]] | None = None
@@ -92,18 +95,24 @@ class HiraganaDataset(Dataset):
         if self.index_file and self.index_file.exists():
             from voicerecognizer.config import PROJECT_ROOT
 
-            with open(self.index_file, encoding="utf-8") as f:
-                f.readline()
-                for line in f:
-                    parts = [p.strip() for p in line.strip().split(",")]
-                    if len(parts) < 2 or not parts[0]:
+            with open(self.index_file, encoding="utf-8", newline="") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    raw_filepath = (row.get("filepath") or "").strip()
+                    if not raw_filepath:
                         continue
-                    wav_path = Path(parts[0])
+                    wav_path = Path(raw_filepath)
                     if not wav_path.is_absolute():
                         wav_path = PROJECT_ROOT / wav_path
-                    label = parts[1]
+                    label = (row.get("label") or "").strip()
                     if wav_path.exists() and label in self.label_to_idx:
                         data.append((wav_path, self.label_to_idx[label]))
+                        self.speaker_ids.append(
+                            normalize_speaker_id(
+                                row.get("speaker_id") or row.get("machine_id"),
+                                raw_filepath,
+                            )
+                        )
             return data
 
         for label in self.labels:
@@ -111,6 +120,7 @@ class HiraganaDataset(Dataset):
             if folder.is_dir():
                 for wav_path in folder.glob("*.wav"):
                     data.append((wav_path, self.label_to_idx[label]))
+                    self.speaker_ids.append(normalize_speaker_id(None, wav_path))
         return data
 
     def _create_mel(self, waveform: np.ndarray) -> torch.Tensor:

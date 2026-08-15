@@ -90,6 +90,9 @@ class TestEvaluator(unittest.TestCase):
         self.assertEqual(len(result.misclassified), 1)
         self.assertEqual(result.misclassified[0].true_label, "a")
         self.assertEqual(result.misclassified[0].predicted_label, "e")
+        self.assertIn("mac1", result.per_speaker)
+        self.assertAlmostEqual(result.per_speaker["mac1"].accuracy, 2 / 3, places=2)
+        self.assertEqual(result.misclassified[0].speaker_id, "mac1")
 
     def test_evaluate_with_model(self) -> None:
         mock_model = MockRecognizer()
@@ -131,6 +134,12 @@ class TestEvaluator(unittest.TestCase):
         success = evaluator.export_json(output_json)
         self.assertTrue(success)
         self.assertTrue(output_json.exists())
+
+        with open(output_json, encoding="utf-8") as f:
+            payload = json.load(f)
+        self.assertIn("per_speaker", payload)
+        self.assertIn("mac1", payload["per_speaker"])
+        self.assertAlmostEqual(payload["per_speaker"]["mac1"]["accuracy"], 2 / 3, places=2)
 
     def test_review_candidates_include_mismatch_and_low_confidence(self) -> None:
         mock_model = CandidateMockRecognizer()

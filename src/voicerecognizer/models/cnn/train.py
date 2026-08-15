@@ -45,12 +45,23 @@ def fix_seed(seed: int = 42) -> None:
 
 
 def split_dataset(
-    dataset: HiraganaDataset, val_rate: float = 0.2, seed: int = 42
+    dataset: HiraganaDataset,
+    val_rate: float = 0.2,
+    seed: int = 42,
+    split_mode: str = "speaker",
 ) -> tuple[Subset, Subset]:
-    from voicerecognizer.utils.split_helper import safe_stratified_split
+    from voicerecognizer.utils.split_helper import safe_group_split, safe_stratified_split
 
     labels = [label for _, label in dataset.data]
-    train_idx, val_idx = safe_stratified_split(labels, val_rate=val_rate, seed=seed)
+    if split_mode == "speaker":
+        train_idx, val_idx = safe_group_split(
+            labels,
+            dataset.speaker_ids,
+            val_rate=val_rate,
+            seed=seed,
+        )
+    else:
+        train_idx, val_idx = safe_stratified_split(labels, val_rate=val_rate, seed=seed)
     return Subset(dataset, train_idx), Subset(dataset, val_idx)
 
 
@@ -131,6 +142,7 @@ def train(args: argparse.Namespace) -> None:
     n_mels = getattr(args, "n_mels", DEFAULT_PREPROCESS_CONFIG.n_mels)
     val_rate = getattr(args, "val_rate", 0.2)
     seed = getattr(args, "seed", 42)
+    split_mode = getattr(args, "split_mode", "speaker")
     best_model_path = getattr(args, "best_model_path", DEFAULT_RECOGNITION_CONFIG.cnn_weight_path)
     last_model_path = getattr(args, "last_model_path", DEFAULT_RECOGNITION_CONFIG.last_model_path)
     target_acc = getattr(args, "target_acc", 0.97)
@@ -149,7 +161,7 @@ def train(args: argparse.Namespace) -> None:
         sample_rate=sample_rate,
         n_mels=n_mels,
     )
-    train_dataset, val_dataset = split_dataset(dataset, val_rate, seed)
+    train_dataset, val_dataset = split_dataset(dataset, val_rate, seed, split_mode=split_mode)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
@@ -326,6 +338,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--skip-prep",
         action="store_true",
         help="Skip automatic data merging and preprocessing before training",
+    )
+    parser.add_argument(
+        "--split-mode",
+        choices=("speaker", "stratified"),
+        default="speaker",
+        help=(
+            "Validation split strategy. 'speaker' keeps each speaker fully in either "
+            "train or validation; 'stratified' uses the previous label-stratified split."
+        ),
     )
     return parser
 

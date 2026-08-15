@@ -23,6 +23,7 @@ from voicerecognizer.evaluation.review import (
     normalize_filepath,
     write_review_candidates_json,
 )
+from voicerecognizer.utils.speaker import normalize_speaker_id
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,15 @@ class OverallMetrics:
 
 
 @dataclass(frozen=True)
+class PerSpeakerMetrics:
+    """話者ごとの評価指標"""
+
+    accuracy: float
+    total_samples: int
+    correct_samples: int
+
+
+@dataclass(frozen=True)
 class MisclassifiedSample:
     """誤識別した音声サンプル"""
 
@@ -55,6 +65,7 @@ class MisclassifiedSample:
     predicted_label: str
     filepath: str = ""
     confidence: float | None = None
+    speaker_id: str = ""
 
 
 @dataclass
@@ -65,6 +76,7 @@ class EvaluationResult:
     per_class: dict[str, PerClassMetrics]
     confusion_matrix: dict[str, dict[str, int]]
     misclassified: list[MisclassifiedSample] = field(default_factory=list)
+    per_speaker: dict[str, PerSpeakerMetrics] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """JSON保存用・Dict型変換"""
@@ -121,6 +133,7 @@ class Evaluator:
         self.y_pred: list[str] = []
         self.confidences: list[float | None] = []
         self.filepaths: list[str] = []
+        self.speaker_ids: list[str] = []
         self.review_candidates: list[ReviewCandidate] = []
         self.result: EvaluationResult | None = None
 
@@ -130,6 +143,7 @@ class Evaluator:
         self.y_pred.clear()
         self.confidences.clear()
         self.filepaths.clear()
+        self.speaker_ids.clear()
         self.review_candidates.clear()
         self.result = None
 
@@ -139,12 +153,15 @@ class Evaluator:
         pred_label: str,
         confidence: float | None = None,
         filepath: str | None = None,
+        speaker_id: str | None = None,
     ) -> None:
         """1件ごとの推論/評価レコードを追加する共通処理"""
+        filepath_value = filepath or ""
         self.y_true.append(true_label)
         self.y_pred.append(pred_label)
         self.confidences.append(confidence)
-        self.filepaths.append(filepath or "")
+        self.filepaths.append(filepath_value)
+        self.speaker_ids.append(normalize_speaker_id(speaker_id, filepath_value))
 
     def _resolve_audio_path(self, rel_path: str) -> Path:
         p = Path(rel_path)
@@ -161,6 +178,13 @@ class Evaluator:
         if value is None:
             value = row.get(f"\ufeff{key}", default)
         return str(value)
+
+    def _row_speaker_id(self, row: dict[str, Any], filepath: str) -> str:
+        speaker_id = row.get("speaker_id") or row.get("machine_id")
+        return normalize_speaker_id(
+            str(speaker_id) if speaker_id is not None else None,
+            filepath,
+        )
 
     def _coerce_optional_float(self, value: Any) -> float | None:
         if value is None or value == "":
@@ -288,6 +312,7 @@ class Evaluator:
                     pred_label=pred_label,
                     confidence=confidence,
                     filepath=rel_path,
+                    speaker_id=self._row_speaker_id(row, rel_path),
                 )
                 self._add_review_candidate(
                     filepath=rel_path,
@@ -353,6 +378,7 @@ class Evaluator:
                     pred_label=pred_label,
                     confidence=confidence,
                     filepath=rel_path,
+                    speaker_id=self._row_speaker_id(row, rel_path),
                 )
                 self._add_review_candidate(
                     filepath=rel_path,
@@ -375,6 +401,7 @@ class Evaluator:
                 per_class={},
                 confusion_matrix={},
                 misclassified=[],
+                per_speaker={},
             )
 
         labels_list = list(self.labels)
@@ -423,20 +450,45 @@ class Evaluator:
             if self.y_true[i] != self.y_pred[i]:
                 filepath = self.filepaths[i] if i < len(self.filepaths) else ""
                 confidence = self.confidences[i] if i < len(self.confidences) else None
+                speaker_id = self.speaker_ids[i] if i < len(self.speaker_ids) else ""
                 misclassified.append(
                     MisclassifiedSample(
                         true_label=self.y_true[i],
                         predicted_label=self.y_pred[i],
                         filepath=filepath,
                         confidence=confidence,
+                        speaker_id=speaker_id,
                     )
                 )
+
+        speaker_totals: dict[str, dict[str, int]] = {}
+        for i, true_label in enumerate(self.y_true):
+            filepath = self.filepaths[i] if i < len(self.filepaths) else ""
+            speaker_id = self.speaker_ids[i] if i < len(self.speaker_ids) else ""
+            speaker_key = normalize_speaker_id(speaker_id, filepath)
+            counts = speaker_totals.setdefault(speaker_key, {"total": 0, "correct": 0})
+            counts["total"] += 1
+            if true_label == self.y_pred[i]:
+                counts["correct"] += 1
+
+        per_speaker = {
+            speaker_id: PerSpeakerMetrics(
+                accuracy=round(
+                    counts["correct"] / counts["total"] if counts["total"] else 0.0,
+                    4,
+                ),
+                total_samples=counts["total"],
+                correct_samples=counts["correct"],
+            )
+            for speaker_id, counts in sorted(speaker_totals.items())
+        }
 
         return EvaluationResult(
             overall=overall,
             per_class=per_class,
             confusion_matrix=confusion_breakdown,
             misclassified=misclassified,
+            per_speaker=per_speaker,
         )
 
     def export_json(self, output_path: Path | str) -> bool:
@@ -1073,7 +1125,8 @@ def compute_evaluation_result(
     y_pred: list[str],
     labels: Sequence[str] = DEFAULT_RECOGNITION_CONFIG.labels,
     filepaths: list[str] | None = None,
-    confidences: list[float] | None = None,
+    confidences: list[float | None] | None = None,
+    speaker_ids: list[str] | None = None,
 ) -> EvaluationResult:
     """スタンドアロンで y_true と y_pred から EvaluationResult を直接計算するユーティリティ関数"""
     evaluator = object.__new__(Evaluator)
@@ -1082,5 +1135,6 @@ def compute_evaluation_result(
     evaluator.y_pred = list(y_pred)
     evaluator.filepaths = list(filepaths) if filepaths else []
     evaluator.confidences = list(confidences) if confidences else []
+    evaluator.speaker_ids = list(speaker_ids) if speaker_ids else []
     evaluator.result = None
     return evaluator._compute_metrics()
