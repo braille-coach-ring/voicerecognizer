@@ -1,6 +1,8 @@
+import csv
 import logging
 import shutil
 from pathlib import Path
+from typing import Any
 
 import soundfile as sf
 
@@ -22,6 +24,53 @@ def _to_rel_path(path: Path) -> str:
         return rel.as_posix()
     except ValueError:
         return str(path)
+
+
+def _row_value(row: dict[str, str], key: str, default: str = "") -> str:
+    value = row.get(key)
+    if value is None:
+        value = row.get(f"\ufeff{key}", default)
+    return str(value).strip()
+
+
+def _resolve_audio_path(path_value: str, *, index_base: Path) -> Path:
+    wav_path = Path(path_value)
+    if wav_path.is_absolute():
+        return wav_path
+
+    index_relative = index_base / wav_path
+    if index_relative.exists():
+        return index_relative
+
+    return PROJECT_ROOT / wav_path
+
+
+def _infer_speaker_from_source(wav_path: Path, label: str) -> str:
+    try:
+        rel = wav_path.resolve().relative_to(DEFAULT_RECOGNITION_CONFIG.raw_dataset_dir.resolve())
+        parts = rel.parts
+        if not parts:
+            return ""
+        if parts[0] == "collected":
+            return parts[1] if len(parts) >= 2 else "collected"
+        return parts[0]
+    except ValueError:
+        pass
+
+    if wav_path.parent.name.startswith("pc_"):
+        return wav_path.parent.name
+    if label and wav_path.parent.name == label and wav_path.parent.parent.name:
+        return wav_path.parent.parent.name
+    return wav_path.parent.name
+
+
+def _format_optional_float(value: Any) -> str:
+    if value is None or value == "":
+        return ""
+    try:
+        return f"{float(value):.4f}"
+    except (TypeError, ValueError):
+        return ""
 
 
 """
@@ -60,12 +109,12 @@ class DatasetBuilder:
 
     def build_index(
         self,
-        raw_root: str | Path = DEFAULT_RECOGNITION_CONFIG.raw_dataset_dir,
-        collected_dir: str | Path = DEFAULT_RECOGNITION_CONFIG.collected_dataset_dir,
+        raw_root: str | Path | None = DEFAULT_RECOGNITION_CONFIG.raw_dataset_dir,
+        collected_dir: str | Path | None = DEFAULT_RECOGNITION_CONFIG.collected_dataset_dir,
         output_root: str | Path = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir,
     ) -> Path:
-        raw_root = Path(raw_root)
-        collected_dir = Path(collected_dir)
+        raw_root = Path(raw_root) if raw_root is not None else None
+        collected_dir = Path(collected_dir) if collected_dir is not None else None
         output_root = Path(output_root)
         output_root.mkdir(parents=True, exist_ok=True)
         index_file = output_root / "index.csv"
@@ -73,7 +122,7 @@ class DatasetBuilder:
         entries: list[tuple[str, str, str]] = []
 
         # 1. Rawデータの収集 (dataset/<person>/<label>/*.wav)
-        if raw_root.exists():
+        if raw_root is not None and raw_root.exists():
             for person in sorted(raw_root.iterdir()):
                 if not person.is_dir() or person.name in ("collected", "__pycache__"):
                     continue
@@ -84,7 +133,7 @@ class DatasetBuilder:
                             entries.append((_to_rel_path(wav_path), label, ""))
 
         # 2. Collectedデータの収集 (dataset/collected/pc_xxxxxxxx/metadata.csv)
-        if collected_dir.exists():
+        if collected_dir is not None and collected_dir.exists():
             for metadata_file in collected_dir.rglob("metadata.csv"):
                 folder = metadata_file.parent
                 with open(metadata_file, encoding="utf-8") as f:
@@ -124,14 +173,14 @@ class DatasetBuilder:
         source_root: str | Path = DEFAULT_RECOGNITION_CONFIG.raw_dataset_dir,
         output_root: str | Path = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir,
     ) -> None:
-        self.build_index(raw_root=source_root, output_root=output_root)
+        self.build_index(raw_root=source_root, collected_dir=None, output_root=output_root)
 
     def merge_collected_dataset(
         self,
         collected_dir: str | Path = DEFAULT_RECOGNITION_CONFIG.collected_dataset_dir,
         output_root: str | Path = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir,
     ) -> None:
-        self.build_index(collected_dir=collected_dir, output_root=output_root)
+        self.build_index(raw_root=None, collected_dir=collected_dir, output_root=output_root)
 
     def preprocess_dataset(
         self,
@@ -149,18 +198,40 @@ class DatasetBuilder:
         if index_file.exists() and index_file.is_file():
             # インデックス CSV ファイルから直接読み込んで前処理
             counts: dict[str, int] = {}
-            with open(index_file, encoding="utf-8") as f:
-                _ = f.readline()
-                for line in f:
-                    parts = [p.strip() for p in line.strip().split(",")]
-                    if len(parts) < 2 or not parts[0]:
+            processed_count = 0
+            skipped_missing = 0
+            processed_index_file = output_root / "index.csv"
+            with (
+                open(index_file, encoding="utf-8", newline="") as src,
+                open(processed_index_file, "w", encoding="utf-8", newline="") as dst,
+            ):
+                reader = csv.DictReader(src)
+                writer = csv.DictWriter(
+                    dst,
+                    fieldnames=[
+                        "filepath",
+                        "label",
+                        "source_filepath",
+                        "speaker",
+                        "predicted_text",
+                        "onset_ms",
+                        "offset_ms",
+                        "speech_duration_ms",
+                        "processed_duration_ms",
+                        "preprocess_latency_ms",
+                    ],
+                )
+                writer.writeheader()
+
+                for row in reader:
+                    path_value = _row_value(row, "filepath")
+                    label = _row_value(row, "label")
+                    if not path_value or not label:
                         continue
-                    wav_path = Path(parts[0])
-                    if not wav_path.is_absolute():
-                        wav_path = PROJECT_ROOT / wav_path
-                    label = parts[1]
+                    wav_path = _resolve_audio_path(path_value, index_base=index_file.parent)
 
                     if not wav_path.exists():
+                        skipped_missing += 1
                         continue
 
                     label_dir = output_root / label
@@ -168,38 +239,103 @@ class DatasetBuilder:
 
                     count = counts.get(label, 1)
                     waveform = self.preprocessor.preprocess_waveform(wav_path)
+                    processed_path = label_dir / f"{count:03d}.wav"
                     sf.write(
-                        label_dir / f"{count:03d}.wav",
+                        processed_path,
                         waveform,
                         self.preprocessor.sample_rate,
                     )
                     counts[label] = count + 1
+                    processed_count += 1
+
+                    stats = getattr(self.preprocessor, "last_stats", {})
+                    processed_duration_ms = len(waveform) / self.preprocessor.sample_rate * 1000.0
+                    writer.writerow(
+                        {
+                            "filepath": _to_rel_path(processed_path),
+                            "label": label,
+                            "source_filepath": _to_rel_path(wav_path),
+                            "speaker": _infer_speaker_from_source(wav_path, label),
+                            "predicted_text": _row_value(row, "predicted_text"),
+                            "onset_ms": _format_optional_float(stats.get("onset_ms")),
+                            "offset_ms": _format_optional_float(stats.get("offset_ms")),
+                            "speech_duration_ms": _format_optional_float(
+                                stats.get("speech_duration_ms")
+                            ),
+                            "processed_duration_ms": _format_optional_float(processed_duration_ms),
+                            "preprocess_latency_ms": _format_optional_float(
+                                stats.get("preprocess_latency_ms")
+                            ),
+                        }
+                    )
 
             logger.info(
-                "index.csv から全 %d 件の音声データを前処理して %s に出力しました",
-                sum(counts.values()),
+                "index.csv から全 %d 件の音声データを前処理して %s に出力しました "
+                "(欠損スキップ %d 件)",
+                processed_count,
                 output_root,
+                skipped_missing,
             )
             return
 
         # 従来のディレクトリベース処理（後方互換用）
-        for label_dir in sorted(input_root.iterdir()):
-            if not label_dir.is_dir():
-                continue
+        processed_index_file = output_root / "index.csv"
+        with open(processed_index_file, "w", encoding="utf-8", newline="") as dst:
+            writer = csv.DictWriter(
+                dst,
+                fieldnames=[
+                    "filepath",
+                    "label",
+                    "source_filepath",
+                    "speaker",
+                    "predicted_text",
+                    "onset_ms",
+                    "offset_ms",
+                    "speech_duration_ms",
+                    "processed_duration_ms",
+                    "preprocess_latency_ms",
+                ],
+            )
+            writer.writeheader()
 
-            output_dir = output_root / label_dir.name
-            output_dir.mkdir(exist_ok=True)
-            file_number = 1
+            for label_dir in sorted(input_root.iterdir()):
+                if not label_dir.is_dir():
+                    continue
 
-            for wav_path in sorted(label_dir.glob("*.wav")):
-                waveform = self.preprocessor.preprocess_waveform(wav_path)
-                sf.write(
-                    output_dir / f"{file_number:03d}.wav",
-                    waveform,
-                    self.preprocessor.sample_rate,
-                )
-                file_number += 1
-            logger.info(f"{label_dir.name}の音声データを{output_dir}にコピーしました")
+                output_dir = output_root / label_dir.name
+                output_dir.mkdir(exist_ok=True)
+                file_number = 1
+
+                for wav_path in sorted(label_dir.glob("*.wav")):
+                    waveform = self.preprocessor.preprocess_waveform(wav_path)
+                    processed_path = output_dir / f"{file_number:03d}.wav"
+                    sf.write(
+                        processed_path,
+                        waveform,
+                        self.preprocessor.sample_rate,
+                    )
+                    stats = getattr(self.preprocessor, "last_stats", {})
+                    processed_duration_ms = len(waveform) / self.preprocessor.sample_rate * 1000.0
+                    writer.writerow(
+                        {
+                            "filepath": _to_rel_path(processed_path),
+                            "label": label_dir.name,
+                            "source_filepath": _to_rel_path(wav_path),
+                            "speaker": _infer_speaker_from_source(wav_path, label_dir.name),
+                            "predicted_text": "",
+                            "onset_ms": _format_optional_float(stats.get("onset_ms")),
+                            "offset_ms": _format_optional_float(stats.get("offset_ms")),
+                            "speech_duration_ms": _format_optional_float(
+                                stats.get("speech_duration_ms")
+                            ),
+                            "processed_duration_ms": _format_optional_float(processed_duration_ms),
+                            "preprocess_latency_ms": _format_optional_float(
+                                stats.get("preprocess_latency_ms")
+                            ),
+                        }
+                    )
+                    file_number += 1
+                logger.info(f"{label_dir.name}の音声データを{output_dir}にコピーしました")
 
 
 def ensure_merged_and_preprocessed(skip_prep: bool = False) -> None:

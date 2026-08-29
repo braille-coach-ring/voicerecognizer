@@ -1,3 +1,4 @@
+import csv
 import pickle
 import tempfile
 import unittest
@@ -96,6 +97,30 @@ class TestWav2Vec2LazyDataset(unittest.TestCase):
 
             self.assertEqual(batch["input_values"].shape, (2, sample_rate))
             self.assertEqual(batch["labels"].shape, (2,))
+
+    def test_dataset_reads_speakers_from_processed_index(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            sample_rate = 16000
+            wav_a = root / "sample_a.wav"
+            wav_e = root / "sample_e.wav"
+            sf.write(wav_a, np.zeros(sample_rate, dtype=np.float32), sample_rate)
+            sf.write(wav_e, np.zeros(sample_rate, dtype=np.float32), sample_rate)
+
+            with open(root / "index.csv", "w", encoding="utf-8", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["filepath", "label", "speaker"])
+                writer.writerow(["sample_a.wav", "a", "speaker_a"])
+                writer.writerow(["sample_e.wav", "e", "speaker_e"])
+
+            dataset = Wav2Vec2ClassificationDataset(
+                root_dir=root,
+                sample_rate=sample_rate,
+                target_length_seconds=1.0,
+                top_db=20.0,
+            )
+
+            self.assertEqual(dataset.speakers, ["speaker_a", "speaker_e"])
 
     def test_epoch_alias_is_supported(self) -> None:
         args = build_parser().parse_args(["--epoch", "1"])

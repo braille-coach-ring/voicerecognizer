@@ -2,7 +2,7 @@
 Wav2Vec2 Fine-Tuning Script with Layer Freezing and Lazy Disk Loading
 
 役割:
-  Wav2Vec2 プリトレイニードモデルの下位層フリーズ ＋ processed_dataset からのlazy loadingにより、
+  Wav2Vec2 プリトレイニードモデルの下位層フリーズ + processed_dataset からのlazy loadingにより、
   RAM使用量を抑えてファインチューニングを実行し、best_model ディレクトリおよび labels.json を保存します。
 
 使い方:
@@ -11,6 +11,7 @@ Wav2Vec2 Fine-Tuning Script with Layer Freezing and Lazy Disk Loading
 """
 
 import argparse
+import csv
 import filecmp
 import gc
 import importlib.util
@@ -20,7 +21,6 @@ import os
 import random
 import shutil
 import sys
-from collections import Counter
 from pathlib import Path
 from typing import Any, cast
 
@@ -39,6 +39,7 @@ from voicerecognizer.config import (
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
+    PROJECT_ROOT,
 )
 from voicerecognizer.dataset.hiragana_dataset import HiraganaDataset
 from voicerecognizer.evaluation.evaluator import compute_evaluation_result
@@ -46,7 +47,10 @@ from voicerecognizer.models.wav2vec2.export_onnx import export_and_benchmark
 from voicerecognizer.preprocessing.audio_augmentor import AudioAugmentor
 from voicerecognizer.preprocessing.dataset_builder import ensure_merged_and_preprocessed
 from voicerecognizer.utils.plot_saver import save_history_plots
-from voicerecognizer.utils.split_helper import safe_stratified_split
+from voicerecognizer.utils.split_helper import (
+    safe_stratified_split,
+    speaker_aware_stratified_split,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -67,6 +71,7 @@ class Wav2Vec2ClassificationDataset(Dataset):
         )
         self.labels = source_dataset.labels
         self.data = source_dataset.data
+        self.speakers = collect_speakers_for_data(root_dir, self.data)
         self.sample_rate = sample_rate
         self.target_samples = int(target_length_seconds * sample_rate)
 
@@ -109,6 +114,39 @@ class Wav2Vec2ClassificationDataset(Dataset):
         return np.ascontiguousarray(waveform, dtype=np.float32), label
 
 
+def _resolve_index_audio_path(path_value: str, *, root: Path) -> Path:
+    path = Path(path_value)
+    if path.is_absolute():
+        return path
+    root_relative = root / path
+    if root_relative.exists():
+        return root_relative
+    return PROJECT_ROOT / path
+
+
+def collect_speakers_for_data(
+    root_dir: str | Path,
+    data: list[tuple[Path, int]],
+) -> list[str]:
+    root = Path(root_dir)
+    index_file = root / "index.csv" if root.is_dir() else root
+    if not index_file.exists():
+        return [""] * len(data)
+
+    speaker_by_path: dict[str, str] = {}
+    with open(index_file, encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            filepath = str(row.get("filepath") or row.get("\ufefffilepath") or "").strip()
+            speaker = str(row.get("speaker") or "").strip()
+            if not filepath:
+                continue
+            wav_path = _resolve_index_audio_path(filepath, root=index_file.parent)
+            speaker_by_path[str(wav_path.resolve())] = speaker
+
+    return [speaker_by_path.get(str(wav_path.resolve()), "") for wav_path, _ in data]
+
+
 def determine_optimal_num_workers(requested_num_workers: int | None = None) -> int:
     """
     CPUコア数とOS特性に応じて DataLoader の num_workers を自動・動的に計算する。
@@ -140,11 +178,42 @@ def fix_seed(seed: int) -> None:
 
 
 def split_dataset(
-    dataset: Wav2Vec2ClassificationDataset, val_rate: float, seed: int
+    dataset: Wav2Vec2ClassificationDataset,
+    val_rate: float,
+    seed: int,
+    speaker_aware: bool = False,
 ) -> tuple[Subset, Subset]:
     labels = [label for _, label in dataset.data]
-    train_idx, val_idx = safe_stratified_split(labels, val_rate=val_rate, seed=seed)
+    if speaker_aware:
+        train_idx, val_idx = speaker_aware_stratified_split(
+            labels,
+            dataset.speakers,
+            val_rate=val_rate,
+            seed=seed,
+        )
+        logger.info(
+            "speaker-aware split を有効化しました: train=%d, validation=%d",
+            len(train_idx),
+            len(val_idx),
+        )
+    else:
+        train_idx, val_idx = safe_stratified_split(labels, val_rate=val_rate, seed=seed)
     return Subset(dataset, train_idx), Subset(dataset, val_idx)
+
+
+def collect_augmentation_noise_files(noise_dir: str | Path | None) -> list[Path]:
+    if noise_dir is None:
+        return []
+
+    path = Path(noise_dir)
+    if not path.exists():
+        logger.warning("augmentation noise dir が存在しません: %s", path)
+        return []
+    if path.is_file() and path.suffix.lower() == ".wav":
+        return [path]
+    if not path.is_dir():
+        return []
+    return sorted(path.rglob("*.wav"))
 
 
 class AugmentedSubset(Dataset):
@@ -183,6 +252,97 @@ def compute_class_weights(
     weights = (max_count / counts) ** power
     weights = weights / np.mean(weights)
     return torch.tensor(weights, dtype=torch.float32)
+
+
+def compute_balanced_sampler_weights(
+    labels: list[int] | torch.Tensor | np.ndarray,
+    num_classes: int,
+    power: float = 0.5,
+    confusion_label_multipliers: dict[int, float] | None = None,
+) -> list[float]:
+    labels_arr = np.asarray(labels, dtype=np.int64)
+    counts = np.bincount(labels_arr, minlength=num_classes)
+    counts = np.maximum(counts, 1)
+    max_count = np.max(counts)
+    class_weights = (max_count / counts) ** power
+    multipliers = confusion_label_multipliers or {}
+    return [
+        float(class_weights[int(label)] * multipliers.get(int(label), 1.0)) for label in labels_arr
+    ]
+
+
+def load_confusion_label_multipliers(
+    evaluation_result_path: Path | str,
+    labels: tuple[str, ...] | list[str],
+    *,
+    min_count: int = 3,
+    max_pairs: int = 20,
+    boost: float = 0.5,
+) -> dict[int, float]:
+    if boost <= 0 or max_pairs <= 0:
+        return {}
+
+    path = Path(evaluation_result_path)
+    if not path.exists():
+        logger.info("混同ペア重点サンプラー: 評価結果が見つからないためスキップします: %s", path)
+        return {}
+
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        logger.warning("混同ペア重点サンプラー: 評価結果JSONの読み込みに失敗しました: %s", exc)
+        return {}
+
+    matrix = payload.get("confusion_matrix", {}) if isinstance(payload, dict) else {}
+    if not isinstance(matrix, dict):
+        return {}
+
+    pairs: list[tuple[str, str, int, float]] = []
+    for true_label, row in matrix.items():
+        if not isinstance(row, dict):
+            continue
+        row_total = sum(int(value) for value in row.values())
+        if row_total <= 0:
+            continue
+        for predicted_label, raw_count in row.items():
+            count = int(raw_count)
+            if true_label == predicted_label or count < min_count:
+                continue
+            pairs.append((str(true_label), str(predicted_label), count, count / row_total))
+
+    if not pairs:
+        return {}
+
+    pairs.sort(key=lambda item: item[2], reverse=True)
+    label_scores: dict[str, float] = {}
+    for true_label, predicted_label, count, rate in pairs[:max_pairs]:
+        score = count * (1.0 + rate)
+        label_scores[true_label] = label_scores.get(true_label, 0.0) + score
+        label_scores[predicted_label] = label_scores.get(predicted_label, 0.0) + score
+
+    if not label_scores:
+        return {}
+
+    max_score = max(label_scores.values())
+    label_to_idx = {label: index for index, label in enumerate(labels)}
+    multipliers: dict[int, float] = {}
+    for label, score in label_scores.items():
+        if label not in label_to_idx:
+            continue
+        multipliers[label_to_idx[label]] = 1.0 + boost * (float(score) / float(max_score))
+
+    if multipliers:
+        top_labels = ", ".join(
+            f"{labels[index]}={multiplier:.2f}"
+            for index, multiplier in sorted(
+                multipliers.items(),
+                key=lambda item: item[1],
+                reverse=True,
+            )[:10]
+        )
+        logger.info("混同ペア重点サンプラーを有効化します: %s", top_labels)
+
+    return multipliers
 
 
 def is_labels_compatible(model_path: Path, current_labels: list[str]) -> bool:
@@ -807,23 +967,36 @@ def train(args: argparse.Namespace) -> None:
         target_length_seconds=target_length_seconds,
         top_db=top_db,
     )
-    train_dataset, val_dataset = split_dataset(dataset, val_rate, seed)
+    train_subset, val_dataset = split_dataset(
+        dataset,
+        val_rate,
+        seed,
+        speaker_aware=getattr(args, "speaker_aware_split", False),
+    )
 
     use_class_weights = getattr(args, "use_class_weights", True)
     augment = getattr(args, "augment", True)
     class_weight_power = getattr(args, "class_weight_power", 0.5)
 
     if augment:
-        logger.info(
-            "Audio Data Augmentation (ノイズ加算・音量変調・タイムシフト) を訓練データセットに有効化しました。"
+        augmentation_noise_files = collect_augmentation_noise_files(
+            getattr(args, "augmentation_noise_dir", None)
         )
-        train_augmentor = AudioAugmentor()
-        train_augmented_subset = AugmentedSubset(train_dataset, train_augmentor)
+        logger.info(
+            "Audio Data Augmentation "
+            "(ノイズ加算・音量変調・タイムシフト・軽い速度/ピッチ変化・実機ノイズ混合) "
+            "を訓練データセットに有効化しました。実機ノイズ=%d件",
+            len(augmentation_noise_files),
+        )
+        train_augmentor = AudioAugmentor(
+            sample_rate=sample_rate,
+            noise_file_paths=augmentation_noise_files,
+        )
+        train_dataset = AugmentedSubset(train_subset, train_augmentor)
     else:
-        train_augmented_subset = AugmentedSubset(train_dataset, augmentor=None)
+        train_dataset = AugmentedSubset(train_subset, augmentor=None)
 
-    raw_train_subset = train_augmented_subset.subset
-    train_labels = [dataset.data[i][1] for i in raw_train_subset.indices]
+    train_labels = [dataset.data[i][1] for i in train_subset.indices]
 
     loss_fct: torch.nn.Module | None = None
     if use_class_weights:
@@ -884,16 +1057,33 @@ def train(args: argparse.Namespace) -> None:
     use_balanced_sampler = getattr(args, "use_balanced_sampler", True)
     train_sampler = None
     if use_balanced_sampler:
-        label_counts = Counter(train_labels)
-        class_weights_dict = {lbl: 1.0 / (count**0.5) for lbl, count in label_counts.items()}
-        sample_weights = [class_weights_dict[lbl] for lbl in train_labels]
+        confusion_label_multipliers: dict[int, float] = {}
+        if getattr(args, "use_confusion_pair_sampler", True):
+            confusion_label_multipliers = load_confusion_label_multipliers(
+                getattr(
+                    args,
+                    "confusion_pair_evaluation_result",
+                    PROJECT_ROOT / "evaluation_results" / "evaluation_result.json",
+                ),
+                dataset.labels,
+                min_count=getattr(args, "confusion_pair_min_count", 3),
+                max_pairs=getattr(args, "confusion_pair_max_pairs", 20),
+                boost=getattr(args, "confusion_pair_boost", 0.5),
+            )
+        sample_weights = compute_balanced_sampler_weights(
+            train_labels,
+            num_classes=len(dataset.labels),
+            power=0.5,
+            confusion_label_multipliers=confusion_label_multipliers,
+        )
         train_sampler = WeightedRandomSampler(
             weights=sample_weights,
             num_samples=len(sample_weights),
             replacement=True,
         )
         logger.info(
-            "マイルド全クラスサンプラー (WeightedRandomSampler: power=0.5) を有効化しました。aiueo の正解率を維持しつつマイナー音もバランスよく学習します。"
+            "マイルド全クラスサンプラー (WeightedRandomSampler: power=0.5) を有効化しました。"
+            "必要に応じて混同ペア重点倍率も上乗せします。"
         )
 
     pin_memory = device.type == "cuda"
@@ -1231,6 +1421,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Disable training audio data augmentation (enabled by default)",
     )
     parser.add_argument(
+        "--augmentation-noise-dir",
+        type=Path,
+        default=None,
+        help="Optional wav file or directory of recorded device/background noise for augmentation",
+    )
+    parser.add_argument(
         "--class-weight-power",
         type=float,
         default=0.5,
@@ -1251,6 +1447,43 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_false",
         dest="use_balanced_sampler",
         help="Disable WeightedRandomSampler for class-balanced training",
+    )
+    parser.add_argument(
+        "--speaker-aware-split",
+        action="store_true",
+        default=False,
+        help="Split validation by speaker groups using processed_dataset/index.csv speaker metadata",
+    )
+    parser.add_argument(
+        "--no-confusion-pair-sampler",
+        action="store_false",
+        dest="use_confusion_pair_sampler",
+        default=True,
+        help="Disable extra sampling weight for labels involved in past confusion pairs",
+    )
+    parser.add_argument(
+        "--confusion-pair-evaluation-result",
+        type=Path,
+        default=PROJECT_ROOT / "evaluation_results" / "evaluation_result.json",
+        help="Evaluation JSON containing the confusion matrix used by the sampler",
+    )
+    parser.add_argument(
+        "--confusion-pair-min-count",
+        type=int,
+        default=3,
+        help="Minimum off-diagonal confusion count to include in the sampler",
+    )
+    parser.add_argument(
+        "--confusion-pair-max-pairs",
+        type=int,
+        default=20,
+        help="Maximum number of confusion pairs to boost",
+    )
+    parser.add_argument(
+        "--confusion-pair-boost",
+        type=float,
+        default=0.5,
+        help="Maximum extra sampling multiplier for the hardest confusion label",
     )
     parser.add_argument(
         "--num-workers",

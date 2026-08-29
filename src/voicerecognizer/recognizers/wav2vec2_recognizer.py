@@ -39,7 +39,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         sample_rate: int = DEFAULT_AUDIO_CONFIG.sample_rate,
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
         top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,
-        dynamic_trimming: bool = True,
+        dynamic_trimming: bool = False,
         auto_download: bool = True,
         candidate_filenames: tuple[str, ...]
         | list[str] = DEFAULT_RECOGNITION_CONFIG.wav2vec2_onnx_candidate_filenames,
@@ -156,8 +156,8 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
             "     ネットワーク接続を確認の上、再度実行してください。\n"
             "  2. [Hugging Face 認証トークン]\n"
             "     アクセス制限やレートリミットを回避する場合は環境変数を設定してください:\n"
-            "     - Windows (PowerShell): $env:VOICERECOGNIZER_HF_TOKEN = \"your_token\"\n"
-            "     - Linux / macOS (Bash): export VOICERECOGNIZER_HF_TOKEN=\"your_token\"\n"
+            '     - Windows (PowerShell): $env:VOICERECOGNIZER_HF_TOKEN = "your_token"\n'
+            '     - Linux / macOS (Bash): export VOICERECOGNIZER_HF_TOKEN="your_token"\n'
             "     - または環境変数 HF_TOKEN (フォールバック) を設定\n"
             "  3. [ローカルモデルの指定]\n"
             "     ローカルに既にあるモデルフォルダを使用したい場合は、初期化時に model_path を渡してください:\n"
@@ -276,7 +276,9 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         """全ラベルに対する確率スコアの辞書を返します"""
         self._ensure_model_loaded()
         if self.session is None:
-            raise ModelNotFoundError(f"Wav2Vec2 ONNX セッションがロードされていません: {self.model_path}")
+            raise ModelNotFoundError(
+                f"Wav2Vec2 ONNX セッションがロードされていません: {self.model_path}"
+            )
         input_values, _, _ = self._prepare_input_values(audio)
         outputs = self.session.run(None, {self.input_name: input_values})
         logits = outputs[0][0]
