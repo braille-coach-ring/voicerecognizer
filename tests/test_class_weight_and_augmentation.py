@@ -134,6 +134,7 @@ class TestClassWeightAndAugmentation(unittest.TestCase):
         self.assertTrue(args_default.use_balanced_sampler)
         self.assertFalse(args_default.speaker_aware_split)
         self.assertTrue(args_default.use_confusion_pair_sampler)
+        self.assertTrue(args_default.hf_upload)
         self.assertEqual(args_default.class_weight_power, 0.5)
         self.assertEqual(args_default.confusion_pair_min_count, 3)
         self.assertEqual(args_default.confusion_pair_boost, 0.5)
@@ -144,6 +145,7 @@ class TestClassWeightAndAugmentation(unittest.TestCase):
                 "--no-augment",
                 "--no-balanced-sampler",
                 "--no-confusion-pair-sampler",
+                "--no-hf-upload",
                 "--speaker-aware-split",
                 "--class-weight-power",
                 "1.0",
@@ -154,6 +156,7 @@ class TestClassWeightAndAugmentation(unittest.TestCase):
         self.assertFalse(args_opt_out.use_balanced_sampler)
         self.assertTrue(args_opt_out.speaker_aware_split)
         self.assertFalse(args_opt_out.use_confusion_pair_sampler)
+        self.assertFalse(args_opt_out.hf_upload)
         self.assertEqual(args_opt_out.class_weight_power, 1.0)
 
 

@@ -5,7 +5,11 @@ import unittest
 from pathlib import Path
 
 from voicerecognizer.core.interfaces import RecognitionStrategy
-from voicerecognizer.evaluation.evaluator import EvaluationResult, Evaluator
+from voicerecognizer.evaluation.evaluator import (
+    EvaluationResult,
+    Evaluator,
+    compute_evaluation_result,
+)
 
 
 class MockRecognizer(RecognitionStrategy):
@@ -64,10 +68,10 @@ class TestEvaluator(unittest.TestCase):
         self.index_path = self.dataset_dir / "index.csv"
         with open(self.index_path, "w", encoding="utf-8", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["filepath", "label", "machine_id", "predicted_text"])
-            writer.writerow(["sample_a1.wav", "a", "mac1", "a"])
-            writer.writerow(["sample_a2.wav", "a", "mac1", "e"])  # misclassified
-            writer.writerow(["sample_e1.wav", "e", "mac1", "e"])
+            writer.writerow(["filepath", "label", "speaker", "machine_id", "predicted_text"])
+            writer.writerow(["sample_a1.wav", "a", "speaker_a", "mac1", "a"])
+            writer.writerow(["sample_a2.wav", "a", "speaker_a", "mac1", "e"])  # misclassified
+            writer.writerow(["sample_e1.wav", "e", "speaker_b", "mac2", "e"])
 
         # Create mock audio files
         (self.dataset_dir / "sample_a1.wav").touch()
@@ -90,6 +94,16 @@ class TestEvaluator(unittest.TestCase):
         self.assertEqual(len(result.misclassified), 1)
         self.assertEqual(result.misclassified[0].true_label, "a")
         self.assertEqual(result.misclassified[0].predicted_label, "e")
+        self.assertEqual(result.misclassified[0].speaker, "speaker_a")
+        self.assertEqual(result.speaker_metrics["speaker_a"].total_samples, 2)
+        self.assertEqual(result.speaker_metrics["speaker_a"].misclassified_samples, 1)
+        self.assertAlmostEqual(result.speaker_metrics["speaker_a"].accuracy, 0.5)
+        self.assertEqual(result.speaker_metrics["speaker_b"].total_samples, 1)
+        self.assertAlmostEqual(result.speaker_metrics["speaker_b"].accuracy, 1.0)
+        self.assertEqual(
+            result.speaker_metrics["speaker_a"].top_confusions[0],
+            {"true_label": "a", "predicted_label": "e", "count": 1},
+        )
 
     def test_evaluate_with_model(self) -> None:
         mock_model = MockRecognizer()
@@ -131,6 +145,38 @@ class TestEvaluator(unittest.TestCase):
         success = evaluator.export_json(output_json)
         self.assertTrue(success)
         self.assertTrue(output_json.exists())
+        with open(output_json, encoding="utf-8") as f:
+            payload = json.load(f)
+        self.assertIn("speaker_metrics", payload)
+        self.assertEqual(payload["speaker_metrics"]["speaker_a"]["total_samples"], 2)
+
+    def test_compute_evaluation_result_accepts_speakers(self) -> None:
+        result = compute_evaluation_result(
+            ["a", "a", "e"],
+            ["a", "e", "e"],
+            labels=("a", "e"),
+            speakers=["speaker_a", "speaker_a", "speaker_b"],
+        )
+
+        self.assertEqual(result.speaker_metrics["speaker_a"].total_samples, 2)
+        self.assertAlmostEqual(result.speaker_metrics["speaker_a"].accuracy, 0.5)
+        self.assertEqual(result.speaker_metrics["speaker_b"].misclassified_samples, 0)
+
+    def test_export_html_includes_speaker_metrics(self) -> None:
+        evaluator = Evaluator(
+            model=None,
+            labels=("a", "e", "i", "o", "u", "other"),
+            dataset_path=self.dataset_dir,
+        )
+        evaluator.update_from_dataset()
+
+        output_html = self.dataset_dir / "evaluation_report.html"
+        self.assertTrue(evaluator.export_html(output_html))
+
+        html = output_html.read_text(encoding="utf-8")
+        self.assertIn("話者別精度指標", html)
+        self.assertIn("speaker_a", html)
+        self.assertIn("speaker_b", html)
 
     def test_review_candidates_include_mismatch_and_low_confidence(self) -> None:
         mock_model = CandidateMockRecognizer()

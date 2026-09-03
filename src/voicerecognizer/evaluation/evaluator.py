@@ -55,6 +55,20 @@ class MisclassifiedSample:
     predicted_label: str
     filepath: str = ""
     confidence: float | None = None
+    speaker: str = ""
+
+
+@dataclass(frozen=True)
+class SpeakerMetrics:
+    """話者ごとの評価指標"""
+
+    accuracy: float
+    macro_f1: float
+    weighted_f1: float
+    total_samples: int
+    correct_samples: int
+    misclassified_samples: int
+    top_confusions: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -65,6 +79,7 @@ class EvaluationResult:
     per_class: dict[str, PerClassMetrics]
     confusion_matrix: dict[str, dict[str, int]]
     misclassified: list[MisclassifiedSample] = field(default_factory=list)
+    speaker_metrics: dict[str, SpeakerMetrics] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """JSON保存用・Dict型変換"""
@@ -121,6 +136,7 @@ class Evaluator:
         self.y_pred: list[str] = []
         self.confidences: list[float | None] = []
         self.filepaths: list[str] = []
+        self.speakers: list[str] = []
         self.review_candidates: list[ReviewCandidate] = []
         self.result: EvaluationResult | None = None
 
@@ -130,6 +146,7 @@ class Evaluator:
         self.y_pred.clear()
         self.confidences.clear()
         self.filepaths.clear()
+        self.speakers.clear()
         self.review_candidates.clear()
         self.result = None
 
@@ -139,12 +156,14 @@ class Evaluator:
         pred_label: str,
         confidence: float | None = None,
         filepath: str | None = None,
+        speaker: str | None = None,
     ) -> None:
         """1件ごとの推論/評価レコードを追加する共通処理"""
         self.y_true.append(true_label)
         self.y_pred.append(pred_label)
         self.confidences.append(confidence)
         self.filepaths.append(filepath or "")
+        self.speakers.append((speaker or "").strip() or "unknown")
 
     def _resolve_audio_path(self, rel_path: str) -> Path:
         p = Path(rel_path)
@@ -161,6 +180,42 @@ class Evaluator:
         if value is None:
             value = row.get(f"\ufeff{key}", default)
         return str(value)
+
+    def _infer_speaker_from_path(self, path_value: str, label: str = "") -> str:
+        normalized = path_value.replace("\\", "/")
+        parts = [part for part in normalized.split("/") if part and part != "."]
+
+        if "collected" in parts:
+            index = parts.index("collected")
+            if index + 1 < len(parts):
+                return parts[index + 1]
+
+        if "dataset" in parts:
+            index = parts.index("dataset")
+            if index + 2 < len(parts) and parts[index + 1] != "collected":
+                return parts[index + 1]
+
+        if label and len(parts) >= 3 and parts[-2] == label:
+            return parts[-3]
+        return ""
+
+    def _read_speaker(self, row: dict[str, Any], *, filepath: str, label: str) -> str:
+        speaker = self._row_value(row, "speaker").strip()
+        if speaker:
+            return speaker
+
+        machine_id = self._row_value(row, "machine_id").strip()
+        if machine_id:
+            return machine_id
+
+        source_filepath = self._row_value(row, "source_filepath").strip()
+        if source_filepath:
+            inferred = self._infer_speaker_from_path(source_filepath, label=label)
+            if inferred:
+                return inferred
+
+        inferred = self._infer_speaker_from_path(filepath, label=label)
+        return inferred or "unknown"
 
     def _coerce_optional_float(self, value: Any) -> float | None:
         if value is None or value == "":
@@ -274,6 +329,7 @@ class Evaluator:
             for row in reader:
                 rel_path = self._row_value(row, "filepath")
                 true_label = self._row_value(row, "label")
+                speaker = self._read_speaker(row, filepath=rel_path, label=true_label)
                 audio_path = self._resolve_audio_path(rel_path)
 
                 if not audio_path.exists():
@@ -288,6 +344,7 @@ class Evaluator:
                     pred_label=pred_label,
                     confidence=confidence,
                     filepath=rel_path,
+                    speaker=speaker,
                 )
                 self._add_review_candidate(
                     filepath=rel_path,
@@ -346,6 +403,7 @@ class Evaluator:
                 true_label = self._row_value(row, "label")
                 pred_label = str(row["predicted_text"])
                 rel_path = self._row_value(row, "filepath")
+                speaker = self._read_speaker(row, filepath=rel_path, label=true_label)
                 confidence = self._coerce_optional_float(row.get("confidence"))
 
                 self._add_prediction(
@@ -353,6 +411,7 @@ class Evaluator:
                     pred_label=pred_label,
                     confidence=confidence,
                     filepath=rel_path,
+                    speaker=speaker,
                 )
                 self._add_review_candidate(
                     filepath=rel_path,
@@ -363,6 +422,78 @@ class Evaluator:
 
         self.result = self._compute_metrics()
         return self.result
+
+    def _compute_speaker_metrics(self) -> dict[str, SpeakerMetrics]:
+        grouped_indices: dict[str, list[int]] = {}
+        for index in range(len(self.y_true)):
+            speaker = self.speakers[index] if index < len(self.speakers) else "unknown"
+            grouped_indices.setdefault(speaker or "unknown", []).append(index)
+
+        speaker_metrics: dict[str, SpeakerMetrics] = {}
+        label_order = {label: index for index, label in enumerate(self.labels)}
+
+        for speaker, indices in grouped_indices.items():
+            y_true = [self.y_true[index] for index in indices]
+            y_pred = [self.y_pred[index] for index in indices]
+            if not y_true:
+                continue
+
+            observed_labels = sorted(
+                set(y_true) | set(y_pred),
+                key=lambda label: label_order.get(label, len(label_order)),
+            )
+            report_dict = cast(
+                dict[str, Any],
+                classification_report(
+                    y_true,
+                    y_pred,
+                    labels=observed_labels,
+                    output_dict=True,
+                    zero_division=0,
+                ),
+            )
+            correct = sum(
+                1
+                for true_label, pred_label in zip(y_true, y_pred, strict=False)
+                if true_label == pred_label
+            )
+
+            confusion_counter: dict[tuple[str, str], int] = {}
+            for true_label, pred_label in zip(y_true, y_pred, strict=False):
+                if true_label == pred_label:
+                    continue
+                key = (true_label, pred_label)
+                confusion_counter[key] = confusion_counter.get(key, 0) + 1
+
+            top_confusions = [
+                {
+                    "true_label": true_label,
+                    "predicted_label": pred_label,
+                    "count": count,
+                }
+                for (true_label, pred_label), count in sorted(
+                    confusion_counter.items(),
+                    key=lambda item: item[1],
+                    reverse=True,
+                )[:10]
+            ]
+
+            speaker_metrics[speaker] = SpeakerMetrics(
+                accuracy=round(float(accuracy_score(y_true, y_pred)), 4),
+                macro_f1=round(float(report_dict["macro avg"]["f1-score"]), 4),
+                weighted_f1=round(float(report_dict["weighted avg"]["f1-score"]), 4),
+                total_samples=len(y_true),
+                correct_samples=correct,
+                misclassified_samples=len(y_true) - correct,
+                top_confusions=top_confusions,
+            )
+
+        return dict(
+            sorted(
+                speaker_metrics.items(),
+                key=lambda item: (item[1].accuracy, -item[1].total_samples, item[0]),
+            )
+        )
 
     def _compute_metrics(self) -> EvaluationResult:
         """蓄積された y_true / y_pred から EvaluationResult を計算・構築する"""
@@ -375,6 +506,7 @@ class Evaluator:
                 per_class={},
                 confusion_matrix={},
                 misclassified=[],
+                speaker_metrics={},
             )
 
         labels_list = list(self.labels)
@@ -423,20 +555,25 @@ class Evaluator:
             if self.y_true[i] != self.y_pred[i]:
                 filepath = self.filepaths[i] if i < len(self.filepaths) else ""
                 confidence = self.confidences[i] if i < len(self.confidences) else None
+                speaker = self.speakers[i] if i < len(self.speakers) else ""
                 misclassified.append(
                     MisclassifiedSample(
                         true_label=self.y_true[i],
                         predicted_label=self.y_pred[i],
                         filepath=filepath,
                         confidence=confidence,
+                        speaker=speaker,
                     )
                 )
+
+        speaker_metrics = self._compute_speaker_metrics()
 
         return EvaluationResult(
             overall=overall,
             per_class=per_class,
             confusion_matrix=confusion_breakdown,
             misclassified=misclassified,
+            speaker_metrics=speaker_metrics,
         )
 
     def export_json(self, output_path: Path | str) -> bool:
@@ -514,6 +651,7 @@ def generate_html_report(
     per_class = result.per_class
     cm = result.confusion_matrix
     misclassified = result.misclassified
+    speaker_metrics = result.speaker_metrics
 
     labels = list(per_class.keys())
 
@@ -568,6 +706,20 @@ def generate_html_report(
                 "icon": "[OK] ",
                 "title": f"優秀クラス: 「{', '.join(high_acc_labels)}」 は F1 95% 以上を維持",
                 "desc": "これらの音階・音声特徴表現は安定して正しく学習されています。",
+            }
+        )
+
+    if speaker_metrics:
+        weakest_speaker, weakest_metrics = min(
+            speaker_metrics.items(),
+            key=lambda item: (item[1].accuracy, -item[1].total_samples),
+        )
+        insights.append(
+            {
+                "type": "warning",
+                "icon": "[Speaker] ",
+                "title": f"話者別の弱点: 「{weakest_speaker}」 の正解率が {weakest_metrics.accuracy * 100:.1f}%",
+                "desc": f"{weakest_metrics.total_samples} 件中 {weakest_metrics.misclassified_samples} 件が誤認識です。この話者の録音環境・音量・混同ペアを優先確認してください。",
             }
         )
 
@@ -634,7 +786,38 @@ def generate_html_report(
         </tr>
         """
 
-    # --- 4. 誤識別サンプル行 ＆ インライン HTML5 音声再生プレイヤー ---
+    # --- 4. 話者別メトリクス行 ---
+    speaker_rows_html = ""
+    if speaker_metrics:
+        for speaker, metrics in speaker_metrics.items():
+            accuracy_pct = metrics.accuracy * 100
+            macro_f1_pct = metrics.macro_f1 * 100
+            confusion_summary = ", ".join(
+                f"{item['true_label']}->{item['predicted_label']}:{item['count']}"
+                for item in metrics.top_confusions[:3]
+            )
+            if not confusion_summary:
+                confusion_summary = "-"
+            speaker_rows_html += f"""
+            <tr>
+                <td class='class-name'><strong>{speaker}</strong></td>
+                <td>{metrics.total_samples} 件</td>
+                <td>{metrics.correct_samples} 件</td>
+                <td>{metrics.misclassified_samples} 件</td>
+                <td>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {accuracy_pct:.1f}%;"></div>
+                        <span class="progress-text">{metrics.accuracy:.4f} ({accuracy_pct:.1f}%)</span>
+                    </div>
+                </td>
+                <td>{metrics.macro_f1:.4f} ({macro_f1_pct:.1f}%)</td>
+                <td>{confusion_summary}</td>
+            </tr>
+            """
+    else:
+        speaker_rows_html = "<tr><td colspan='7' style='text-align:center; color: var(--text-muted); padding:20px;'>話者情報がありません。</td></tr>"
+
+    # --- 5. 誤識別サンプル行 ＆ インライン HTML5 音声再生プレイヤー ---
     filter_buttons_html = f"<button class='btn-filter active' onclick='filterCategory(\"all\")'>全件 ({len(misclassified)})</button>"
 
     # 誤認識のある正解ラベルのユニークリスト
@@ -662,6 +845,7 @@ def generate_html_report(
             mis_rows_html += f"""
             <tr class="mis-row category-{sample.true_label}">
                 <td>{i}</td>
+                <td>{sample.speaker or "-"}</td>
                 <td><span class="badge badge-true">正解: {sample.true_label}</span></td>
                 <td><span class="badge badge-pred">予測: {sample.predicted_label}</span></td>
                 <td>{audio_player_html}</td>
@@ -670,7 +854,7 @@ def generate_html_report(
             </tr>
             """
     else:
-        mis_rows_html = "<tr><td colspan='6' style='text-align:center; color:#34d399; padding:20px;'>誤識別サンプルはありません（全件完全正解）！</td></tr>"
+        mis_rows_html = "<tr><td colspan='7' style='text-align:center; color:#34d399; padding:20px;'>誤識別サンプルはありません（全件完全正解）！</td></tr>"
 
     html = f"""<!DOCTYPE html>
 <html lang="ja">
@@ -947,7 +1131,29 @@ def generate_html_report(
             </div>
         </div>
 
-        <!-- 4. Confusion Matrix Heatmap -->
+        <!-- 4. Speaker Metrics -->
+        <div class="section-card">
+            <h2>話者別精度指標</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: -10px;">※ Accuracy が低い順に表示します。話者ごとの録音環境差や苦手な混同ペアの確認に使います。</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>話者</th>
+                        <th>件数</th>
+                        <th>正解</th>
+                        <th>誤認識</th>
+                        <th>Accuracy</th>
+                        <th>Macro F1</th>
+                        <th>主な混同</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {speaker_rows_html}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 5. Confusion Matrix Heatmap -->
         <div class="section-card">
             <h2>混同行列ヒートマップ (Confusion Matrix Heatmap)</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: -10px;">※ 各セル内のパーセンテージは、正解ラベル全体に対する予測割合を示しています。</p>
@@ -964,7 +1170,7 @@ def generate_html_report(
             </table>
         </div>
 
-        <!-- 5. Misclassified Samples with Audio Player & Filtering -->
+        <!-- 6. Misclassified Samples with Audio Player & Filtering -->
         <div class="section-card">
             <h2>誤識別サンプルの試聴 ＆ 詳細解析 (Misclassified Samples: {len(misclassified)}件)</h2>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: -10px;">ブラウザ上で直接再生ボタンを押すと実際の音声を試聴できます。問題のある文字カテゴリをクリックして絞り込めます。</p>
@@ -977,6 +1183,7 @@ def generate_html_report(
                 <thead>
                     <tr>
                         <th>#</th>
+                        <th>話者</th>
                         <th>正解</th>
                         <th>予測</th>
                         <th>音声試聴 (Audio Player)</th>
@@ -1074,6 +1281,7 @@ def compute_evaluation_result(
     labels: Sequence[str] = DEFAULT_RECOGNITION_CONFIG.labels,
     filepaths: list[str] | None = None,
     confidences: list[float] | None = None,
+    speakers: list[str] | None = None,
 ) -> EvaluationResult:
     """スタンドアロンで y_true と y_pred から EvaluationResult を直接計算するユーティリティ関数"""
     evaluator = object.__new__(Evaluator)
@@ -1082,5 +1290,6 @@ def compute_evaluation_result(
     evaluator.y_pred = list(y_pred)
     evaluator.filepaths = list(filepaths) if filepaths else []
     evaluator.confidences = list(confidences) if confidences else []
+    evaluator.speakers = list(speakers) if speakers else ["unknown"] * len(y_true)
     evaluator.result = None
     return evaluator._compute_metrics()

@@ -214,6 +214,12 @@ uv run python train.py --model wav2vec2
 uv run python train.py --model wav2vec2 --speaker-aware-split --epochs 30 --batch-size 4 --learning-rate 0.00003
 ```
 
+テスト学習で Hugging Face にアップロードしたくない場合:
+
+```powershell
+uv run python train.py --model wav2vec2 --speaker-aware-split --no-hf-upload
+```
+
 実機ノイズ wav を用意した場合:
 
 ```powershell
@@ -241,6 +247,7 @@ uv run python train.py --model wav2vec2 --no-augment
 uv run python train.py --model wav2vec2 --no-balanced-sampler
 uv run python train.py --model wav2vec2 --no-confusion-pair-sampler
 uv run python train.py --model wav2vec2 --no-onnx-export
+uv run python train.py --model wav2vec2 --no-hf-upload
 uv run python train.py --model wav2vec2 --num-workers 0
 ```
 
@@ -252,6 +259,9 @@ uv run python train.py --model wav2vec2 --num-workers 0
 uv run python script\evaluate.py --model-type wav2vec2
 uv run python script\evaluate.py --model-type cnn
 ```
+
+`index.csv` に `speaker` 列、または推定可能な `dataset\<speaker>\<label>\*.wav` 形式のパスがある場合、
+評価 JSON と HTML には話者別の Accuracy、Macro F1、誤認識数、主な混同ペアも出力されます。
 
 最新モデルの予測で `merged_dataset/index.csv` の `predicted_text` を更新してから評価します。
 
