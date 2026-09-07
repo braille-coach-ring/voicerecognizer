@@ -23,6 +23,14 @@ def _path_for_json(path: Path) -> str:
     return str(path).replace("\\", "/")
 
 
+def _path_sort_key(path: Path) -> str:
+    return str(path)
+
+
+def _dict_count_sort_key(item: dict[str, Any]) -> int:
+    return int(item["count"])
+
+
 def _resolve_audio_path(path_value: str, *, index_base: Path, project_root: Path) -> Path:
     path = Path(path_value)
     if path.is_absolute():
@@ -111,7 +119,7 @@ def _find_audio_hash_duplicates(
     limit: int,
 ) -> list[dict[str, Any]]:
     by_digest: dict[str, list[str]] = defaultdict(list)
-    for path in sorted(set(paths), key=lambda item: str(item)):
+    for path in sorted(set(paths), key=_path_sort_key):
         try:
             by_digest[_hash_file(path)].append(_path_for_json(path))
         except OSError:
@@ -122,7 +130,7 @@ def _find_audio_hash_duplicates(
         for digest, items in by_digest.items()
         if len(items) > 1
     ]
-    groups.sort(key=lambda item: int(item["count"]), reverse=True)
+    groups.sort(key=_dict_count_sort_key, reverse=True)
     return groups[:limit]
 
 
@@ -131,6 +139,7 @@ def _audit_processed_dataset(
     *,
     expected_existing_files: int,
 ) -> dict[str, Any]:
+    wav_files: list[Path]
     wav_files = (
         sorted(processed_dataset_dir.rglob("*.wav")) if processed_dataset_dir.exists() else []
     )
@@ -230,7 +239,9 @@ def _audit_confusions(evaluation_result_path: Path, *, limit: int) -> dict[str, 
     with open(evaluation_result_path, encoding="utf-8") as f:
         payload = json.load(f)
 
-    matrix = payload.get("confusion_matrix", {}) if isinstance(payload, dict) else {}
+    matrix: object = {}
+    if isinstance(payload, dict):
+        matrix = payload.get("confusion_matrix", {})
     pairs: list[dict[str, Any]] = []
     if isinstance(matrix, dict):
         for true_label, row in matrix.items():
@@ -252,7 +263,7 @@ def _audit_confusions(evaluation_result_path: Path, *, limit: int) -> dict[str, 
                     }
                 )
 
-    pairs.sort(key=lambda item: int(item["count"]), reverse=True)
+    pairs.sort(key=_dict_count_sort_key, reverse=True)
     return {"exists": True, "top_pairs": pairs[:limit]}
 
 
@@ -337,7 +348,7 @@ def audit_dataset(
     imbalance_ratio = round(max_count / min_count, 4) if min_count > 0 else None
 
     existing_paths = [Path(row["resolved_filepath"]) for row in existing_rows]
-    audio_hash_duplicates = (
+    audio_hash_duplicates: list[dict[str, Any]] = (
         _find_audio_hash_duplicates(existing_paths, limit=duplicate_hash_limit)
         if include_hash_duplicates
         else []

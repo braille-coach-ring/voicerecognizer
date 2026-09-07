@@ -299,6 +299,14 @@ def build_wav2vec2_optimizer(
     return torch.optim.AdamW(param_groups, weight_decay=weight_decay)
 
 
+def _confusion_pair_count_sort_key(item: tuple[str, str, int, float]) -> int:
+    return item[2]
+
+
+def _label_multiplier_sort_key(item: tuple[int, float]) -> float:
+    return item[1]
+
+
 def count_trainable_parameters(model: torch.nn.Module) -> int:
     return sum(param.numel() for param in model.parameters() if param.requires_grad)
 
@@ -427,7 +435,9 @@ def load_confusion_label_multipliers(
         logger.warning("混同ペア重点サンプラー: 評価結果JSONの読み込みに失敗しました: %s", exc)
         return {}
 
-    matrix = payload.get("confusion_matrix", {}) if isinstance(payload, dict) else {}
+    matrix: object = {}
+    if isinstance(payload, dict):
+        matrix = payload.get("confusion_matrix", {})
     if not isinstance(matrix, dict):
         return {}
 
@@ -447,7 +457,7 @@ def load_confusion_label_multipliers(
     if not pairs:
         return {}
 
-    pairs.sort(key=lambda item: item[2], reverse=True)
+    pairs.sort(key=_confusion_pair_count_sort_key, reverse=True)
     label_scores: dict[str, float] = {}
     for true_label, predicted_label, count, rate in pairs[:max_pairs]:
         score = count * (1.0 + rate)
@@ -470,7 +480,7 @@ def load_confusion_label_multipliers(
             f"{labels[index]}={multiplier:.2f}"
             for index, multiplier in sorted(
                 multipliers.items(),
-                key=lambda item: item[1],
+                key=_label_multiplier_sort_key,
                 reverse=True,
             )[:10]
         )

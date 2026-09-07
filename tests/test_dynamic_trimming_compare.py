@@ -1,25 +1,30 @@
 import unittest
+from typing import Any, override
 
+from voicerecognizer.core.interfaces import RecognitionStrategy
 from voicerecognizer.evaluation.dynamic_trimming_compare import (
     compare_dynamic_trimming_accuracy,
     format_dynamic_trimming_summary,
 )
-from voicerecognizer.evaluation.evaluator import compute_evaluation_result
+from voicerecognizer.evaluation.evaluator import EvaluationResult, compute_evaluation_result
 
 
-class FakeRecognizer:
+class FakeRecognizer(RecognitionStrategy):
     def __init__(self, dynamic_trimming: bool) -> None:
         self.dynamic_trimming = dynamic_trimming
 
-    def recognize(self, audio: str) -> str:
+    @override
+    def recognize(self, audio: Any) -> str:
         return "a"
 
 
 class FakeEvaluator:
-    def __init__(self, model: FakeRecognizer) -> None:
+    def __init__(self, model: RecognitionStrategy) -> None:
+        if not isinstance(model, FakeRecognizer):
+            raise TypeError(f"FakeEvaluator expects FakeRecognizer, got {type(model).__name__}")
         self.model = model
 
-    def evaluate(self):
+    def evaluate(self) -> EvaluationResult:
         if self.model.dynamic_trimming:
             return compute_evaluation_result(
                 ["a", "a", "e"],

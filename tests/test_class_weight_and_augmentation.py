@@ -5,6 +5,7 @@ Unit tests for AudioAugmentor, compute_class_weights, and CLI option defaults us
 import json
 import tempfile
 import unittest
+from typing import override
 from unittest.mock import patch
 
 import numpy as np
@@ -67,10 +68,11 @@ class TestClassWeightAndAugmentation(unittest.TestCase):
         self.assertFalse(np.isinf(aug_waveform).any())
 
     def test_augmented_subset_applies_augmentation_when_loaded(self) -> None:
-        class TinyDataset(Dataset):
+        class TinyDataset(Dataset[tuple[np.ndarray, int]]):
             def __len__(self) -> int:
                 return 2
 
+            @override
             def __getitem__(self, index: int) -> tuple[np.ndarray, int]:
                 return np.zeros(4, dtype=np.float32), index
 

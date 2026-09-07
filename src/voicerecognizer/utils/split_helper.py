@@ -8,6 +8,14 @@ from sklearn.model_selection import StratifiedGroupKFold, StratifiedShuffleSplit
 logger = logging.getLogger(__name__)
 
 
+def _validation_size_delta(
+    item: tuple[Sequence[int], Sequence[int]],
+    *,
+    target_val_size: float,
+) -> float:
+    return abs(len(item[1]) - target_val_size)
+
+
 def safe_stratified_split(
     labels: Sequence[int | str], val_rate: float, seed: int
 ) -> tuple[list[int], list[int]]:
@@ -98,7 +106,10 @@ def speaker_aware_stratified_split(
             shuffle=True,
             random_state=seed,
         )
-        candidates = list(splitter.split(np.arange(len(labels)), labels, groups=groups))
+        candidates: list[tuple[Sequence[int], Sequence[int]]] = [
+            (list(train_idx), list(val_idx))
+            for train_idx, val_idx in splitter.split(np.arange(len(labels)), labels, groups=groups)
+        ]
     except ValueError as exc:
         logger.warning("speaker-aware split に失敗したため通常 split に戻します: %s", exc)
         return safe_stratified_split(labels, val_rate=val_rate, seed=seed)
@@ -107,8 +118,12 @@ def speaker_aware_stratified_split(
         return safe_stratified_split(labels, val_rate=val_rate, seed=seed)
 
     target_val_size = len(labels) * val_rate
+
+    def validation_size_delta(item: tuple[Sequence[int], Sequence[int]]) -> float:
+        return _validation_size_delta(item, target_val_size=target_val_size)
+
     train_idx, val_idx = min(
         candidates,
-        key=lambda item: abs(len(item[1]) - target_val_size),
+        key=validation_size_delta,
     )
     return list(train_idx), list(val_idx)

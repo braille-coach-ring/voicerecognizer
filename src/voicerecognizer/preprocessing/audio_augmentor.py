@@ -10,6 +10,7 @@ Audio Data Augmentation Module
 ・実機ノイズ混合 (Optional Recorded Device Noise Mix)
 """
 
+from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
@@ -29,7 +30,7 @@ class AudioAugmentor:
         speed_range: tuple[float, float] = (0.95, 1.05),
         pitch_shift_steps: tuple[float, float] = (-0.5, 0.5),
         noise_mix_snr_db_range: tuple[float, float] = (18.0, 30.0),
-        noise_file_paths: list[str | Path] | None = None,
+        noise_file_paths: Sequence[str | Path] | None = None,
         sample_rate: int = 16000,
         p: float = 0.5,
         seed: int | None = None,
@@ -58,7 +59,7 @@ class AudioAugmentor:
         self.rng = np.random.default_rng(seed)
         self.noise_waveforms = self._load_noise_waveforms(noise_file_paths or [])
 
-    def _load_noise_waveforms(self, noise_file_paths: list[str | Path]) -> list[np.ndarray]:
+    def _load_noise_waveforms(self, noise_file_paths: Sequence[str | Path]) -> list[np.ndarray]:
         noise_waveforms: list[np.ndarray] = []
         for noise_path in noise_file_paths:
             try:
@@ -119,11 +120,14 @@ class AudioAugmentor:
         target_length = len(waveform)
         stretched_length = max(2, round(target_length / speed))
         source_positions = np.linspace(0, target_length - 1, stretched_length)
-        resampled = np.interp(
-            source_positions,
-            np.arange(target_length),
-            waveform,
-        ).astype(np.float32)
+        resampled = np.asarray(
+            np.interp(
+                source_positions,
+                np.arange(target_length),
+                waveform,
+            ),
+            dtype=np.float32,
+        ).reshape(-1)
         return self._fit_length(resampled, target_length)
 
     def shift_pitch(self, waveform: np.ndarray) -> np.ndarray:

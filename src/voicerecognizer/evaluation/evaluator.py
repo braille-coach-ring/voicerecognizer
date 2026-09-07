@@ -86,6 +86,20 @@ class EvaluationResult:
         return asdict(self)
 
 
+def _confusion_count_sort_key(item: tuple[tuple[str, str], int]) -> int:
+    return item[1]
+
+
+def _speaker_metric_sort_key(item: tuple[str, SpeakerMetrics]) -> tuple[float, int, str]:
+    speaker, metrics = item
+    return metrics.accuracy, -metrics.total_samples, speaker
+
+
+def _weak_speaker_metric_sort_key(item: tuple[str, SpeakerMetrics]) -> tuple[float, int]:
+    _, metrics = item
+    return metrics.accuracy, -metrics.total_samples
+
+
 class Evaluator:
     def __init__(
         self,
@@ -438,10 +452,11 @@ class Evaluator:
             if not y_true:
                 continue
 
-            observed_labels = sorted(
-                set(y_true) | set(y_pred),
-                key=lambda label: label_order.get(label, len(label_order)),
-            )
+            def label_sort_key(label: str) -> int:
+                return label_order.get(label, len(label_order))
+
+            observed_label_set: set[str] = set(y_true) | set(y_pred)
+            observed_labels = sorted(observed_label_set, key=label_sort_key)
             report_dict = cast(
                 dict[str, Any],
                 classification_report(
@@ -473,7 +488,7 @@ class Evaluator:
                 }
                 for (true_label, pred_label), count in sorted(
                     confusion_counter.items(),
-                    key=lambda item: item[1],
+                    key=_confusion_count_sort_key,
                     reverse=True,
                 )[:10]
             ]
@@ -491,7 +506,7 @@ class Evaluator:
         return dict(
             sorted(
                 speaker_metrics.items(),
-                key=lambda item: (item[1].accuracy, -item[1].total_samples, item[0]),
+                key=_speaker_metric_sort_key,
             )
         )
 
@@ -712,7 +727,7 @@ def generate_html_report(
     if speaker_metrics:
         weakest_speaker, weakest_metrics = min(
             speaker_metrics.items(),
-            key=lambda item: (item[1].accuracy, -item[1].total_samples),
+            key=_weak_speaker_metric_sort_key,
         )
         insights.append(
             {
