@@ -238,10 +238,21 @@ Wav2Vec2 学習の主な既定値:
 - confusion-pair sampler 有効
 - 学習後の ONNX export 有効
 
+`--from-scratch` で `facebook/wav2vec2-base` から新規ファインチューニングする時だけ、通常の追加学習設定より学習しやすい専用設定が自動適用されます。
+
+- base learning rate: `5e-5`
+- 新規 `projector` / `classifier` の learning rate: `5e-4` (`10x`)
+- `--freeze-transformer-layers 6`
+- `--patience 10`
+- early stopping は既存best超えではなく、今回runの `Val Macro-F1` 改善を基準にする
+
+既存bestからの追加学習ではこの専用設定は使われません。古い from-scratch 挙動を再現したい場合は `--no-from-scratch-auto-tune` を付けます。
+
 主なオプション:
 
 ```powershell
 uv run python train.py --model wav2vec2 --from-scratch
+uv run python train.py --model wav2vec2 --from-scratch --no-from-scratch-auto-tune
 uv run python train.py --model wav2vec2 --resume-from weights\wav2vec2_last
 uv run python train.py --model wav2vec2 --no-augment
 uv run python train.py --model wav2vec2 --no-balanced-sampler

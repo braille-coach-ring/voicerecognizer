@@ -14,9 +14,11 @@ from torch.utils.data import DataLoader, Dataset, Subset
 from voicerecognizer.models.wav2vec2.train import (
     AugmentedSubset,
     build_parser,
+    build_wav2vec2_optimizer,
     compute_balanced_sampler_weights,
     compute_class_weights,
     load_confusion_label_multipliers,
+    resolve_training_settings,
 )
 from voicerecognizer.preprocessing.audio_augmentor import AudioAugmentor
 
@@ -135,6 +137,7 @@ class TestClassWeightAndAugmentation(unittest.TestCase):
         self.assertFalse(args_default.speaker_aware_split)
         self.assertTrue(args_default.use_confusion_pair_sampler)
         self.assertTrue(args_default.hf_upload)
+        self.assertTrue(args_default.from_scratch_auto_tune)
         self.assertEqual(args_default.class_weight_power, 0.5)
         self.assertEqual(args_default.confusion_pair_min_count, 3)
         self.assertEqual(args_default.confusion_pair_boost, 0.5)
@@ -146,6 +149,7 @@ class TestClassWeightAndAugmentation(unittest.TestCase):
                 "--no-balanced-sampler",
                 "--no-confusion-pair-sampler",
                 "--no-hf-upload",
+                "--no-from-scratch-auto-tune",
                 "--speaker-aware-split",
                 "--class-weight-power",
                 "1.0",
@@ -157,7 +161,77 @@ class TestClassWeightAndAugmentation(unittest.TestCase):
         self.assertTrue(args_opt_out.speaker_aware_split)
         self.assertFalse(args_opt_out.use_confusion_pair_sampler)
         self.assertFalse(args_opt_out.hf_upload)
+        self.assertFalse(args_opt_out.from_scratch_auto_tune)
         self.assertEqual(args_opt_out.class_weight_power, 1.0)
+
+    def test_from_scratch_auto_tune_changes_only_from_scratch_settings(self) -> None:
+        parser = build_parser()
+
+        default_settings = resolve_training_settings(parser.parse_args([]))
+        self.assertFalse(default_settings.from_scratch_auto_tuned)
+        self.assertEqual(default_settings.learning_rate, 3e-5)
+        self.assertEqual(default_settings.freeze_transformer_layers, 10)
+        self.assertEqual(default_settings.patience, 5)
+        self.assertEqual(default_settings.head_lr_multiplier, 1.0)
+        self.assertEqual(default_settings.early_stopping_scope, "global_best")
+
+        from_scratch_settings = resolve_training_settings(parser.parse_args(["--from-scratch"]))
+        self.assertTrue(from_scratch_settings.from_scratch_auto_tuned)
+        self.assertEqual(from_scratch_settings.learning_rate, 5e-5)
+        self.assertEqual(from_scratch_settings.freeze_transformer_layers, 6)
+        self.assertEqual(from_scratch_settings.patience, 10)
+        self.assertEqual(from_scratch_settings.head_lr_multiplier, 10.0)
+        self.assertEqual(from_scratch_settings.early_stopping_scope, "run_best")
+
+        old_style_from_scratch_settings = resolve_training_settings(
+            parser.parse_args(["--from-scratch", "--no-from-scratch-auto-tune"])
+        )
+        self.assertFalse(old_style_from_scratch_settings.from_scratch_auto_tuned)
+        self.assertEqual(old_style_from_scratch_settings.learning_rate, 3e-5)
+        self.assertEqual(old_style_from_scratch_settings.freeze_transformer_layers, 10)
+        self.assertEqual(old_style_from_scratch_settings.patience, 5)
+        self.assertEqual(old_style_from_scratch_settings.early_stopping_scope, "global_best")
+
+        manual_from_scratch_settings = resolve_training_settings(
+            parser.parse_args(
+                [
+                    "--from-scratch",
+                    "--learning-rate",
+                    "0.0001",
+                    "--freeze-transformer-layers",
+                    "2",
+                    "--patience",
+                    "3",
+                    "--from-scratch-head-lr-multiplier",
+                    "2.0",
+                ]
+            )
+        )
+        self.assertEqual(manual_from_scratch_settings.learning_rate, 0.0001)
+        self.assertEqual(manual_from_scratch_settings.freeze_transformer_layers, 2)
+        self.assertEqual(manual_from_scratch_settings.patience, 3)
+        self.assertEqual(manual_from_scratch_settings.head_lr_multiplier, 2.0)
+        self.assertEqual(manual_from_scratch_settings.early_stopping_scope, "run_best")
+
+    def test_from_scratch_optimizer_boosts_projector_and_classifier_lr(self) -> None:
+        class TinyClassifier(torch.nn.Module):
+            def __init__(self) -> None:
+                super().__init__()
+                self.wav2vec2 = torch.nn.Linear(2, 2)
+                self.projector = torch.nn.Linear(2, 2)
+                self.classifier = torch.nn.Linear(2, 2)
+
+        model = TinyClassifier()
+
+        optimizer = build_wav2vec2_optimizer(
+            model,
+            learning_rate=5e-5,
+            weight_decay=0.01,
+            head_lr_multiplier=10.0,
+        )
+
+        group_lrs = sorted(group["lr"] for group in optimizer.param_groups)
+        self.assertEqual(group_lrs, [5e-5, 5e-4])
 
 
 if __name__ == "__main__":

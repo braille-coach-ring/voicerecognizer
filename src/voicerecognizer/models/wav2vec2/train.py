@@ -21,6 +21,7 @@ import os
 import random
 import shutil
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
@@ -54,6 +55,25 @@ from voicerecognizer.utils.split_helper import (
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+DEFAULT_WAV2VEC2_LEARNING_RATE = 3e-5
+DEFAULT_WAV2VEC2_FREEZE_TRANSFORMER_LAYERS = 10
+DEFAULT_WAV2VEC2_PATIENCE = 5
+
+FROM_SCRATCH_LEARNING_RATE = 5e-5
+FROM_SCRATCH_FREEZE_TRANSFORMER_LAYERS = 6
+FROM_SCRATCH_HEAD_LR_MULTIPLIER = 10.0
+FROM_SCRATCH_PATIENCE = 10
+
+
+@dataclass(frozen=True)
+class Wav2Vec2TrainingSettings:
+    learning_rate: float
+    freeze_transformer_layers: int
+    patience: int
+    head_lr_multiplier: float
+    early_stopping_scope: str
+    from_scratch_auto_tuned: bool
 
 
 class Wav2Vec2ClassificationDataset(Dataset):
@@ -167,6 +187,120 @@ def determine_optimal_num_workers(requested_num_workers: int | None = None) -> i
         optimal = min(max(1, cpu_count // 2), 8)
 
     return optimal
+
+
+def is_from_scratch_base_run(args: argparse.Namespace) -> bool:
+    return not getattr(args, "resume", True) and not getattr(args, "resume_from", None)
+
+
+def resolve_training_settings(args: argparse.Namespace) -> Wav2Vec2TrainingSettings:
+    from_scratch_auto_tuned = is_from_scratch_base_run(args) and getattr(
+        args, "from_scratch_auto_tune", True
+    )
+
+    learning_rate_arg = getattr(args, "learning_rate", None)
+    freeze_transformer_layers_arg = getattr(args, "freeze_transformer_layers", None)
+    patience_arg = getattr(args, "patience", None)
+
+    learning_rate = (
+        learning_rate_arg if learning_rate_arg is not None else DEFAULT_WAV2VEC2_LEARNING_RATE
+    )
+    freeze_transformer_layers = (
+        freeze_transformer_layers_arg
+        if freeze_transformer_layers_arg is not None
+        else DEFAULT_WAV2VEC2_FREEZE_TRANSFORMER_LAYERS
+    )
+    patience = patience_arg if patience_arg is not None else DEFAULT_WAV2VEC2_PATIENCE
+    head_lr_multiplier = 1.0
+    early_stopping_scope = "global_best"
+
+    if from_scratch_auto_tuned:
+        from_scratch_learning_rate_arg = getattr(args, "from_scratch_learning_rate", None)
+        from_scratch_freeze_arg = getattr(args, "from_scratch_freeze_transformer_layers", None)
+        from_scratch_patience_arg = getattr(args, "from_scratch_patience", None)
+        learning_rate = (
+            from_scratch_learning_rate_arg
+            if from_scratch_learning_rate_arg is not None
+            else learning_rate_arg
+            if learning_rate_arg is not None
+            else FROM_SCRATCH_LEARNING_RATE
+        )
+        freeze_transformer_layers = (
+            from_scratch_freeze_arg
+            if from_scratch_freeze_arg is not None
+            else freeze_transformer_layers_arg
+            if freeze_transformer_layers_arg is not None
+            else FROM_SCRATCH_FREEZE_TRANSFORMER_LAYERS
+        )
+        patience = (
+            from_scratch_patience_arg
+            if from_scratch_patience_arg is not None
+            else patience_arg
+            if patience_arg is not None
+            else FROM_SCRATCH_PATIENCE
+        )
+        head_lr_multiplier = getattr(
+            args,
+            "from_scratch_head_lr_multiplier",
+            FROM_SCRATCH_HEAD_LR_MULTIPLIER,
+        )
+        early_stopping_scope = "run_best"
+
+    if learning_rate <= 0:
+        raise ValueError("learning_rate must be greater than 0")
+    if freeze_transformer_layers < 0:
+        raise ValueError("freeze_transformer_layers must be 0 or greater")
+    if patience < 0:
+        raise ValueError("patience must be 0 or greater")
+    if head_lr_multiplier <= 0:
+        raise ValueError("head_lr_multiplier must be greater than 0")
+
+    return Wav2Vec2TrainingSettings(
+        learning_rate=float(learning_rate),
+        freeze_transformer_layers=int(freeze_transformer_layers),
+        patience=int(patience),
+        head_lr_multiplier=float(head_lr_multiplier),
+        early_stopping_scope=early_stopping_scope,
+        from_scratch_auto_tuned=from_scratch_auto_tuned,
+    )
+
+
+def is_wav2vec2_classification_head_parameter(name: str) -> bool:
+    return any(part in {"projector", "classifier"} for part in name.split("."))
+
+
+def build_wav2vec2_optimizer(
+    model: torch.nn.Module,
+    *,
+    learning_rate: float,
+    weight_decay: float,
+    head_lr_multiplier: float = 1.0,
+) -> torch.optim.Optimizer:
+    body_params: list[torch.nn.Parameter] = []
+    head_params: list[torch.nn.Parameter] = []
+
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
+        if head_lr_multiplier != 1.0 and is_wav2vec2_classification_head_parameter(name):
+            head_params.append(param)
+        else:
+            body_params.append(param)
+
+    param_groups: list[dict[str, Any]] = []
+    if body_params:
+        param_groups.append({"params": body_params, "lr": learning_rate})
+    if head_params:
+        param_groups.append({"params": head_params, "lr": learning_rate * head_lr_multiplier})
+
+    if not param_groups:
+        raise ValueError("No trainable Wav2Vec2 parameters found")
+
+    return torch.optim.AdamW(param_groups, weight_decay=weight_decay)
+
+
+def count_trainable_parameters(model: torch.nn.Module) -> int:
+    return sum(param.numel() for param in model.parameters() if param.requires_grad)
 
 
 def fix_seed(seed: int) -> None:
@@ -951,6 +1085,18 @@ def train(args: argparse.Namespace) -> None:
     warmup_ratio = getattr(args, "warmup_ratio", 0.1)
     max_grad_norm = getattr(args, "max_grad_norm", 1.0)
     freeze_feature_encoder = True
+    training_settings = resolve_training_settings(args)
+    if training_settings.from_scratch_auto_tuned:
+        logger.info(
+            "--from-scratch 専用の学習設定を適用します: "
+            "base_lr=%.1e, head_lr=%.1e, freeze_transformer_layers=%d, "
+            "patience=%d, early_stopping=%s",
+            training_settings.learning_rate,
+            training_settings.learning_rate * training_settings.head_lr_multiplier,
+            training_settings.freeze_transformer_layers,
+            training_settings.patience,
+            training_settings.early_stopping_scope,
+        )
 
     fix_seed(seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -1121,14 +1267,16 @@ def train(args: argparse.Namespace) -> None:
     freeze_wav2vec2_layers(
         model,
         freeze_feature_encoder=freeze_feature_encoder,
-        freeze_transformer_layers=args.freeze_transformer_layers,
+        freeze_transformer_layers=training_settings.freeze_transformer_layers,
     )
     model.to(device)
+    logger.info("Wav2Vec2 trainable parameters: %d", count_trainable_parameters(model))
 
-    optimizer = torch.optim.AdamW(
-        model.parameters(),
-        lr=args.learning_rate,
+    optimizer = build_wav2vec2_optimizer(
+        model,
+        learning_rate=training_settings.learning_rate,
         weight_decay=weight_decay,
+        head_lr_multiplier=training_settings.head_lr_multiplier,
     )
     training_steps = max(len(train_loader) * args.epochs, 1)
     warmup_steps = int(training_steps * warmup_ratio)
@@ -1182,7 +1330,7 @@ def train(args: argparse.Namespace) -> None:
     is_best_updated = False
     scaler = GradScaler() if device.type == "cuda" else None
 
-    patience = getattr(args, "patience", 5)
+    patience = training_settings.patience
     patience_counter = 0
 
     interrupted = False
@@ -1225,7 +1373,8 @@ def train(args: argparse.Namespace) -> None:
             )
 
             # 今回の学習ランにおける最高精度 (Last Training Best) を更新した場合
-            if macro_f1 > run_best_macro_f1:
+            run_best_improved = macro_f1 > run_best_macro_f1
+            if run_best_improved:
                 run_best_macro_f1 = macro_f1
                 save_pretrained_model(
                     model,
@@ -1240,10 +1389,10 @@ def train(args: argparse.Namespace) -> None:
                 )
 
             # チーム共有・歴代最高精度 (Global Best) を更新した場合
-            if macro_f1 > best_macro_f1:
+            global_best_improved = macro_f1 > best_macro_f1
+            if global_best_improved:
                 best_macro_f1 = macro_f1
                 is_best_updated = True
-                patience_counter = 0
                 save_pretrained_model(
                     model,
                     feature_extractor,
@@ -1256,11 +1405,20 @@ def train(args: argparse.Namespace) -> None:
                     best_macro_f1,
                     val_acc,
                 )
+
+            stopping_improved = (
+                run_best_improved
+                if training_settings.early_stopping_scope == "run_best"
+                else global_best_improved
+            )
+            if stopping_improved:
+                patience_counter = 0
             else:
                 patience_counter += 1
                 if patience > 0 and patience_counter >= patience:
                     logger.info(
-                        "Early stopping: Validation Macro-F1 が %d エポック連続で向上しなかったため、頭打ちと判断して学習を自動終了します (Run Best: %.4f, Global Best: %.4f)",
+                        "Early stopping: Validation Macro-F1 (%s) が %d エポック連続で向上しなかったため、頭打ちと判断して学習を自動終了します (Run Best: %.4f, Global Best: %.4f)",
+                        training_settings.early_stopping_scope,
                         patience,
                         run_best_macro_f1,
                         best_macro_f1,
@@ -1383,19 +1541,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--learning-rate",
         type=float,
-        default=3e-5,
+        default=None,
         help="Learning rate (default: 3e-5)",
     )
     parser.add_argument(
         "--patience",
         type=int,
-        default=5,
+        default=None,
         help="Number of epochs with no validation improvement after which training stops early (default: 5, set 0 to disable)",
     )
     parser.add_argument(
         "--freeze-transformer-layers",
         type=int,
-        default=10,
+        default=None,
         help="Number of bottom Transformer layers to freeze (default: 10 out of 12)",
     )
     parser.add_argument(
@@ -1404,6 +1562,37 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_false",
         dest="resume",
         help="Train from base pretrained model without reusing existing checkpoint",
+    )
+    parser.add_argument(
+        "--no-from-scratch-auto-tune",
+        action="store_false",
+        dest="from_scratch_auto_tune",
+        default=True,
+        help="Disable safer defaults that are applied only when --from-scratch starts from the base model",
+    )
+    parser.add_argument(
+        "--from-scratch-learning-rate",
+        type=float,
+        default=None,
+        help="Base learning rate used only with --from-scratch auto tune (default: 5e-5)",
+    )
+    parser.add_argument(
+        "--from-scratch-freeze-transformer-layers",
+        type=int,
+        default=None,
+        help="Number of bottom Transformer layers to freeze only with --from-scratch auto tune (default: 6)",
+    )
+    parser.add_argument(
+        "--from-scratch-head-lr-multiplier",
+        type=float,
+        default=FROM_SCRATCH_HEAD_LR_MULTIPLIER,
+        help="Learning-rate multiplier for new projector/classifier params only with --from-scratch auto tune (default: 10.0)",
+    )
+    parser.add_argument(
+        "--from-scratch-patience",
+        type=int,
+        default=None,
+        help="Early-stopping patience used only with --from-scratch auto tune (default: 10)",
     )
     parser.add_argument(
         "--resume-from",
