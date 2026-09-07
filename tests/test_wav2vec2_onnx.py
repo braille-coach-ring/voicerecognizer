@@ -9,9 +9,16 @@ from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
 
 
 class TestWav2Vec2ONNXRecognizer(unittest.TestCase):
+    def test_dynamic_trimming_defaults_to_accuracy_first_fixed_padding(self):
+        recognizer = Wav2Vec2Recognizer(
+            model_path=Path("weights/non_existent_dir_for_testing"),
+            auto_download=False,
+        )
+        self.assertFalse(recognizer.dynamic_trimming)
+
     def test_missing_onnx_model_raises_file_not_found(self):
         non_existent_dir = Path("weights/non_existent_dir_for_testing")
-        recognizer = Wav2Vec2Recognizer(model_path=non_existent_dir)
+        recognizer = Wav2Vec2Recognizer(model_path=non_existent_dir, auto_download=False)
         with self.assertRaises(FileNotFoundError) as ctx:
             recognizer.recognize(np.zeros(16000, dtype=np.float32))
         self.assertIn("Wav2Vec2 ONNX モデル", str(ctx.exception))

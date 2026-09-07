@@ -100,7 +100,11 @@ class HiraganaDataset(Dataset):
                         continue
                     wav_path = Path(parts[0])
                     if not wav_path.is_absolute():
-                        wav_path = PROJECT_ROOT / wav_path
+                        index_relative_path = self.index_file.parent / wav_path
+                        if index_relative_path.exists():
+                            wav_path = index_relative_path
+                        else:
+                            wav_path = PROJECT_ROOT / wav_path
                     label = parts[1]
                     if wav_path.exists() and label in self.label_to_idx:
                         data.append((wav_path, self.label_to_idx[label]))

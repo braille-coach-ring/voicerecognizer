@@ -1,3 +1,4 @@
+import csv
 import tempfile
 import unittest
 from pathlib import Path
@@ -33,10 +34,23 @@ class TestDatasetBuilderIsolated(unittest.TestCase):
 
             # Test preprocess_dataset reading directly from index.csv
             builder.preprocess_dataset(input_root=merged_root, output_root=processed_root)
-            self.assertTrue((processed_root / "a" / "001.wav").exists())
+            processed_wav_path = processed_root / "a" / "001.wav"
+            self.assertTrue(processed_wav_path.exists())
+
+            processed_index = processed_root / "index.csv"
+            self.assertTrue(processed_index.exists())
+            with open(processed_index, encoding="utf-8", newline="") as f:
+                rows = list(csv.DictReader(f))
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["label"], "a")
+            self.assertEqual(Path(rows[0]["filepath"]), processed_wav_path)
+            self.assertEqual(Path(rows[0]["source_filepath"]), speaker_dir / "001.wav")
+            self.assertEqual(rows[0]["speaker"], "speaker1")
+            self.assertGreaterEqual(float(rows[0]["speech_duration_ms"]), 0.0)
+            self.assertAlmostEqual(float(rows[0]["processed_duration_ms"]), 600.0, places=1)
 
             # Verify saved audio format
-            data, sr = sf.read(processed_root / "a" / "001.wav")
+            data, sr = sf.read(processed_wav_path)
             self.assertEqual(sr, DEFAULT_AUDIO_CONFIG.sample_rate)
             self.assertEqual(
                 len(data),
@@ -92,6 +106,12 @@ class TestDatasetBuilderIsolated(unittest.TestCase):
             index_path = merged_root / "index.csv"
             self.assertTrue(index_path.exists())
             self.assertIn("200_1.wav", index_path.read_text(encoding="utf-8"))
+
+            processed_root = tmp_path / "processed_dataset"
+            builder.preprocess_dataset(input_root=merged_root, output_root=processed_root)
+            with open(processed_root / "index.csv", encoding="utf-8", newline="") as f:
+                rows = list(csv.DictReader(f))
+            self.assertEqual(rows[0]["speaker"], "pc_12345678")
 
 
 if __name__ == "__main__":

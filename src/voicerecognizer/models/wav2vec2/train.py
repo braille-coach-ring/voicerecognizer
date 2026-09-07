@@ -2,7 +2,7 @@
 Wav2Vec2 Fine-Tuning Script with Layer Freezing and Lazy Disk Loading
 
 役割:
-  Wav2Vec2 プリトレイニードモデルの下位層フリーズ ＋ processed_dataset からのlazy loadingにより、
+  Wav2Vec2 プリトレイニードモデルの下位層フリーズ + processed_dataset からのlazy loadingにより、
   RAM使用量を抑えてファインチューニングを実行し、best_model ディレクトリおよび labels.json を保存します。
 
 使い方:
@@ -11,6 +11,7 @@ Wav2Vec2 Fine-Tuning Script with Layer Freezing and Lazy Disk Loading
 """
 
 import argparse
+import csv
 import filecmp
 import gc
 import importlib.util
@@ -20,7 +21,7 @@ import os
 import random
 import shutil
 import sys
-from collections import Counter
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
@@ -39,6 +40,7 @@ from voicerecognizer.config import (
     DEFAULT_AUDIO_CONFIG,
     DEFAULT_PREPROCESS_CONFIG,
     DEFAULT_RECOGNITION_CONFIG,
+    PROJECT_ROOT,
 )
 from voicerecognizer.dataset.hiragana_dataset import HiraganaDataset
 from voicerecognizer.evaluation.evaluator import compute_evaluation_result
@@ -46,10 +48,32 @@ from voicerecognizer.models.wav2vec2.export_onnx import export_and_benchmark
 from voicerecognizer.preprocessing.audio_augmentor import AudioAugmentor
 from voicerecognizer.preprocessing.dataset_builder import ensure_merged_and_preprocessed
 from voicerecognizer.utils.plot_saver import save_history_plots
-from voicerecognizer.utils.split_helper import safe_stratified_split
+from voicerecognizer.utils.split_helper import (
+    safe_stratified_split,
+    speaker_aware_stratified_split,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+DEFAULT_WAV2VEC2_LEARNING_RATE = 3e-5
+DEFAULT_WAV2VEC2_FREEZE_TRANSFORMER_LAYERS = 10
+DEFAULT_WAV2VEC2_PATIENCE = 5
+
+FROM_SCRATCH_LEARNING_RATE = 5e-5
+FROM_SCRATCH_FREEZE_TRANSFORMER_LAYERS = 6
+FROM_SCRATCH_HEAD_LR_MULTIPLIER = 10.0
+FROM_SCRATCH_PATIENCE = 10
+
+
+@dataclass(frozen=True)
+class Wav2Vec2TrainingSettings:
+    learning_rate: float
+    freeze_transformer_layers: int
+    patience: int
+    head_lr_multiplier: float
+    early_stopping_scope: str
+    from_scratch_auto_tuned: bool
 
 
 class Wav2Vec2ClassificationDataset(Dataset):
@@ -67,6 +91,7 @@ class Wav2Vec2ClassificationDataset(Dataset):
         )
         self.labels = source_dataset.labels
         self.data = source_dataset.data
+        self.speakers = collect_speakers_for_data(root_dir, self.data)
         self.sample_rate = sample_rate
         self.target_samples = int(target_length_seconds * sample_rate)
 
@@ -109,6 +134,39 @@ class Wav2Vec2ClassificationDataset(Dataset):
         return np.ascontiguousarray(waveform, dtype=np.float32), label
 
 
+def _resolve_index_audio_path(path_value: str, *, root: Path) -> Path:
+    path = Path(path_value)
+    if path.is_absolute():
+        return path
+    root_relative = root / path
+    if root_relative.exists():
+        return root_relative
+    return PROJECT_ROOT / path
+
+
+def collect_speakers_for_data(
+    root_dir: str | Path,
+    data: list[tuple[Path, int]],
+) -> list[str]:
+    root = Path(root_dir)
+    index_file = root / "index.csv" if root.is_dir() else root
+    if not index_file.exists():
+        return [""] * len(data)
+
+    speaker_by_path: dict[str, str] = {}
+    with open(index_file, encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            filepath = str(row.get("filepath") or row.get("\ufefffilepath") or "").strip()
+            speaker = str(row.get("speaker") or "").strip()
+            if not filepath:
+                continue
+            wav_path = _resolve_index_audio_path(filepath, root=index_file.parent)
+            speaker_by_path[str(wav_path.resolve())] = speaker
+
+    return [speaker_by_path.get(str(wav_path.resolve()), "") for wav_path, _ in data]
+
+
 def determine_optimal_num_workers(requested_num_workers: int | None = None) -> int:
     """
     CPUコア数とOS特性に応じて DataLoader の num_workers を自動・動的に計算する。
@@ -131,6 +189,128 @@ def determine_optimal_num_workers(requested_num_workers: int | None = None) -> i
     return optimal
 
 
+def is_from_scratch_base_run(args: argparse.Namespace) -> bool:
+    return not getattr(args, "resume", True) and not getattr(args, "resume_from", None)
+
+
+def resolve_training_settings(args: argparse.Namespace) -> Wav2Vec2TrainingSettings:
+    from_scratch_auto_tuned = is_from_scratch_base_run(args) and getattr(
+        args, "from_scratch_auto_tune", True
+    )
+
+    learning_rate_arg = getattr(args, "learning_rate", None)
+    freeze_transformer_layers_arg = getattr(args, "freeze_transformer_layers", None)
+    patience_arg = getattr(args, "patience", None)
+
+    learning_rate = (
+        learning_rate_arg if learning_rate_arg is not None else DEFAULT_WAV2VEC2_LEARNING_RATE
+    )
+    freeze_transformer_layers = (
+        freeze_transformer_layers_arg
+        if freeze_transformer_layers_arg is not None
+        else DEFAULT_WAV2VEC2_FREEZE_TRANSFORMER_LAYERS
+    )
+    patience = patience_arg if patience_arg is not None else DEFAULT_WAV2VEC2_PATIENCE
+    head_lr_multiplier = 1.0
+    early_stopping_scope = "global_best"
+
+    if from_scratch_auto_tuned:
+        from_scratch_learning_rate_arg = getattr(args, "from_scratch_learning_rate", None)
+        from_scratch_freeze_arg = getattr(args, "from_scratch_freeze_transformer_layers", None)
+        from_scratch_patience_arg = getattr(args, "from_scratch_patience", None)
+        learning_rate = (
+            from_scratch_learning_rate_arg
+            if from_scratch_learning_rate_arg is not None
+            else learning_rate_arg
+            if learning_rate_arg is not None
+            else FROM_SCRATCH_LEARNING_RATE
+        )
+        freeze_transformer_layers = (
+            from_scratch_freeze_arg
+            if from_scratch_freeze_arg is not None
+            else freeze_transformer_layers_arg
+            if freeze_transformer_layers_arg is not None
+            else FROM_SCRATCH_FREEZE_TRANSFORMER_LAYERS
+        )
+        patience = (
+            from_scratch_patience_arg
+            if from_scratch_patience_arg is not None
+            else patience_arg
+            if patience_arg is not None
+            else FROM_SCRATCH_PATIENCE
+        )
+        head_lr_multiplier = getattr(
+            args,
+            "from_scratch_head_lr_multiplier",
+            FROM_SCRATCH_HEAD_LR_MULTIPLIER,
+        )
+        early_stopping_scope = "run_best"
+
+    if learning_rate <= 0:
+        raise ValueError("learning_rate must be greater than 0")
+    if freeze_transformer_layers < 0:
+        raise ValueError("freeze_transformer_layers must be 0 or greater")
+    if patience < 0:
+        raise ValueError("patience must be 0 or greater")
+    if head_lr_multiplier <= 0:
+        raise ValueError("head_lr_multiplier must be greater than 0")
+
+    return Wav2Vec2TrainingSettings(
+        learning_rate=float(learning_rate),
+        freeze_transformer_layers=int(freeze_transformer_layers),
+        patience=int(patience),
+        head_lr_multiplier=float(head_lr_multiplier),
+        early_stopping_scope=early_stopping_scope,
+        from_scratch_auto_tuned=from_scratch_auto_tuned,
+    )
+
+
+def is_wav2vec2_classification_head_parameter(name: str) -> bool:
+    return any(part in {"projector", "classifier"} for part in name.split("."))
+
+
+def build_wav2vec2_optimizer(
+    model: torch.nn.Module,
+    *,
+    learning_rate: float,
+    weight_decay: float,
+    head_lr_multiplier: float = 1.0,
+) -> torch.optim.Optimizer:
+    body_params: list[torch.nn.Parameter] = []
+    head_params: list[torch.nn.Parameter] = []
+
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
+        if head_lr_multiplier != 1.0 and is_wav2vec2_classification_head_parameter(name):
+            head_params.append(param)
+        else:
+            body_params.append(param)
+
+    param_groups: list[dict[str, Any]] = []
+    if body_params:
+        param_groups.append({"params": body_params, "lr": learning_rate})
+    if head_params:
+        param_groups.append({"params": head_params, "lr": learning_rate * head_lr_multiplier})
+
+    if not param_groups:
+        raise ValueError("No trainable Wav2Vec2 parameters found")
+
+    return torch.optim.AdamW(param_groups, weight_decay=weight_decay)
+
+
+def _confusion_pair_count_sort_key(item: tuple[str, str, int, float]) -> int:
+    return item[2]
+
+
+def _label_multiplier_sort_key(item: tuple[int, float]) -> float:
+    return item[1]
+
+
+def count_trainable_parameters(model: torch.nn.Module) -> int:
+    return sum(param.numel() for param in model.parameters() if param.requires_grad)
+
+
 def fix_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
@@ -140,11 +320,42 @@ def fix_seed(seed: int) -> None:
 
 
 def split_dataset(
-    dataset: Wav2Vec2ClassificationDataset, val_rate: float, seed: int
+    dataset: Wav2Vec2ClassificationDataset,
+    val_rate: float,
+    seed: int,
+    speaker_aware: bool = False,
 ) -> tuple[Subset, Subset]:
     labels = [label for _, label in dataset.data]
-    train_idx, val_idx = safe_stratified_split(labels, val_rate=val_rate, seed=seed)
+    if speaker_aware:
+        train_idx, val_idx = speaker_aware_stratified_split(
+            labels,
+            dataset.speakers,
+            val_rate=val_rate,
+            seed=seed,
+        )
+        logger.info(
+            "speaker-aware split を有効化しました: train=%d, validation=%d",
+            len(train_idx),
+            len(val_idx),
+        )
+    else:
+        train_idx, val_idx = safe_stratified_split(labels, val_rate=val_rate, seed=seed)
     return Subset(dataset, train_idx), Subset(dataset, val_idx)
+
+
+def collect_augmentation_noise_files(noise_dir: str | Path | None) -> list[Path]:
+    if noise_dir is None:
+        return []
+
+    path = Path(noise_dir)
+    if not path.exists():
+        logger.warning("augmentation noise dir が存在しません: %s", path)
+        return []
+    if path.is_file() and path.suffix.lower() == ".wav":
+        return [path]
+    if not path.is_dir():
+        return []
+    return sorted(path.rglob("*.wav"))
 
 
 class AugmentedSubset(Dataset):
@@ -183,6 +394,99 @@ def compute_class_weights(
     weights = (max_count / counts) ** power
     weights = weights / np.mean(weights)
     return torch.tensor(weights, dtype=torch.float32)
+
+
+def compute_balanced_sampler_weights(
+    labels: list[int] | torch.Tensor | np.ndarray,
+    num_classes: int,
+    power: float = 0.5,
+    confusion_label_multipliers: dict[int, float] | None = None,
+) -> list[float]:
+    labels_arr = np.asarray(labels, dtype=np.int64)
+    counts = np.bincount(labels_arr, minlength=num_classes)
+    counts = np.maximum(counts, 1)
+    max_count = np.max(counts)
+    class_weights = (max_count / counts) ** power
+    multipliers = confusion_label_multipliers or {}
+    return [
+        float(class_weights[int(label)] * multipliers.get(int(label), 1.0)) for label in labels_arr
+    ]
+
+
+def load_confusion_label_multipliers(
+    evaluation_result_path: Path | str,
+    labels: tuple[str, ...] | list[str],
+    *,
+    min_count: int = 3,
+    max_pairs: int = 20,
+    boost: float = 0.5,
+) -> dict[int, float]:
+    if boost <= 0 or max_pairs <= 0:
+        return {}
+
+    path = Path(evaluation_result_path)
+    if not path.exists():
+        logger.info("混同ペア重点サンプラー: 評価結果が見つからないためスキップします: %s", path)
+        return {}
+
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        logger.warning("混同ペア重点サンプラー: 評価結果JSONの読み込みに失敗しました: %s", exc)
+        return {}
+
+    matrix: object = {}
+    if isinstance(payload, dict):
+        matrix = payload.get("confusion_matrix", {})
+    if not isinstance(matrix, dict):
+        return {}
+
+    pairs: list[tuple[str, str, int, float]] = []
+    for true_label, row in matrix.items():
+        if not isinstance(row, dict):
+            continue
+        row_total = sum(int(value) for value in row.values())
+        if row_total <= 0:
+            continue
+        for predicted_label, raw_count in row.items():
+            count = int(raw_count)
+            if true_label == predicted_label or count < min_count:
+                continue
+            pairs.append((str(true_label), str(predicted_label), count, count / row_total))
+
+    if not pairs:
+        return {}
+
+    pairs.sort(key=_confusion_pair_count_sort_key, reverse=True)
+    label_scores: dict[str, float] = {}
+    for true_label, predicted_label, count, rate in pairs[:max_pairs]:
+        score = count * (1.0 + rate)
+        label_scores[true_label] = label_scores.get(true_label, 0.0) + score
+        label_scores[predicted_label] = label_scores.get(predicted_label, 0.0) + score
+
+    if not label_scores:
+        return {}
+
+    max_score = max(label_scores.values())
+    label_to_idx = {label: index for index, label in enumerate(labels)}
+    multipliers: dict[int, float] = {}
+    for label, score in label_scores.items():
+        if label not in label_to_idx:
+            continue
+        multipliers[label_to_idx[label]] = 1.0 + boost * (float(score) / float(max_score))
+
+    if multipliers:
+        top_labels = ", ".join(
+            f"{labels[index]}={multiplier:.2f}"
+            for index, multiplier in sorted(
+                multipliers.items(),
+                key=_label_multiplier_sort_key,
+                reverse=True,
+            )[:10]
+        )
+        logger.info("混同ペア重点サンプラーを有効化します: %s", top_labels)
+
+    return multipliers
 
 
 def is_labels_compatible(model_path: Path, current_labels: list[str]) -> bool:
@@ -791,6 +1095,18 @@ def train(args: argparse.Namespace) -> None:
     warmup_ratio = getattr(args, "warmup_ratio", 0.1)
     max_grad_norm = getattr(args, "max_grad_norm", 1.0)
     freeze_feature_encoder = True
+    training_settings = resolve_training_settings(args)
+    if training_settings.from_scratch_auto_tuned:
+        logger.info(
+            "--from-scratch 専用の学習設定を適用します: "
+            "base_lr=%.1e, head_lr=%.1e, freeze_transformer_layers=%d, "
+            "patience=%d, early_stopping=%s",
+            training_settings.learning_rate,
+            training_settings.learning_rate * training_settings.head_lr_multiplier,
+            training_settings.freeze_transformer_layers,
+            training_settings.patience,
+            training_settings.early_stopping_scope,
+        )
 
     fix_seed(seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -807,23 +1123,36 @@ def train(args: argparse.Namespace) -> None:
         target_length_seconds=target_length_seconds,
         top_db=top_db,
     )
-    train_dataset, val_dataset = split_dataset(dataset, val_rate, seed)
+    train_subset, val_dataset = split_dataset(
+        dataset,
+        val_rate,
+        seed,
+        speaker_aware=getattr(args, "speaker_aware_split", False),
+    )
 
     use_class_weights = getattr(args, "use_class_weights", True)
     augment = getattr(args, "augment", True)
     class_weight_power = getattr(args, "class_weight_power", 0.5)
 
     if augment:
-        logger.info(
-            "Audio Data Augmentation (ノイズ加算・音量変調・タイムシフト) を訓練データセットに有効化しました。"
+        augmentation_noise_files = collect_augmentation_noise_files(
+            getattr(args, "augmentation_noise_dir", None)
         )
-        train_augmentor = AudioAugmentor()
-        train_augmented_subset = AugmentedSubset(train_dataset, train_augmentor)
+        logger.info(
+            "Audio Data Augmentation "
+            "(ノイズ加算・音量変調・タイムシフト・軽い速度/ピッチ変化・実機ノイズ混合) "
+            "を訓練データセットに有効化しました。実機ノイズ=%d件",
+            len(augmentation_noise_files),
+        )
+        train_augmentor = AudioAugmentor(
+            sample_rate=sample_rate,
+            noise_file_paths=augmentation_noise_files,
+        )
+        train_dataset = AugmentedSubset(train_subset, train_augmentor)
     else:
-        train_augmented_subset = AugmentedSubset(train_dataset, augmentor=None)
+        train_dataset = AugmentedSubset(train_subset, augmentor=None)
 
-    raw_train_subset = train_augmented_subset.subset
-    train_labels = [dataset.data[i][1] for i in raw_train_subset.indices]
+    train_labels = [dataset.data[i][1] for i in train_subset.indices]
 
     loss_fct: torch.nn.Module | None = None
     if use_class_weights:
@@ -884,16 +1213,33 @@ def train(args: argparse.Namespace) -> None:
     use_balanced_sampler = getattr(args, "use_balanced_sampler", True)
     train_sampler = None
     if use_balanced_sampler:
-        label_counts = Counter(train_labels)
-        class_weights_dict = {lbl: 1.0 / (count**0.5) for lbl, count in label_counts.items()}
-        sample_weights = [class_weights_dict[lbl] for lbl in train_labels]
+        confusion_label_multipliers: dict[int, float] = {}
+        if getattr(args, "use_confusion_pair_sampler", True):
+            confusion_label_multipliers = load_confusion_label_multipliers(
+                getattr(
+                    args,
+                    "confusion_pair_evaluation_result",
+                    PROJECT_ROOT / "evaluation_results" / "evaluation_result.json",
+                ),
+                dataset.labels,
+                min_count=getattr(args, "confusion_pair_min_count", 3),
+                max_pairs=getattr(args, "confusion_pair_max_pairs", 20),
+                boost=getattr(args, "confusion_pair_boost", 0.5),
+            )
+        sample_weights = compute_balanced_sampler_weights(
+            train_labels,
+            num_classes=len(dataset.labels),
+            power=0.5,
+            confusion_label_multipliers=confusion_label_multipliers,
+        )
         train_sampler = WeightedRandomSampler(
             weights=sample_weights,
             num_samples=len(sample_weights),
             replacement=True,
         )
         logger.info(
-            "マイルド全クラスサンプラー (WeightedRandomSampler: power=0.5) を有効化しました。aiueo の正解率を維持しつつマイナー音もバランスよく学習します。"
+            "マイルド全クラスサンプラー (WeightedRandomSampler: power=0.5) を有効化しました。"
+            "必要に応じて混同ペア重点倍率も上乗せします。"
         )
 
     pin_memory = device.type == "cuda"
@@ -931,14 +1277,16 @@ def train(args: argparse.Namespace) -> None:
     freeze_wav2vec2_layers(
         model,
         freeze_feature_encoder=freeze_feature_encoder,
-        freeze_transformer_layers=args.freeze_transformer_layers,
+        freeze_transformer_layers=training_settings.freeze_transformer_layers,
     )
     model.to(device)
+    logger.info("Wav2Vec2 trainable parameters: %d", count_trainable_parameters(model))
 
-    optimizer = torch.optim.AdamW(
-        model.parameters(),
-        lr=args.learning_rate,
+    optimizer = build_wav2vec2_optimizer(
+        model,
+        learning_rate=training_settings.learning_rate,
         weight_decay=weight_decay,
+        head_lr_multiplier=training_settings.head_lr_multiplier,
     )
     training_steps = max(len(train_loader) * args.epochs, 1)
     warmup_steps = int(training_steps * warmup_ratio)
@@ -992,7 +1340,7 @@ def train(args: argparse.Namespace) -> None:
     is_best_updated = False
     scaler = GradScaler() if device.type == "cuda" else None
 
-    patience = getattr(args, "patience", 5)
+    patience = training_settings.patience
     patience_counter = 0
 
     interrupted = False
@@ -1035,7 +1383,8 @@ def train(args: argparse.Namespace) -> None:
             )
 
             # 今回の学習ランにおける最高精度 (Last Training Best) を更新した場合
-            if macro_f1 > run_best_macro_f1:
+            run_best_improved = macro_f1 > run_best_macro_f1
+            if run_best_improved:
                 run_best_macro_f1 = macro_f1
                 save_pretrained_model(
                     model,
@@ -1050,10 +1399,10 @@ def train(args: argparse.Namespace) -> None:
                 )
 
             # チーム共有・歴代最高精度 (Global Best) を更新した場合
-            if macro_f1 > best_macro_f1:
+            global_best_improved = macro_f1 > best_macro_f1
+            if global_best_improved:
                 best_macro_f1 = macro_f1
                 is_best_updated = True
-                patience_counter = 0
                 save_pretrained_model(
                     model,
                     feature_extractor,
@@ -1066,11 +1415,20 @@ def train(args: argparse.Namespace) -> None:
                     best_macro_f1,
                     val_acc,
                 )
+
+            stopping_improved = (
+                run_best_improved
+                if training_settings.early_stopping_scope == "run_best"
+                else global_best_improved
+            )
+            if stopping_improved:
+                patience_counter = 0
             else:
                 patience_counter += 1
                 if patience > 0 and patience_counter >= patience:
                     logger.info(
-                        "Early stopping: Validation Macro-F1 が %d エポック連続で向上しなかったため、頭打ちと判断して学習を自動終了します (Run Best: %.4f, Global Best: %.4f)",
+                        "Early stopping: Validation Macro-F1 (%s) が %d エポック連続で向上しなかったため、頭打ちと判断して学習を自動終了します (Run Best: %.4f, Global Best: %.4f)",
+                        training_settings.early_stopping_scope,
                         patience,
                         run_best_macro_f1,
                         best_macro_f1,
@@ -1157,11 +1515,16 @@ def train(args: argparse.Namespace) -> None:
                 except Exception as e:
                     logger.error("ONNX 自動エクスポート (last) 中にエラーが発生しました: %s", e)
 
-    # Hugging Face 自動アップロード判定 (チーム最高精度を更新した場合のみ)
-    if is_best_updated:
+    # Hugging Face 自動アップロード判定 (チーム最高精度を更新し、アップロードが許可されている場合のみ)
+    hf_upload = getattr(args, "hf_upload", True)
+    if is_best_updated and hf_upload:
         from voicerecognizer.utils.model_uploader import upload_weights_to_hf
 
         upload_weights_to_hf(model_type="wav2vec2")
+    elif is_best_updated and not hf_upload:
+        logger.info(
+            "--no-hf-upload が指定されたため、Hugging Face へのアップロードをスキップします。"
+        )
     else:
         logger.info(
             "チーム最高精度が更新されなかったため、Hugging Face へのアップロードをスキップします。"
@@ -1188,19 +1551,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--learning-rate",
         type=float,
-        default=3e-5,
+        default=None,
         help="Learning rate (default: 3e-5)",
     )
     parser.add_argument(
         "--patience",
         type=int,
-        default=5,
+        default=None,
         help="Number of epochs with no validation improvement after which training stops early (default: 5, set 0 to disable)",
     )
     parser.add_argument(
         "--freeze-transformer-layers",
         type=int,
-        default=10,
+        default=None,
         help="Number of bottom Transformer layers to freeze (default: 10 out of 12)",
     )
     parser.add_argument(
@@ -1209,6 +1572,37 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_false",
         dest="resume",
         help="Train from base pretrained model without reusing existing checkpoint",
+    )
+    parser.add_argument(
+        "--no-from-scratch-auto-tune",
+        action="store_false",
+        dest="from_scratch_auto_tune",
+        default=True,
+        help="Disable safer defaults that are applied only when --from-scratch starts from the base model",
+    )
+    parser.add_argument(
+        "--from-scratch-learning-rate",
+        type=float,
+        default=None,
+        help="Base learning rate used only with --from-scratch auto tune (default: 5e-5)",
+    )
+    parser.add_argument(
+        "--from-scratch-freeze-transformer-layers",
+        type=int,
+        default=None,
+        help="Number of bottom Transformer layers to freeze only with --from-scratch auto tune (default: 6)",
+    )
+    parser.add_argument(
+        "--from-scratch-head-lr-multiplier",
+        type=float,
+        default=FROM_SCRATCH_HEAD_LR_MULTIPLIER,
+        help="Learning-rate multiplier for new projector/classifier params only with --from-scratch auto tune (default: 10.0)",
+    )
+    parser.add_argument(
+        "--from-scratch-patience",
+        type=int,
+        default=None,
+        help="Early-stopping patience used only with --from-scratch auto tune (default: 10)",
     )
     parser.add_argument(
         "--resume-from",
@@ -1231,6 +1625,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Disable training audio data augmentation (enabled by default)",
     )
     parser.add_argument(
+        "--augmentation-noise-dir",
+        type=Path,
+        default=None,
+        help="Optional wav file or directory of recorded device/background noise for augmentation",
+    )
+    parser.add_argument(
         "--class-weight-power",
         type=float,
         default=0.5,
@@ -1247,10 +1647,54 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip automatic ONNX export and INT8 quantization after training",
     )
     parser.add_argument(
+        "--no-hf-upload",
+        action="store_false",
+        dest="hf_upload",
+        default=True,
+        help="Skip Hugging Face upload even if the best model is updated",
+    )
+    parser.add_argument(
         "--no-balanced-sampler",
         action="store_false",
         dest="use_balanced_sampler",
         help="Disable WeightedRandomSampler for class-balanced training",
+    )
+    parser.add_argument(
+        "--speaker-aware-split",
+        action="store_true",
+        default=False,
+        help="Split validation by speaker groups using processed_dataset/index.csv speaker metadata",
+    )
+    parser.add_argument(
+        "--no-confusion-pair-sampler",
+        action="store_false",
+        dest="use_confusion_pair_sampler",
+        default=True,
+        help="Disable extra sampling weight for labels involved in past confusion pairs",
+    )
+    parser.add_argument(
+        "--confusion-pair-evaluation-result",
+        type=Path,
+        default=PROJECT_ROOT / "evaluation_results" / "evaluation_result.json",
+        help="Evaluation JSON containing the confusion matrix used by the sampler",
+    )
+    parser.add_argument(
+        "--confusion-pair-min-count",
+        type=int,
+        default=3,
+        help="Minimum off-diagonal confusion count to include in the sampler",
+    )
+    parser.add_argument(
+        "--confusion-pair-max-pairs",
+        type=int,
+        default=20,
+        help="Maximum number of confusion pairs to boost",
+    )
+    parser.add_argument(
+        "--confusion-pair-boost",
+        type=float,
+        default=0.5,
+        help="Maximum extra sampling multiplier for the hardest confusion label",
     )
     parser.add_argument(
         "--num-workers",

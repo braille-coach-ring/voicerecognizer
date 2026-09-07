@@ -288,11 +288,16 @@ def train(args: argparse.Namespace) -> None:
     )
     logger.info("Training finished. Last model saved to %s", last_model_path)
 
-    # Hugging Face 自動アップロード判定 (チーム最高精度を更新した場合のみ)
-    if is_best_updated:
+    # Hugging Face 自動アップロード判定 (チーム最高精度を更新し、アップロードが許可されている場合のみ)
+    hf_upload = getattr(args, "hf_upload", True)
+    if is_best_updated and hf_upload:
         from voicerecognizer.utils.model_uploader import upload_weights_to_hf
 
         upload_weights_to_hf(model_type="cnn")
+    elif is_best_updated and not hf_upload:
+        logger.info(
+            "--no-hf-upload が指定されたため、Hugging Face へのアップロードをスキップします。"
+        )
     else:
         logger.info(
             "チーム最高精度が更新されなかったため、Hugging Face へのアップロードをスキップします。"
@@ -326,6 +331,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--skip-prep",
         action="store_true",
         help="Skip automatic data merging and preprocessing before training",
+    )
+    parser.add_argument(
+        "--no-hf-upload",
+        action="store_false",
+        dest="hf_upload",
+        default=True,
+        help="Skip Hugging Face upload even if the best model is updated",
     )
     return parser
 

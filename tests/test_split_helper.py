@@ -1,6 +1,9 @@
 import unittest
 
-from voicerecognizer.utils.split_helper import safe_stratified_split
+from voicerecognizer.utils.split_helper import (
+    safe_stratified_split,
+    speaker_aware_stratified_split,
+)
 
 
 class TestSplitHelper(unittest.TestCase):
@@ -25,6 +28,35 @@ class TestSplitHelper(unittest.TestCase):
         self.assertIn(ga_idx, train_idx)
         self.assertNotIn(kya_idx, val_idx)
         self.assertNotIn(ga_idx, val_idx)
+
+    def test_speaker_aware_split_keeps_speakers_separate(self):
+        labels = ["a", "i"] * 6
+        speakers = [
+            "s1",
+            "s1",
+            "s2",
+            "s2",
+            "s3",
+            "s3",
+            "s4",
+            "s4",
+            "s5",
+            "s5",
+            "s6",
+            "s6",
+        ]
+        train_idx, val_idx = speaker_aware_stratified_split(
+            labels,
+            speakers,
+            val_rate=0.25,
+            seed=42,
+        )
+
+        self.assertEqual(len(train_idx) + len(val_idx), len(labels))
+        train_speakers = {speakers[index] for index in train_idx}
+        val_speakers = {speakers[index] for index in val_idx}
+        self.assertTrue(val_speakers)
+        self.assertTrue(train_speakers.isdisjoint(val_speakers))
 
 
 if __name__ == "__main__":
