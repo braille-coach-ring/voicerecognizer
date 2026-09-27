@@ -66,15 +66,17 @@ class TestModelUploader(unittest.TestCase):
             self.assertTrue(res)
             mock_download.assert_not_called()
 
-    @patch("voicerecognizer.utils.model_uploader.login")
     @patch("voicerecognizer.utils.model_uploader.HfApi")
     @patch(
         "voicerecognizer.utils.model_uploader.calculate_file_sha256", return_value="dummy_hash_123"
     )
     @patch("voicerecognizer.utils.model_uploader.get_remote_file_sha256_map", return_value={})
     def test_upload_weights_cnn_only(
-        self, mock_remote_map, mock_sha, mock_hf_api_class, mock_login
-    ):
+        self,
+        mock_remote_map: MagicMock,
+        mock_sha: MagicMock,
+        mock_hf_api_class: MagicMock,
+    ) -> None:
         mock_api_instance = MagicMock()
         mock_hf_api_class.return_value = mock_api_instance
         dummy_cfg = HuggingFaceConfig(
@@ -90,10 +92,10 @@ class TestModelUploader(unittest.TestCase):
                 model_type="cnn", hf_config=dummy_cfg, weights_dir=weights_dir, force_upload=True
             )
             self.assertTrue(res)
-            mock_login.assert_called_once_with(token="dummy_token_123")
+            # login() でグローバル認証を書き換えず、トークンは HfApi にだけ渡すこと
+            mock_hf_api_class.assert_called_once_with(token="dummy_token_123")
             mock_api_instance.upload_folder.assert_called_once()
 
-    @patch("voicerecognizer.utils.model_uploader.login")
     @patch("voicerecognizer.utils.model_uploader.HfApi")
     @patch("voicerecognizer.utils.model_uploader.calculate_file_sha256", return_value="same_hash")
     @patch(
@@ -101,8 +103,11 @@ class TestModelUploader(unittest.TestCase):
         return_value={"best_model.pth": "same_hash", "labels.json": "same_hash"},
     )
     def test_upload_weights_cnn_skip_identical(
-        self, mock_remote_map, mock_sha, mock_hf_api_class, mock_login
-    ):
+        self,
+        mock_remote_map: MagicMock,
+        mock_sha: MagicMock,
+        mock_hf_api_class: MagicMock,
+    ) -> None:
         mock_api_instance = MagicMock()
         mock_hf_api_class.return_value = mock_api_instance
         dummy_cfg = HuggingFaceConfig(token="dummy_token_123", repo_id="dummy/repo-id")
@@ -118,15 +123,17 @@ class TestModelUploader(unittest.TestCase):
             self.assertTrue(res)
             mock_api_instance.upload_folder.assert_not_called()
 
-    @patch("voicerecognizer.utils.model_uploader.login")
     @patch("voicerecognizer.utils.model_uploader.HfApi")
     @patch(
         "voicerecognizer.utils.model_uploader.calculate_file_sha256", return_value="dummy_hash_123"
     )
     @patch("voicerecognizer.utils.model_uploader.get_remote_file_sha256_map", return_value={})
     def test_upload_weights_wav2vec2_essential_files_strict_count(
-        self, mock_remote_map, mock_sha, mock_hf_api_class, mock_login
-    ):
+        self,
+        mock_remote_map: MagicMock,
+        mock_sha: MagicMock,
+        mock_hf_api_class: MagicMock,
+    ) -> None:
         mock_api_instance = MagicMock()
         mock_hf_api_class.return_value = mock_api_instance
         dummy_cfg = HuggingFaceConfig(token="dummy_token_123", repo_id="dummy/repo-id")
@@ -168,7 +175,9 @@ class TestModelUploader(unittest.TestCase):
 
     def test_namespaced_environment_variable_precedence(self):
         # Test fallback
-        with patch.dict(os.environ, {"HF_TOKEN": "fallback_token", "HF_REPO_ID": "fallback/repo"}, clear=True):
+        with patch.dict(
+            os.environ, {"HF_TOKEN": "fallback_token", "HF_REPO_ID": "fallback/repo"}, clear=True
+        ):
             cfg = HuggingFaceConfig()
             self.assertEqual(cfg.token, "fallback_token")
             self.assertEqual(cfg.repo_id, "fallback/repo")
@@ -195,7 +204,9 @@ class TestModelUploader(unittest.TestCase):
             self.assertEqual(cfg.repo_id, PUBLIC_DEFAULT_HF_REPO_ID)
 
     def test_recognizer_parameter_injection(self):
-        with patch("voicerecognizer.recognizers.wav2vec2_recognizer.download_latest_team_weights_if_needed"):
+        with patch(
+            "voicerecognizer.recognizers.wav2vec2_recognizer.download_latest_team_weights_if_needed"
+        ):
             w2v = Wav2Vec2Recognizer(
                 model_path="dummy_dir",
                 hf_repo_id="custom/w2v-repo",
@@ -205,8 +216,12 @@ class TestModelUploader(unittest.TestCase):
             self.assertEqual(w2v.hf_config.repo_id, "custom/w2v-repo")
             self.assertEqual(w2v.hf_config.token, "custom_token_123")
 
-        with patch("voicerecognizer.recognizers.cnn_recognizer.download_latest_team_weights_if_needed"), \
-             patch.object(CNNRecognizer, "_load_model", return_value=MagicMock()):
+        with (
+            patch(
+                "voicerecognizer.recognizers.cnn_recognizer.download_latest_team_weights_if_needed"
+            ),
+            patch.object(CNNRecognizer, "_load_model", return_value=MagicMock()),
+        ):
             cnn = CNNRecognizer(
                 model_path="dummy_dir/best_model.pth",
                 hf_repo_id="custom/cnn-repo",
@@ -219,4 +234,3 @@ class TestModelUploader(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
