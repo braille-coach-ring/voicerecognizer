@@ -181,7 +181,8 @@ class CNNRecognizer(RecognitionStrategy):
     def _load_model(self) -> HiraganaCNN:
         try:
             model = HiraganaCNN(num_classes=len(self.labels))
-            state_dict = torch.load(self.model_path, map_location=self.device)
+            # Hugging Face Hub から自動取得した重みも通るため、pickle 展開を禁止する
+            state_dict = torch.load(self.model_path, map_location=self.device, weights_only=True)
             model.load_state_dict(state_dict)
             model.to(self.device)
             model.eval()
