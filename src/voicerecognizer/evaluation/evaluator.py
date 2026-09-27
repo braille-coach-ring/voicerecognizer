@@ -100,11 +100,34 @@ def _weak_speaker_metric_sort_key(item: tuple[str, SpeakerMetrics]) -> tuple[flo
     return metrics.accuracy, -metrics.total_samples
 
 
+def resolve_evaluation_labels(model: RecognitionStrategy | None) -> Sequence[str]:
+    """評価に使うラベル集合を決める。
+
+    学習側 (models/*/train.py) は実データに存在するラベルだけで Macro-F1 を計算するのに対し、
+    ここで config の全ラベルを既定にすると、モデルが一度も学習していないクラスが F1=0 として
+    平均に入り、同じモデルなのに学習ログとレポートで Macro-F1 が食い違う。
+    モデルが持つラベル (labels.json 由来) を優先して、両者の母数を揃える。
+    """
+    model_labels: Any = getattr(model, "labels", None) if model is not None else None
+    if isinstance(model_labels, (list, tuple)) and model_labels:
+        logger.info(
+            "評価ラベルにモデル自身のラベル (%d 件) を使用します。",
+            len(model_labels),
+        )
+        return list(model_labels)
+
+    logger.info(
+        "モデルのラベルを参照できないため、config の既定ラベル (%d 件) で評価します。",
+        len(DEFAULT_RECOGNITION_CONFIG.labels),
+    )
+    return DEFAULT_RECOGNITION_CONFIG.labels
+
+
 class Evaluator:
     def __init__(
         self,
         model: RecognitionStrategy | None = None,
-        labels: Sequence[str] = DEFAULT_RECOGNITION_CONFIG.labels,
+        labels: Sequence[str] | None = None,
         dataset_path: Path | str = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir,
         review_decisions_path: Path | str | None = None,
         review_config: ReviewPriorityConfig = DEFAULT_REVIEW_PRIORITY_CONFIG,
@@ -113,9 +136,12 @@ class Evaluator:
 
         Args:
             model: RecognitionStrategyの実装モデル（推論なし集計時はNone可）
-            labels: 評価対象ラベルのシーケンス (list, tuple 等)
+            labels: 評価対象ラベルのシーケンス (list, tuple 等)。
+                省略時はモデルが実際に出力しうるラベル (labels.json 由来) を使う。
             dataset_path: データセットのルートディレクトリ
         """
+        if labels is None:
+            labels = resolve_evaluation_labels(model)
         raw_labels: Any = labels
         if not isinstance(raw_labels, (tuple, list)):
             logger.error(
@@ -510,6 +536,25 @@ class Evaluator:
             )
         )
 
+    def _warn_on_unknown_labels(self, labels_list: list[str]) -> None:
+        """評価ラベル集合の外にある正解ラベルを警告する。
+
+        classification_report は labels 引数の外の正解ラベルをクラス別集計から
+        落とすため、accuracy と macro-F1 の母数がずれたまま気付けなくなる。
+        """
+        known = set(labels_list)
+        unknown = sorted({label for label in self.y_true if label not in known})
+        if not unknown:
+            return
+
+        affected = sum(1 for label in self.y_true if label not in known)
+        logger.warning(
+            "評価ラベル集合に含まれない正解ラベルが %d 件あります (%s)。"
+            "これらはクラス別指標・Macro-F1 から除外され、Accuracy とは母数がずれます。",
+            affected,
+            ", ".join(unknown[:10]),
+        )
+
     def _compute_metrics(self) -> EvaluationResult:
         """蓄積された y_true / y_pred から EvaluationResult を計算・構築する"""
         if not self.y_true:
@@ -525,6 +570,7 @@ class Evaluator:
             )
 
         labels_list = list(self.labels)
+        self._warn_on_unknown_labels(labels_list)
         acc = float(accuracy_score(self.y_true, self.y_pred))
         report_dict = cast(
             dict[str, Any],
