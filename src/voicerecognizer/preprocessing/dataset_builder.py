@@ -162,9 +162,11 @@ class DatasetBuilder:
         if collected_dir is not None and collected_dir.exists():
             for metadata_file in collected_dir.rglob("metadata.csv"):
                 folder = metadata_file.parent
-                with open(metadata_file, encoding="utf-8") as f:
-                    for line in f:
-                        parts = [p.strip() for p in line.strip().split(",")]
+                with open(metadata_file, encoding="utf-8", newline="") as f:
+                    # metadata.csv はヘッダなし 3〜4 列。カンマを含む値でも列がずれないよう
+                    # csv モジュールで解釈する。
+                    for parts in csv.reader(f):
+                        parts = [value.strip() for value in parts]
                         if len(parts) < 3 or not parts[0]:
                             continue
                         filename = parts[1]
@@ -185,11 +187,11 @@ class DatasetBuilder:
                                     (_to_rel_path(wav_path), ground_truth, predicted_text)
                                 )
 
-        # 3. index.csv の書き出し
-        with open(index_file, "w", encoding="utf-8") as f:
-            f.write("filepath,label,predicted_text\n")
-            for filepath, label, pred_text in entries:
-                f.write(f"{filepath},{label},{pred_text}\n")
+        # 3. index.csv の書き出し（値にカンマが含まれても壊れないよう csv モジュールで書く）
+        with open(index_file, "w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["filepath", "label", "predicted_text"])
+            writer.writerows(entries)
 
         logger.info("インデックスファイルを作成しました: %s (全 %d 件)", index_file, len(entries))
         return index_file
