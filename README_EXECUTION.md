@@ -267,7 +267,7 @@ uv run python models\wav2vec2\export_onnx.py
 
 ## 8. 補助スクリプト
 
-マイク音量とノイズフロアを測定します。`measured_audio.wav` と `Docs\charts\audio_level_measurement.png` を出力します。
+main.py の VAD 閾値 (`vad_silence_threshold` / `vad_rms_threshold`) をマイク環境に合わせて調整します。最初の 5 秒は黙って環境ノイズを録音し、その後画面に表示される文字 (「あ」「か」…) を表示直後に 1 回ずつ、main.py を使うときと同じ声量で発声してください。main.py と同じ 1 秒窓で VAD を再現し、全発話を検出しつつノイズでは反応しない閾値を `config.py` に書き込みます。結果が不安定な場合 (誤検知がある・検出できない発話が多い) は `config.py` を更新しません (`--force` で強制更新、`--dry-run` で確認のみ)。`measured_audio.wav` と `Docs\charts\audio_level_measurement.png` を出力します。
 
 ```powershell
 uv run python script\measure_audio_level.py
