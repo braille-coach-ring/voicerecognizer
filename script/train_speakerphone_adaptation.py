@@ -7,12 +7,12 @@ import logging
 import random
 import time
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
 from voicerecognizer.config import DEFAULT_AUDIO_CONFIG, DEFAULT_PREPROCESS_CONFIG, PROJECT_ROOT
 from voicerecognizer.dataset.hiragana_dataset import HiraganaDataset
@@ -34,7 +34,7 @@ def fix_seed(seed: int = 42) -> None:
 
 def train_epoch(
     model: nn.Module,
-    loader: DataLoader,
+    loader: DataLoader[Any],
     criterion: nn.Module,
     optimizer: torch.optim.Optimizer,
     device: torch.device,
@@ -62,7 +62,7 @@ def train_epoch(
 
 def validate(
     model: nn.Module,
-    loader: DataLoader,
+    loader: DataLoader[Any],
     criterion: nn.Module,
     device: torch.device,
     labels: list[str],

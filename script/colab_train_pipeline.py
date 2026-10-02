@@ -4,9 +4,7 @@ Executed directly on Colab GPU environment.
 """
 
 import csv
-import json
 import logging
-import os
 import shutil
 import sys
 import time
@@ -15,7 +13,7 @@ from unittest.mock import MagicMock
 
 # ヘッドレスColab環境でPortAudioライブラリ未検出によるインポートエラーを完全防護
 try:
-    import sounddevice
+    __import__("sounddevice")
 except Exception:
     sys.modules["sounddevice"] = MagicMock()
 

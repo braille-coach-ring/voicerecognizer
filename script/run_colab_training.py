@@ -4,8 +4,6 @@ Executes Wav2Vec2 adaptation fine-tuning on Colab GPU via WSL Colab CLI.
 """
 
 import argparse
-import json
-import os
 import subprocess
 import sys
 import time
@@ -25,7 +23,7 @@ SESSION_NAME = "voicerecognizer-gpu"
 
 
 def run_wsl_stream(args_list: list[str], input_text: str | None = None, check: bool = True) -> int:
-    cmd = ["wsl", "-u", "root", "--"] + args_list
+    cmd = ["wsl", "-u", "root", "--", *args_list]
     cmd_str = " ".join(cmd)
     if input_text:
         print(f"\n[EXEC] {cmd_str} (piped script: {len(input_text)} chars)", flush=True)
@@ -43,17 +41,17 @@ def run_wsl_stream(args_list: list[str], input_text: str | None = None, check: b
         bufsize=1,
     )
 
-    if input_text:
+    if input_text and proc.stdin is not None:
         proc.stdin.write(input_text)
         proc.stdin.close()
 
-    for line in iter(proc.stdout.readline, ""):
-        try:
-            print(line, end="", flush=True)
-        except UnicodeEncodeError:
-            print(line.encode("ascii", errors="replace").decode("ascii"), end="", flush=True)
-
-    proc.stdout.close()
+    if proc.stdout is not None:
+        for line in iter(proc.stdout.readline, ""):
+            try:
+                print(line, end="", flush=True)
+            except UnicodeEncodeError:
+                print(line.encode("ascii", errors="replace").decode("ascii"), end="", flush=True)
+        proc.stdout.close()
     return_code = proc.wait()
 
     if check and return_code != 0:
@@ -77,9 +75,7 @@ def main():
     if env_path.exists():
         for line in env_path.read_text(encoding="utf-8").splitlines():
             line = line.strip()
-            if line.startswith("HF_TOKEN="):
-                hf_token = line.split("=", 1)[1].strip()
-            elif line.startswith("VOICERECOGNIZER_HF_TOKEN="):
+            if line.startswith("HF_TOKEN=") or line.startswith("VOICERECOGNIZER_HF_TOKEN="):
                 hf_token = line.split("=", 1)[1].strip()
 
     colab_bin = ["/root/.local/bin/colab", "--auth=oauth2"]
@@ -95,11 +91,11 @@ def main():
     try:
         # 1. GPU インスタンスの確保
         print(f"\n[Step 1] Provisioning Fresh Colab {args.gpu} GPU Instance...", flush=True)
-        run_wsl_stream(colab_bin + ["new", "-s", SESSION_NAME, "--gpu", args.gpu])
+        run_wsl_stream([*colab_bin, "new", "-s", SESSION_NAME, "--gpu", args.gpu])
 
         print("Waiting 25 seconds for Colab VM & Jupyter kernel to fully stabilize...", flush=True)
         time.sleep(25)
-        run_wsl_stream(colab_bin + ["status", "-s", SESSION_NAME])
+        run_wsl_stream([*colab_bin, "status", "-s", SESSION_NAME])
 
         # 2. リモート環境のセットアップ (クローンと依存導入)
         print("\n[Step 2] Cloning repository and installing dependencies on Colab GPU...", flush=True)
@@ -115,11 +111,11 @@ def main():
             "subprocess.run(['uv', 'pip', 'install', '--system', '-e', '.', 'soundfile', 'librosa', 'onnx', 'onnxruntime', 'tqdm', 'transformers', 'accelerate', 'huggingface_hub', 'scikit-learn'], check=True)\n"
             "print('Environment setup complete on Colab.', flush=True)\n"
         )
-        
+
         # リトライ付きでセットアップ実行
         for attempt in range(1, 4):
             try:
-                run_wsl_stream(colab_bin + ["exec", "-s", SESSION_NAME], input_text=setup_script)
+                run_wsl_stream([*colab_bin, "exec", "-s", SESSION_NAME], input_text=setup_script)
                 break
             except Exception as e:
                 print(f"Setup attempt {attempt} failed: {e}. Retrying in 15 seconds...", flush=True)
@@ -141,7 +137,7 @@ def main():
             f"if p.returncode != 0:\n"
             f"    raise RuntimeError(f'colab_train_pipeline failed with exit code {{p.returncode}}')\n"
         )
-        run_wsl_stream(colab_bin + ["exec", "-s", SESSION_NAME, "--timeout", "7200"], input_text=run_script)
+        run_wsl_stream([*colab_bin, "exec", "-s", SESSION_NAME, "--timeout", "7200"], input_text=run_script)
 
         # 4. 評価結果 JSON と HTML をローカルに回収
         print("\n[Step 4] Downloading evaluation results to local...", flush=True)
@@ -149,18 +145,18 @@ def main():
         local_results_dir.mkdir(exist_ok=True)
         local_json_dest = "/mnt/c/Users/yamadarikuto/Mycode/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.json"
         local_html_dest = "/mnt/c/Users/yamadarikuto/Mycode/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.html"
-        run_wsl_stream(colab_bin + ["download", "-s", SESSION_NAME, "/content/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.json", local_json_dest])
+        run_wsl_stream([*colab_bin, "download", "-s", SESSION_NAME, "/content/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.json", local_json_dest])
         try:
-            run_wsl_stream(colab_bin + ["download", "-s", SESSION_NAME, "/content/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.html", local_html_dest])
+            run_wsl_stream([*colab_bin, "download", "-s", SESSION_NAME, "/content/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.html", local_html_dest])
         except Exception as e:
             print(f"HTML download skipped: {e}")
 
     finally:
         if not args.keep_session:
             print("\n[Step 5] Releasing Colab GPU VM to Prevent Idle Charges...", flush=True)
-            run_wsl_stream(colab_bin + ["stop", "-s", SESSION_NAME], check=False)
+            run_wsl_stream([*colab_bin, "stop", "-s", SESSION_NAME], check=False)
             print("\nColab VM released. Current balance:", flush=True)
-            run_wsl_stream(colab_bin + ["usage"], check=False)
+            run_wsl_stream([*colab_bin, "usage"], check=False)
         else:
             print(f"\n[Info] Session '{SESSION_NAME}' kept alive.", flush=True)
 

@@ -567,7 +567,7 @@ class Evaluator:
 
         homophone_correct = sum(
             1
-            for yt, yp in zip(self.y_true, self.y_pred)
+            for yt, yp in zip(self.y_true, self.y_pred, strict=True)
             if yt == yp or HOMOPHONE_MAP.get(yt, yt) == HOMOPHONE_MAP.get(yp, yp)
         )
         homophone_acc = round(float(homophone_correct / max(len(self.y_true), 1)), 4)
