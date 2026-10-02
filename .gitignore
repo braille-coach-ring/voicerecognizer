@@ -230,5 +230,6 @@ evaluation_results/
 # Weights & plots
 weights/*
 !weights/.gitkeep
+checkpoints/
 plots/
 *.png

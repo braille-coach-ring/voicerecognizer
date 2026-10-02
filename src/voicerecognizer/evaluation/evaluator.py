@@ -37,6 +37,12 @@ class PerClassMetrics:
     support: int
 
 
+HOMOPHONE_MAP: dict[str, str] = {
+    "di": "ji",
+    "du": "zu",
+}
+
+
 @dataclass(frozen=True)
 class OverallMetrics:
     """全体評価指標"""
@@ -45,6 +51,7 @@ class OverallMetrics:
     macro_f1: float
     weighted_f1: float
     total_samples: int
+    homophone_accuracy: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -558,11 +565,19 @@ class Evaluator:
             if lbl in report_dict
         }
 
+        homophone_correct = sum(
+            1
+            for yt, yp in zip(self.y_true, self.y_pred, strict=True)
+            if yt == yp or HOMOPHONE_MAP.get(yt, yt) == HOMOPHONE_MAP.get(yp, yp)
+        )
+        homophone_acc = round(float(homophone_correct / max(len(self.y_true), 1)), 4)
+
         overall = OverallMetrics(
             accuracy=round(acc, 4),
             macro_f1=round(float(report_dict["macro avg"]["f1-score"]), 4),
             weighted_f1=round(float(report_dict["weighted avg"]["f1-score"]), 4),
             total_samples=len(self.y_true),
+            homophone_accuracy=homophone_acc,
         )
 
         misclassified = []
