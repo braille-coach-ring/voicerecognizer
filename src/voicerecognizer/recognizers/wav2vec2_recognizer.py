@@ -115,7 +115,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         self.session: Any | None = None
         self.input_name: str | None = None
         self.last_confidence: float | None = None
-        self.last_timing_stats: dict[str, float] = {}
+        self.last_timing_stats: dict[str, Any] = {}
         logger.info(
             "Wav2Vec2Recognizer (ONNX) 初期化完了 (動的トリミング=%s): %s",
             self.dynamic_trimming,
@@ -223,6 +223,16 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
         predicted_index = int(np.argmax(probabilities))
         self.last_confidence = float(probabilities[predicted_index])
 
+        top_k = min(3, len(probabilities))
+        top_indices = np.argsort(probabilities)[::-1][:top_k]
+        self.last_top_candidates = [
+            (
+                self._label_for_index(int(idx), output_format=output_format),
+                float(probabilities[idx]),
+            )
+            for idx in top_indices
+        ]
+
         prep_stats = getattr(self.audio_preprocessor, "last_stats", {})
         self.last_timing_stats = {
             "onset_ms": prep_stats.get("onset_ms", 0.0),
@@ -232,6 +242,7 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
             "inference_latency_ms": (t_inf_end - t_inf_start) * 1000.0,
             "total_latency_ms": (t_inf_end - t_start) * 1000.0,
             "confidence": self.last_confidence,
+            "top_candidates": self.last_top_candidates,
         }
 
         logger.debug("Wav2Vec2 ONNX 確率: %s", probabilities)
