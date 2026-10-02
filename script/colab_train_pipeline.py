@@ -56,6 +56,7 @@ def step1_prepare_dataset():
 
 def step2_train_wav2vec2(epochs: int = 5, batch_size: int = 8, lr: float = 3e-5):
     logger.info("=== [Step 2] Training Wav2Vec2 on Colab GPU ===")
+    from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
     from voicerecognizer.models.wav2vec2.train import build_parser, train
 
     parser = build_parser()
@@ -63,11 +64,18 @@ def step2_train_wav2vec2(epochs: int = 5, batch_size: int = 8, lr: float = 3e-5)
         "--epochs", str(epochs),
         "--batch-size", str(batch_size),
         "--learning-rate", str(lr),
-        "--patience", "3",
+        "--patience", "0",
         "--skip-prep",
         "--no-hf-upload",
     ])
     train(args)
+
+    weights_dir = DEFAULT_RECOGNITION_CONFIG.weights_dir
+    last_dir = weights_dir / "wav2vec2_last"
+    best_dir = weights_dir / "wav2vec2_best"
+    if last_dir.exists():
+        logger.info("Syncing newly adapted weights from wav2vec2_last to wav2vec2_best...")
+        shutil.copytree(last_dir, best_dir, dirs_exist_ok=True)
     logger.info("Wav2Vec2 GPU training complete.")
 
 
@@ -108,9 +116,11 @@ def step3_evaluate_unseen_test():
 
 def step4_upload_to_hf():
     logger.info("=== [Step 4] Uploading to Hugging Face Hub ===")
+    from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
     from voicerecognizer.utils.model_uploader import upload_weights_to_hf
 
-    success = upload_weights_to_hf(model_type="wav2vec2")
+    weights_dir = DEFAULT_RECOGNITION_CONFIG.weights_dir
+    success = upload_weights_to_hf(model_type="wav2vec2", weights_dir=weights_dir)
     if success:
         logger.info("Successfully uploaded adapted Wav2Vec2 weights to Hugging Face Hub.")
     else:
