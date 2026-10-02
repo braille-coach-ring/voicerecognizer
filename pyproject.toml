@@ -20,6 +20,8 @@ dependencies = [
     "onnx>=1.22.0",
     "onnxscript>=0.7.1",
     "accelerate>=1.11.0",
+    "edge-tts>=7.2.8",
+    "pyopenjtalk>=0.4.1",
 ]
 
 [project.scripts]
