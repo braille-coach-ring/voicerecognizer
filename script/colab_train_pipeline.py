@@ -11,6 +11,13 @@ import shutil
 import sys
 import time
 from pathlib import Path
+from unittest.mock import MagicMock
+
+# ヘッドレスColab環境でPortAudioライブラリ未検出によるインポートエラーを完全防護
+try:
+    import sounddevice
+except Exception:
+    sys.modules["sounddevice"] = MagicMock()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("colab_pipeline")
