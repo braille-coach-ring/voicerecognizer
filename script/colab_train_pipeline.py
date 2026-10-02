@@ -54,20 +54,30 @@ def step1_prepare_dataset():
     logger.info("Preprocessing complete: processed_dataset/ is ready.")
 
 
-def step2_train_wav2vec2(epochs: int = 5, batch_size: int = 8, lr: float = 3e-5):
-    logger.info("=== [Step 2] Training Wav2Vec2 on Colab GPU ===")
+def step2_train_wav2vec2(epochs: int = 12, batch_size: int = 8, lr: float = 2e-5, freeze_layers: int = 4):
+    logger.info("=== [Step 2] Training Wav2Vec2 on Colab GPU (Freeze=%d layers) ===", freeze_layers)
     from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
     from voicerecognizer.models.wav2vec2.train import build_parser, train
 
-    parser = build_parser()
-    args = parser.parse_args([
+    confusion_json = PROJECT_ROOT / "evaluation_results" / "speakerphone_test_wav2vec2_colab_after.json"
+    train_args = [
         "--epochs", str(epochs),
         "--batch-size", str(batch_size),
         "--learning-rate", str(lr),
+        "--freeze-transformer-layers", str(freeze_layers),
         "--patience", "0",
         "--skip-prep",
         "--no-hf-upload",
-    ])
+    ]
+    if confusion_json.exists():
+        logger.info("Enabling confusion-pair boost sampler with previous evaluation result: %s", confusion_json)
+        train_args.extend([
+            "--confusion-pair-evaluation-result", str(confusion_json),
+            "--confusion-pair-boost", "0.6",
+        ])
+
+    parser = build_parser()
+    args = parser.parse_args(train_args)
     train(args)
 
     weights_dir = DEFAULT_RECOGNITION_CONFIG.weights_dir
@@ -92,11 +102,13 @@ def step3_evaluate_unseen_test():
     )
     result = evaluator.evaluate()
 
+    homophone_acc = getattr(result.overall, "homophone_accuracy", result.overall.accuracy)
     logger.info("--- Speakerphone Unseen Test Set Final Results ---")
-    logger.info("Accuracy    : %.4f (Before was: 0.6154)", result.overall.accuracy)
-    logger.info("Macro F1    : %.4f (Before was: 0.5638)", result.overall.macro_f1)
-    logger.info("Weighted F1 : %.4f (Before was: 0.5630)", result.overall.weighted_f1)
-    logger.info("Total       : %d samples", result.overall.total_samples)
+    logger.info("Accuracy           : %.4f (Before was: 0.6154)", result.overall.accuracy)
+    logger.info("Homophone Accuracy : %.4f (じ/ぢ, ず/づ 同音統合)", homophone_acc)
+    logger.info("Macro F1           : %.4f (Before was: 0.5638)", result.overall.macro_f1)
+    logger.info("Weighted F1        : %.4f (Before was: 0.5630)", result.overall.weighted_f1)
+    logger.info("Total              : %d samples", result.overall.total_samples)
 
     results_dir = PROJECT_ROOT / "evaluation_results"
     results_dir.mkdir(parents=True, exist_ok=True)
@@ -128,13 +140,14 @@ def step4_upload_to_hf():
 
 
 def main():
-    epochs = int(sys.argv[1]) if len(sys.argv) > 1 else 5
+    epochs = int(sys.argv[1]) if len(sys.argv) > 1 else 12
     batch_size = int(sys.argv[2]) if len(sys.argv) > 2 else 8
-    lr = float(sys.argv[3]) if len(sys.argv) > 3 else 3e-5
+    lr = float(sys.argv[3]) if len(sys.argv) > 3 else 2e-5
+    freeze_layers = int(sys.argv[4]) if len(sys.argv) > 4 else 4
 
     t0 = time.time()
     step1_prepare_dataset()
-    step2_train_wav2vec2(epochs=epochs, batch_size=batch_size, lr=lr)
+    step2_train_wav2vec2(epochs=epochs, batch_size=batch_size, lr=lr, freeze_layers=freeze_layers)
     step3_evaluate_unseen_test()
     step4_upload_to_hf()
     elapsed = time.time() - t0

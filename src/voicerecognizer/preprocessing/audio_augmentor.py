@@ -193,11 +193,75 @@ class AudioAugmentor:
             result[:shift] = waveform[-shift:]
         return result
 
+    def apply_speakerphone_eq(self, waveform: np.ndarray) -> np.ndarray:
+        """スピーカーフォン特有の周波数特性（低域カット・高域減衰・通話帯域通過）を適用"""
+        if self.rng.random() > self.p:
+            return waveform
+        try:
+            from scipy import signal
+
+            # スピーカーフォン/通話帯域: 低域カット (150Hz ~ 250Hz), 高域カット (3400Hz ~ 4500Hz)
+            low_cut = float(self.rng.uniform(150.0, 250.0))
+            high_cut = float(self.rng.uniform(3400.0, 4600.0))
+            nyquist = self.sample_rate * 0.5
+            sos = signal.butter(
+                2, [low_cut / nyquist, high_cut / nyquist], btype="band", output="sos"
+            )
+            filtered = signal.sosfilt(sos, waveform)
+            return np.ascontiguousarray(filtered, dtype=np.float32)
+        except Exception:
+            return waveform
+
+    def apply_room_reverb(self, waveform: np.ndarray) -> np.ndarray:
+        """室内音響・マイク距離による残響（Room Impulse Response）をシミュレーション"""
+        if self.rng.random() > self.p:
+            return waveform
+        try:
+            from scipy import signal
+
+            # 室内残響時間 RT60 (0.10s ~ 0.25s)
+            rt60 = float(self.rng.uniform(0.10, 0.25))
+            rir_len = int(self.sample_rate * rt60)
+            if rir_len < 10:
+                return waveform
+
+            t = np.linspace(0, rt60, rir_len, dtype=np.float32)
+            decay = np.exp(-3.0 * t / rt60)
+            rir = self.rng.standard_normal(rir_len, dtype=np.float32) * decay
+            rir[0] = 1.0  # 直達音 (Direct Sound)
+
+            # 初期反射音 (Early Reflections)
+            reflections = [
+                int(self.sample_rate * 0.012),
+                int(self.sample_rate * 0.024),
+                int(self.sample_rate * 0.038),
+            ]
+            for ref_idx in reflections:
+                if ref_idx < rir_len:
+                    sign = 1.0 if self.rng.random() > 0.5 else -1.0
+                    rir[ref_idx] += float(self.rng.uniform(0.15, 0.30)) * sign
+
+            rir /= np.max(np.abs(rir)) + 1e-8
+
+            wet_ratio = float(self.rng.uniform(0.15, 0.35))
+            convolved = signal.fftconvolve(waveform, rir, mode="full")[: len(waveform)]
+            convolved_rms = np.sqrt(np.mean(convolved**2) + 1e-8)
+            orig_rms = np.sqrt(np.mean(waveform**2) + 1e-8)
+            if convolved_rms > 1e-6:
+                convolved = convolved * (orig_rms / convolved_rms)
+
+            mixed = (1.0 - wet_ratio) * waveform + wet_ratio * convolved
+            return np.ascontiguousarray(mixed, dtype=np.float32)
+        except Exception:
+            return waveform
+
     def augment(self, waveform: np.ndarray) -> np.ndarray:
         """全拡張を順次適用した新しい波形配列を返す"""
         aug_waveform = np.ascontiguousarray(waveform, dtype=np.float32).copy()
         aug_waveform = self.change_speed(aug_waveform)
         aug_waveform = self.shift_pitch(aug_waveform)
+        aug_waveform = self.apply_speakerphone_eq(aug_waveform)
+        aug_waveform = self.apply_room_reverb(aug_waveform)
         aug_waveform = self.add_noise(aug_waveform)
         aug_waveform = self.mix_device_noise(aug_waveform)
         aug_waveform = self.change_gain(aug_waveform)

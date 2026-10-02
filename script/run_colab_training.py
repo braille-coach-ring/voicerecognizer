@@ -63,8 +63,10 @@ def run_wsl_stream(args_list: list[str], input_text: str | None = None, check: b
 
 def main():
     parser = argparse.ArgumentParser(description="VoiceRecognizer Colab GPU Training Runner")
-    parser.add_argument("--epochs", type=int, default=5, help="Epochs for Wav2Vec2 fine-tuning")
-    parser.add_argument("--batch-size", type=int, default=8, help="Batch size")
+    parser.add_argument("--epochs", type=int, default=12, help="Epochs for Wav2Vec2 fine-tuning (default: 12)")
+    parser.add_argument("--batch-size", type=int, default=8, help="Batch size (default: 8)")
+    parser.add_argument("--lr", type=float, default=2e-5, help="Learning rate (default: 2e-5)")
+    parser.add_argument("--freeze-layers", type=int, default=4, help="Transformer layers to freeze (default: 4)")
     parser.add_argument("--gpu", type=str, default="T4", help="Colab GPU type (T4, L4, A100)")
     parser.add_argument("--keep-session", action="store_true", help="Keep Colab VM alive after training")
     args = parser.parse_args()
@@ -132,7 +134,7 @@ def main():
             f"import os, subprocess, sys\n"
             f"os.chdir('/content/voicerecognizer')\n"
             f"{hf_env_str}"
-            f"p = subprocess.Popen(['python', '-u', 'script/colab_train_pipeline.py', '{args.epochs}', '{args.batch_size}'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)\n"
+            f"p = subprocess.Popen(['python', '-u', 'script/colab_train_pipeline.py', '{args.epochs}', '{args.batch_size}', '{args.lr}', '{args.freeze_layers}'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)\n"
             f"for line in p.stdout:\n"
             f"    print(line, end='', flush=True)\n"
             f"p.wait()\n"
