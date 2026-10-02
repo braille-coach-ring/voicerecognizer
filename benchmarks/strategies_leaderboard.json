@@ -1,0 +1,17 @@
+{
+  "strategies": {
+    "wav2vec2_baseline": {
+      "strategy_name": "wav2vec2_baseline",
+      "display_name": "Wav2Vec2 Baseline",
+      "category": "Baseline",
+      "status": "active",
+      "general_val_acc": 92.85,
+      "speakerphone_test_acc": 90.38,
+      "female_test_acc": 67.31,
+      "latency_ms": 70.1,
+      "model_size_mb": 116.6,
+      "evaluated_at": "2026-10-02 23:56:41",
+      "notes": "Standard facebook/wav2vec2-base fine-tuned on single morae without distillation."
+    }
+  }
+}

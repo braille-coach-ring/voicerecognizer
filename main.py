@@ -44,6 +44,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--model",
+        "--strategy",
+        dest="model",
         default=DEFAULT_RECOGNITION_CONFIG.model_type,
         choices=RecognizerFactory.available_strategies(),
         help="Recognition strategy to use.",
