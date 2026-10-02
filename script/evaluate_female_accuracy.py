@@ -109,8 +109,8 @@ def evaluate_dataset(
             top3_desc = top1_pred
 
         # 集計
-        is_top1 = (top1_pred == true_label)
-        is_top3 = (true_label in top3_preds)
+        is_top1 = top1_pred == true_label
+        is_top3 = true_label in top3_preds
 
         if is_top1:
             correct_top1 += 1

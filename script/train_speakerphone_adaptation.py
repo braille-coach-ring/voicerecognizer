@@ -199,7 +199,9 @@ def main():
         else:
             patience_counter += 1
             if patience_counter >= patience:
-                logger.info("Early stopping triggered after %d epochs without improvement.", epoch + 1)
+                logger.info(
+                    "Early stopping triggered after %d epochs without improvement.", epoch + 1
+                )
                 break
 
     logger.info("=== Fine-tuning completed! Best Val Macro-F1: %.4f ===", best_val_macro_f1)

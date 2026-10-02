@@ -48,31 +48,49 @@ def step1_prepare_dataset():
     from voicerecognizer.preprocessing.dataset_builder import DatasetBuilder
 
     builder = DatasetBuilder()
-    builder.preprocess_dataset(input_root=merged_dir, output_root=PROJECT_ROOT / "processed_dataset")
+    builder.preprocess_dataset(
+        input_root=merged_dir, output_root=PROJECT_ROOT / "processed_dataset"
+    )
     logger.info("Preprocessing complete: processed_dataset/ is ready.")
 
 
-def step2_train_wav2vec2(epochs: int = 12, batch_size: int = 8, lr: float = 2e-5, freeze_layers: int = 4):
+def step2_train_wav2vec2(
+    epochs: int = 12, batch_size: int = 8, lr: float = 2e-5, freeze_layers: int = 4
+):
     logger.info("=== [Step 2] Training Wav2Vec2 on Colab GPU (Freeze=%d layers) ===", freeze_layers)
     from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
     from voicerecognizer.models.wav2vec2.train import build_parser, train
 
-    confusion_json = PROJECT_ROOT / "evaluation_results" / "speakerphone_test_wav2vec2_colab_after.json"
+    confusion_json = (
+        PROJECT_ROOT / "evaluation_results" / "speakerphone_test_wav2vec2_colab_after.json"
+    )
     train_args = [
-        "--epochs", str(epochs),
-        "--batch-size", str(batch_size),
-        "--learning-rate", str(lr),
-        "--freeze-transformer-layers", str(freeze_layers),
-        "--patience", "0",
+        "--epochs",
+        str(epochs),
+        "--batch-size",
+        str(batch_size),
+        "--learning-rate",
+        str(lr),
+        "--freeze-transformer-layers",
+        str(freeze_layers),
+        "--patience",
+        "0",
         "--skip-prep",
         "--no-hf-upload",
     ]
     if confusion_json.exists():
-        logger.info("Enabling confusion-pair boost sampler with previous evaluation result: %s", confusion_json)
-        train_args.extend([
-            "--confusion-pair-evaluation-result", str(confusion_json),
-            "--confusion-pair-boost", "0.6",
-        ])
+        logger.info(
+            "Enabling confusion-pair boost sampler with previous evaluation result: %s",
+            confusion_json,
+        )
+        train_args.extend(
+            [
+                "--confusion-pair-evaluation-result",
+                str(confusion_json),
+                "--confusion-pair-boost",
+                "0.6",
+            ]
+        )
 
     parser = build_parser()
     args = parser.parse_args(train_args)
@@ -114,7 +132,9 @@ def step3_evaluate_unseen_test():
     html_path = results_dir / "speakerphone_test_wav2vec2_colab_after.html"
 
     evaluator.export_json(json_path)
-    evaluator.export_html(html_path, title="Wav2Vec2 Speakerphone Adaptation Final Report (Colab GPU)")
+    evaluator.export_html(
+        html_path, title="Wav2Vec2 Speakerphone Adaptation Final Report (Colab GPU)"
+    )
     logger.info("Evaluation report saved to: %s", json_path)
 
     # Print JSON output directly to stdout for immediate display
@@ -132,7 +152,9 @@ def step3_evaluate_unseen_test():
             dataset_path=fem_test_dir,
         )
         fem_result = fem_evaluator.evaluate()
-        fem_homophone_acc = getattr(fem_result.overall, "homophone_accuracy", fem_result.overall.accuracy)
+        fem_homophone_acc = getattr(
+            fem_result.overall, "homophone_accuracy", fem_result.overall.accuracy
+        )
         logger.info("--- Female Unseen Test Set Final Results ---")
         logger.info("Accuracy           : %.4f (Before was: 0.3301)", fem_result.overall.accuracy)
         logger.info("Homophone Accuracy : %.4f", fem_homophone_acc)
@@ -143,7 +165,9 @@ def step3_evaluate_unseen_test():
         fem_json_path = results_dir / "female_test_wav2vec2_colab_after.json"
         fem_html_path = results_dir / "female_test_wav2vec2_colab_after.html"
         fem_evaluator.export_json(fem_json_path)
-        fem_evaluator.export_html(fem_html_path, title="Wav2Vec2 Female Voice Adaptation Final Report (Colab GPU)")
+        fem_evaluator.export_html(
+            fem_html_path, title="Wav2Vec2 Female Voice Adaptation Final Report (Colab GPU)"
+        )
         logger.info("Female evaluation report saved to: %s", fem_json_path)
 
 

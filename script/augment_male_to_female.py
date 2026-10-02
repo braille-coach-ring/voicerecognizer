@@ -395,9 +395,15 @@ async def process_and_generate_all(
         dsp_converted = convert_male_to_female_dsp(waveform, sr, dsp_preset)
 
         # 2. Neural TTS 生成 (3バリエーション)
-        ai_std = await synthesize_neural_female_voice(char, pitch_offset_hz="+0Hz", rate_offset_pct="+0%")
-        ai_high = await synthesize_neural_female_voice(char, pitch_offset_hz="+25Hz", rate_offset_pct="+5%")
-        ai_deep = await synthesize_neural_female_voice(char, pitch_offset_hz="-20Hz", rate_offset_pct="-5%")
+        ai_std = await synthesize_neural_female_voice(
+            char, pitch_offset_hz="+0Hz", rate_offset_pct="+0%"
+        )
+        ai_high = await synthesize_neural_female_voice(
+            char, pitch_offset_hz="+25Hz", rate_offset_pct="+5%"
+        )
+        ai_deep = await synthesize_neural_female_voice(
+            char, pitch_offset_hz="-20Hz", rate_offset_pct="-5%"
+        )
 
         # WAV ファイルとして保存
         sf.write(output_dir / f"{cls_name}_dsp.wav", dsp_converted, sr)

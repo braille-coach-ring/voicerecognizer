@@ -139,7 +139,6 @@ class CNNRecognizer(RecognitionStrategy):
             "     ネットワーク接続を確認の上、再度実行してください。\n"
             "  2. [Hugging Face 認証トークン]\n"
             "     アクセス制限やレートリミットを回避する場合は環境変数を設定してください:\n"
-
             '     - Windows (PowerShell): $env:HF_TOKEN = "your_token"\n'
             '     - Linux / macOS (Bash): export HF_TOKEN="your_token"\n'
             "     - または .env ファイルに HF_TOKEN=your_token を記述\n"
@@ -172,9 +171,7 @@ class CNNRecognizer(RecognitionStrategy):
                 self._label_for_index(int(idx), output_format=output_format),
                 float(val),
             )
-            for idx, val in zip(
-                top_k_res.indices.tolist(), top_k_res.values.tolist(), strict=False
-            )
+            for idx, val in zip(top_k_res.indices.tolist(), top_k_res.values.tolist(), strict=False)
         ]
 
         prep_stats = getattr(self.audio_preprocessor, "last_stats", {})

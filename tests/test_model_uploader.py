@@ -168,7 +168,9 @@ class TestModelUploader(unittest.TestCase):
 
     def test_namespaced_environment_variable_precedence(self):
         # Test fallback
-        with patch.dict(os.environ, {"HF_TOKEN": "fallback_token", "HF_REPO_ID": "fallback/repo"}, clear=True):
+        with patch.dict(
+            os.environ, {"HF_TOKEN": "fallback_token", "HF_REPO_ID": "fallback/repo"}, clear=True
+        ):
             cfg = HuggingFaceConfig()
             self.assertEqual(cfg.token, "fallback_token")
             self.assertEqual(cfg.repo_id, "fallback/repo")
@@ -195,7 +197,9 @@ class TestModelUploader(unittest.TestCase):
             self.assertEqual(cfg.repo_id, PUBLIC_DEFAULT_HF_REPO_ID)
 
     def test_recognizer_parameter_injection(self):
-        with patch("voicerecognizer.recognizers.wav2vec2_recognizer.download_latest_team_weights_if_needed"):
+        with patch(
+            "voicerecognizer.recognizers.wav2vec2_recognizer.download_latest_team_weights_if_needed"
+        ):
             w2v = Wav2Vec2Recognizer(
                 model_path="dummy_dir",
                 hf_repo_id="custom/w2v-repo",
@@ -205,8 +209,12 @@ class TestModelUploader(unittest.TestCase):
             self.assertEqual(w2v.hf_config.repo_id, "custom/w2v-repo")
             self.assertEqual(w2v.hf_config.token, "custom_token_123")
 
-        with patch("voicerecognizer.recognizers.cnn_recognizer.download_latest_team_weights_if_needed"), \
-             patch.object(CNNRecognizer, "_load_model", return_value=MagicMock()):
+        with (
+            patch(
+                "voicerecognizer.recognizers.cnn_recognizer.download_latest_team_weights_if_needed"
+            ),
+            patch.object(CNNRecognizer, "_load_model", return_value=MagicMock()),
+        ):
             cnn = CNNRecognizer(
                 model_path="dummy_dir/best_model.pth",
                 hf_repo_id="custom/cnn-repo",
@@ -219,4 +227,3 @@ class TestModelUploader(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

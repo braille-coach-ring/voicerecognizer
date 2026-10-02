@@ -11,6 +11,7 @@ from sklearn.model_selection import StratifiedShuffleSplit
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
+
 def main():
     splits_dir = PROJECT_ROOT / "data_splits"
     splits_dir.mkdir(parents=True, exist_ok=True)
@@ -40,7 +41,11 @@ def main():
             for row in reader:
                 filepath = row.get("filepath", "").strip()
                 label = row.get("label", "").strip()
-                if filepath and label and not any(filepath == sp[0] for sp in new_speakerphone_samples):
+                if (
+                    filepath
+                    and label
+                    and not any(filepath == sp[0] for sp in new_speakerphone_samples)
+                ):
                     existing_samples.append((filepath, label))
     print(f"Total existing samples: {len(existing_samples)}")
 
@@ -95,7 +100,9 @@ def main():
             else:
                 female_train.extend(c_files_sorted)
 
-        print(f"AI female split: Train={len(female_train)}, Val={len(female_val)}, Test={len(female_test)}")
+        print(
+            f"AI female split: Train={len(female_train)}, Val={len(female_val)}, Test={len(female_test)}"
+        )
 
     # 5. 既存データを Train (80%) vs Val (20%) に Stratified 分割
     ex_labels = [s[1] for s in existing_samples]
@@ -110,7 +117,9 @@ def main():
     ex_train_sub, ex_val_sub = next(sss_ex.split(valid_ex_indices, valid_ex_labels))
 
     ex_train = [existing_samples[valid_ex_indices[i]] for i in ex_train_sub] + [
-        existing_samples[i] for i in range(len(existing_samples)) if existing_samples[i][1] in singletons
+        existing_samples[i]
+        for i in range(len(existing_samples))
+        if existing_samples[i][1] in singletons
     ]
     ex_val = [existing_samples[valid_ex_indices[i]] for i in ex_val_sub]
     print(f"Existing split: Train={len(ex_train)}, Val={len(ex_val)}")
@@ -150,6 +159,7 @@ def main():
     save_csv(sp_test_dir / "index.csv", sp_test)
 
     print("Splits successfully saved to:", splits_dir)
+
 
 if __name__ == "__main__":
     main()

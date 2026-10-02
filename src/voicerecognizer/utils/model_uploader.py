@@ -130,7 +130,12 @@ def download_latest_team_weights_if_needed(
                 )
             except Exception as first_exc:
                 err_lower = str(first_exc).lower()
-                if token and ("401" in err_lower or "403" in err_lower or "unauthorized" in err_lower or "invalid" in err_lower):
+                if token and (
+                    "401" in err_lower
+                    or "403" in err_lower
+                    or "unauthorized" in err_lower
+                    or "invalid" in err_lower
+                ):
                     logger.warning(
                         "設定された Hugging Face トークンが無効です。公開モデルのためトークンなしでもダウンロード可能ですが、設定を確認・修正してください: %s",
                         first_exc,
@@ -206,12 +211,9 @@ def upload_weights_to_hf(
 
     if weights_dir is not None:
         target_dir = Path(weights_dir)
-    elif (
-        Path("weights").exists()
-        and (
-            (model_type == "wav2vec2" and (Path("weights") / "wav2vec2_best").exists())
-            or (model_type == "cnn" and (Path("weights") / "best_model.pth").exists())
-        )
+    elif Path("weights").exists() and (
+        (model_type == "wav2vec2" and (Path("weights") / "wav2vec2_best").exists())
+        or (model_type == "cnn" and (Path("weights") / "best_model.pth").exists())
     ):
         target_dir = Path("weights")
     else:

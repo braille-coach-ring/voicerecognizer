@@ -97,9 +97,9 @@ async def generate_dataset(
     target_dir.mkdir(parents=True, exist_ok=True)
 
     base_patterns: list[GenerationPattern] = [
-        GenerationPattern(filename="001.wav", pitch_base=0.0, rate_base=0.0),    # 1. Standard
-        GenerationPattern(filename="002.wav", pitch_base=25.0, rate_base=4.0),   # 2. Bright / High
-        GenerationPattern(filename="003.wav", pitch_base=-20.0, rate_base=-4.0), # 3. Calm / Deep
+        GenerationPattern(filename="001.wav", pitch_base=0.0, rate_base=0.0),  # 1. Standard
+        GenerationPattern(filename="002.wav", pitch_base=25.0, rate_base=4.0),  # 2. Bright / High
+        GenerationPattern(filename="003.wav", pitch_base=-20.0, rate_base=-4.0),  # 3. Calm / Deep
     ]
 
     total_labels = len(labels)
@@ -148,7 +148,9 @@ async def generate_dataset(
         if idx % 10 == 0 or idx == total_labels:
             print(f"  [{idx:3d}/{total_labels}] Processed '{label}' (「{char}」)")
 
-    print(f"\n[SUCCESS] Generated {success_count} audio files across {len(labels)} classes in {target_dir}")
+    print(
+        f"\n[SUCCESS] Generated {success_count} audio files across {len(labels)} classes in {target_dir}"
+    )
 
 
 def clean_dataset(target_dir: Path) -> None:

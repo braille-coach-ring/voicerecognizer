@@ -70,9 +70,7 @@ def format_top_candidates_display(top_candidates: list[tuple[str, float]]) -> li
     lines = ["上位候補 (Top 3):"]
     for rank, (cand_label, cand_conf) in enumerate(top_candidates, start=1):
         cand_hira = ROMAJI_TO_HIRAGANA.get(cand_label, cand_label)
-        cand_disp = (
-            f"{cand_label} ({cand_hira})" if cand_hira != cand_label else cand_label
-        )
+        cand_disp = f"{cand_label} ({cand_hira})" if cand_hira != cand_label else cand_label
         bar_len = round(cand_conf * 20)
         bar = "■" * bar_len + " " * (20 - bar_len)
         lines.append(f"  [{rank}] {cand_disp:<12} : {cand_conf * 100:5.1f}% [{bar}]")
@@ -256,7 +254,9 @@ def main() -> None:
     logger.info("音声ファイルを入力します: %s", args.audio)
     result = pipeline.run(args.audio)
     if result is None:
-        logger.warning("音声認識の結果が得られませんでした（音声区間が検出されなかった可能性があります）。")
+        logger.warning(
+            "音声認識の結果が得られませんでした（音声区間が検出されなかった可能性があります）。"
+        )
         return
 
     stats = getattr(pipeline.recognizer, "last_timing_stats", {})
