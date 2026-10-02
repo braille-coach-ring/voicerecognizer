@@ -55,14 +55,16 @@ class IPAKDSampleDataset(Dataset):
         posteriors_cache: dict[str, torch.Tensor] | None = None,
         sample_rate: int = 16000,
         target_length_seconds: float = 0.6,
+        max_samples_per_class: int | None = None,
     ):
         self.labels = list(labels)
         self.label_to_idx = {lb: i for i, lb in enumerate(self.labels)}
         self.sample_rate = sample_rate
         self.target_samples = int(sample_rate * target_length_seconds)
         self.posteriors_cache = posteriors_cache or {}
-
         self.samples: list[tuple[Path, int]] = []
+        counts: dict[int, int] = {}
+
         with open(csv_path, encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
@@ -70,16 +72,23 @@ class IPAKDSampleDataset(Dataset):
                 label_str = row.get("label") or ""
                 if not filepath_str or label_str not in self.label_to_idx:
                     continue
+                label_id = self.label_to_idx[label_str]
+                if max_samples_per_class is not None and max_samples_per_class > 0:
+                    if counts.get(label_id, 0) >= max_samples_per_class:
+                        continue
+                    counts[label_id] = counts.get(label_id, 0) + 1
+
                 p = Path(filepath_str)
-                if not p.is_absolute():
-                    p = csv_path.parent / p
-                if not p.exists():
-                    p_proc = PROJECT_ROOT / "processed_dataset" / filepath_str
-                    if p_proc.exists():
-                        p = p_proc
+                if not (p.is_absolute() and p.exists()):
+                    if (csv_path.parent / p).exists():
+                        p = csv_path.parent / p
+                    elif (PROJECT_ROOT / p).exists():
+                        p = PROJECT_ROOT / p
+                    elif (PROJECT_ROOT / "processed_dataset" / p).exists():
+                        p = PROJECT_ROOT / "processed_dataset" / p
                     else:
                         continue
-                self.samples.append((p, self.label_to_idx[label_str]))
+                self.samples.append((p, label_id))
 
         if not self.samples:
             raise ValueError(f"No valid audio samples found in {csv_path}")
@@ -133,7 +142,13 @@ def train_ipa_kd(args: argparse.Namespace) -> Path:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    labels = list(DEFAULT_RECOGNITION_CONFIG.labels)
+    base_model_path = Path(args.base_model)
+    labels_file = base_model_path / "labels.json"
+    if labels_file.exists():
+        labels = json.loads(labels_file.read_text(encoding="utf-8"))
+        logger.info("Loaded %d labels matching base checkpoint: %s", len(labels), labels_file)
+    else:
+        labels = sorted(DEFAULT_RECOGNITION_CONFIG.labels)
 
     # 1. Load or build teacher posteriors cache
     cache_path = Path(args.teacher_cache)
@@ -158,6 +173,7 @@ def train_ipa_kd(args: argparse.Namespace) -> Path:
             output_cache_path=cache_path,
             teacher=teacher,
             batch_size=args.teacher_batch_size,
+            max_samples_per_class=args.max_samples_per_class,
         )
         posteriors_cache = torch.load(cache_path, map_location="cpu", weights_only=False)
 
@@ -166,6 +182,7 @@ def train_ipa_kd(args: argparse.Namespace) -> Path:
         csv_path=train_csv,
         labels=labels,
         posteriors_cache=posteriors_cache,
+        max_samples_per_class=args.max_samples_per_class,
     )
     val_ds = IPAKDSampleDataset(
         csv_path=val_csv,
@@ -206,7 +223,7 @@ def train_ipa_kd(args: argparse.Namespace) -> Path:
 
     # Freeze lower transformer layers if specified
     if args.freeze_layers > 0:
-        student.freeze_feature_extractor()
+        student.freeze_feature_encoder()
         for layer in student.wav2vec2.encoder.layers[: args.freeze_layers]:
             for p in layer.parameters():
                 p.requires_grad = False
@@ -335,6 +352,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--temperature", type=float, default=2.0, help="Distillation temperature")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--num-workers", type=int, default=0)
+    parser.add_argument(
+        "--max-samples-per-class",
+        type=int,
+        default=None,
+        help="Limit number of training samples per class for fast local calibration",
+    )
     parser.add_argument(
         "--base-model",
         type=str,

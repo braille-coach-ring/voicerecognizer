@@ -82,12 +82,15 @@ def precompute_ipa_posteriors_cache(
     output_cache_path: Path,
     teacher: IPATeacher,
     batch_size: int = 16,
+    max_samples_per_class: int | None = None,
 ) -> Path:
     """Precompute and cache teacher posteriors for all dataset files to accelerate Student training."""
     import csv
 
     import soundfile as sf
     from tqdm import tqdm
+
+    from voicerecognizer.config import PROJECT_ROOT
 
     logger.info(
         "Precomputing IPA teacher posteriors from %s -> %s", index_csv_path, output_cache_path
@@ -98,6 +101,19 @@ def precompute_ipa_posteriors_cache(
     with open(index_csv_path, encoding="utf-8") as f:
         reader = csv.DictReader(f)
         rows = list(reader)
+
+    if max_samples_per_class is not None and max_samples_per_class > 0:
+        counts: dict[str, int] = {}
+        filtered_rows = []
+        for r in rows:
+            lb = r.get("label", "")
+            if counts.get(lb, 0) < max_samples_per_class:
+                counts[lb] = counts.get(lb, 0) + 1
+                filtered_rows.append(r)
+        rows = filtered_rows
+        logger.info(
+            "Filtered to %d samples (max %d per class).", len(rows), max_samples_per_class
+        )
 
     posteriors_by_path: dict[str, torch.Tensor] = {}
 
@@ -111,10 +127,15 @@ def precompute_ipa_posteriors_cache(
         if not filepath_str:
             continue
         p = Path(filepath_str)
-        if not p.is_absolute():
-            p = index_csv_path.parent / p
-        if not p.exists():
-            continue
+        if not (p.is_absolute() and p.exists()):
+            if (index_csv_path.parent / p).exists():
+                p = index_csv_path.parent / p
+            elif (PROJECT_ROOT / p).exists():
+                p = PROJECT_ROOT / p
+            elif (PROJECT_ROOT / "processed_dataset" / p).exists():
+                p = PROJECT_ROOT / "processed_dataset" / p
+            else:
+                continue
 
         try:
             waveform, _ = sf.read(p, dtype="float32", always_2d=False)

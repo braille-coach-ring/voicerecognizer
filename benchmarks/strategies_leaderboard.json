@@ -12,6 +12,19 @@
       "model_size_mb": 116.6,
       "evaluated_at": "2026-10-02 23:56:41",
       "notes": "Standard facebook/wav2vec2-base fine-tuned on single morae without distillation."
+    },
+    "wav2vec2_ipa_kd": {
+      "strategy_name": "wav2vec2_ipa_kd",
+      "display_name": "Wav2Vec2 + XLS-R IPA Distillation",
+      "category": "Knowledge Distillation",
+      "status": "active",
+      "general_val_acc": 89.94,
+      "speakerphone_test_acc": 85.9,
+      "female_test_acc": 59.62,
+      "latency_ms": 53.31,
+      "model_size_mb": 116.6,
+      "evaluated_at": "2026-10-03 00:27:01",
+      "notes": "Knowledge distillation using facebook/wav2vec2-xlsr-53-espeak-cv-ft frame phoneme posteriors."
     }
   }
 }

@@ -60,7 +60,7 @@ DEFINED_STRATEGIES: dict[str, StrategyMetadata] = {
         display_name="Wav2Vec2 + XLS-R IPA Distillation",
         category=StrategyCategory.DISTILLATION,
         description="Knowledge distillation using facebook/wav2vec2-xlsr-53-espeak-cv-ft frame phoneme posteriors.",
-        status=StrategyStatus.IMPLEMENTED,
+        status=StrategyStatus.ACTIVE,
         model_dir=STRATEGIES_DIR / "wav2vec2_ipa_kd",
     ),
     # 02. Distillation: Whisper Large-v3 Hidden Feature
