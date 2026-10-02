@@ -66,8 +66,18 @@ def main():
     parser.add_argument("--lr", type=float, default=2e-5, help="Learning rate (default: 2e-5)")
     parser.add_argument("--freeze-layers", type=int, default=4, help="Transformer layers to freeze (default: 4)")
     parser.add_argument("--gpu", type=str, default="T4", help="Colab GPU type (T4, L4, A100)")
+    parser.add_argument("--branch", type=str, default="", help="Git branch to clone on Colab (default: current git branch)")
     parser.add_argument("--keep-session", action="store_true", help="Keep Colab VM alive after training")
     args = parser.parse_args()
+
+    # 対象ブランチの特定
+    target_branch = args.branch
+    if not target_branch:
+        try:
+            res = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=PROJECT_ROOT, capture_output=True, text=True, check=True)
+            target_branch = res.stdout.strip()
+        except Exception:
+            target_branch = "feat/male-to-female-voice-augmentation"
 
     # .env から HF_TOKEN を取得
     env_path = PROJECT_ROOT / ".env"
@@ -105,7 +115,7 @@ def main():
             "subprocess.run(['apt-get', 'install', '-y', 'libportaudio2', 'ffmpeg'], check=True)\n"
             "os.chdir('/content')\n"
             "subprocess.run(['rm', '-rf', 'voicerecognizer'], check=False)\n"
-            "subprocess.run(['git', 'clone', '-b', 'train/record-with-speakerphone', 'https://github.com/braille-coach-ring/voicerecognizer.git'], check=True)\n"
+            f"subprocess.run(['git', 'clone', '-b', '{target_branch}', 'https://github.com/braille-coach-ring/voicerecognizer.git'], check=True)\n"
             "os.chdir('/content/voicerecognizer')\n"
             "subprocess.run(['pip', 'install', 'uv'], check=True)\n"
             "subprocess.run(['uv', 'pip', 'install', '--system', '-e', '.', 'soundfile', 'librosa', 'onnx', 'onnxruntime', 'tqdm', 'transformers', 'accelerate', 'huggingface_hub', 'scikit-learn'], check=True)\n"
