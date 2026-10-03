@@ -62,6 +62,21 @@ def run_wsl_stream(args_list: list[str], input_text: str | None = None, check: b
 def main():
     parser = argparse.ArgumentParser(description="VoiceRecognizer Colab GPU Training Runner")
     parser.add_argument(
+        "--strategy",
+        type=str,
+        default="",
+        help="Strategy name to train (e.g. wav2vec2_ipa_kd). If empty, runs baseline pipeline.",
+    )
+    parser.add_argument(
+        "--patience", type=int, default=2, help="Early stopping patience (default: 2)"
+    )
+    parser.add_argument(
+        "--alpha-kd", type=float, default=0.5, help="KD loss alpha for distillation (default: 0.5)"
+    )
+    parser.add_argument(
+        "--temperature", type=float, default=2.0, help="Distillation temperature (default: 2.0)"
+    )
+    parser.add_argument(
         "--epochs", type=int, default=12, help="Epochs for Wav2Vec2 fine-tuning (default: 12)"
     )
     parser.add_argument("--batch-size", type=int, default=8, help="Batch size (default: 8)")
@@ -152,60 +167,122 @@ def main():
                 if attempt == 3:
                     raise
 
-        # 3. Colab 統合パイプラインの実行 (前処理 -> GPU学習 -> ONNXエクスポート -> 未見テスト評価 -> HFアップロード)
-        print(
-            f"\n[Step 3] Running Full GPU Training & Evaluation Pipeline ({args.epochs} epochs)...",
-            flush=True,
-        )
-        hf_env_str = (
-            f"os.environ['HF_TOKEN'] = '{hf_token}'\nos.environ['VOICERECOGNIZER_HF_TOKEN'] = '{hf_token}'\n"
-            if hf_token
-            else ""
-        )
-        run_script = (
-            f"import os, subprocess, sys\n"
-            f"os.chdir('/content/voicerecognizer')\n"
-            f"{hf_env_str}"
-            f"p = subprocess.Popen(['python', '-u', 'script/colab_train_pipeline.py', '{args.epochs}', '{args.batch_size}', '{args.lr}', '{args.freeze_layers}'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)\n"
-            f"for line in p.stdout:\n"
-            f"    print(line, end='', flush=True)\n"
-            f"p.wait()\n"
-            f"if p.returncode != 0:\n"
-            f"    raise RuntimeError(f'colab_train_pipeline failed with exit code {{p.returncode}}')\n"
-        )
-        run_wsl_stream(
-            [*colab_bin, "exec", "-s", SESSION_NAME, "--timeout", "7200"], input_text=run_script
-        )
+        # 3. Colab 実行 (Strategy または 通常パイプライン)
+        if args.strategy:
+            print(
+                f"\n[Step 3] Running Colab GPU Training for Strategy '{args.strategy}' "
+                f"({args.epochs} epochs, patience={args.patience}, batch_size={args.batch_size})...",
+                flush=True,
+            )
+            hf_env_str = (
+                f"os.environ['HF_TOKEN'] = '{hf_token}'\nos.environ['VOICERECOGNIZER_HF_TOKEN'] = '{hf_token}'\n"
+                if hf_token
+                else ""
+            )
+            run_script = (
+                f"import os, subprocess, sys\n"
+                f"os.chdir('/content/voicerecognizer')\n"
+                f"{hf_env_str}"
+                f"p = subprocess.Popen([\n"
+                f"    'python', '-u', 'script/train_ipa_kd.py',\n"
+                f"    '--epochs', '{args.epochs}',\n"
+                f"    '--patience', '{args.patience}',\n"
+                f"    '--batch-size', '{args.batch_size}',\n"
+                f"    '--lr', '{args.lr}',\n"
+                f"    '--freeze-layers', '{args.freeze_layers}',\n"
+                f"    '--alpha-kd', '{args.alpha_kd}',\n"
+                f"    '--temperature', '{args.temperature}',\n"
+                f"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)\n"
+                f"for line in p.stdout:\n"
+                f"    print(line, end='', flush=True)\n"
+                f"p.wait()\n"
+                f"if p.returncode != 0:\n"
+                f"    raise RuntimeError(f'train_ipa_kd failed with exit code {{p.returncode}}')\n"
+                f"subprocess.run(['tar', '-czf', '/content/strategy_weights.tar.gz', '-C', '/content/voicerecognizer/weights/strategies/{args.strategy}', '.'], check=True)\n"
+                f"print('Strategy weights archived successfully.', flush=True)\n"
+            )
+            run_wsl_stream(
+                [*colab_bin, "exec", "-s", SESSION_NAME, "--timeout", "7200"], input_text=run_script
+            )
 
-        # 4. 評価結果 JSON と HTML をローカルに回収
-        print("\n[Step 4] Downloading evaluation results to local...", flush=True)
-        local_results_dir = PROJECT_ROOT / "evaluation_results"
-        local_results_dir.mkdir(exist_ok=True)
-        local_json_dest = "/mnt/c/Users/yamadarikuto/Mycode/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.json"
-        local_html_dest = "/mnt/c/Users/yamadarikuto/Mycode/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.html"
-        run_wsl_stream(
-            [
-                *colab_bin,
-                "download",
-                "-s",
-                SESSION_NAME,
-                "/content/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.json",
-                local_json_dest,
-            ]
-        )
-        try:
+            # 4. 成果物 tar.gz をダウンロードして展開
+            print(f"\n[Step 4] Downloading strategy weights for '{args.strategy}'...", flush=True)
+            strat_dest_dir = PROJECT_ROOT / "weights" / "strategies" / args.strategy
+            strat_dest_dir.mkdir(parents=True, exist_ok=True)
+            wsl_dest = f"/mnt/c/Users/yamadarikuto/Mycode/voicerecognizer/weights/strategies/{args.strategy}/weights.tar.gz"
+            run_wsl_stream(
+                [*colab_bin, "download", "-s", SESSION_NAME, "/content/strategy_weights.tar.gz", wsl_dest]
+            )
+
+            import tarfile
+            local_tar = strat_dest_dir / "weights.tar.gz"
+            if local_tar.exists():
+                with tarfile.open(local_tar, "r:gz") as tar:
+                    tar.extractall(path=strat_dest_dir)
+                local_tar.unlink()
+                print(f"[Info] Unpacked strategy weights to {strat_dest_dir}", flush=True)
+
+            # 4.5 ローカルベンチマーク実行
+            print(f"\n[Step 4.5] Running unified strategy benchmark on {args.strategy}...", flush=True)
+            subprocess.run(
+                [sys.executable, "script/benchmark_strategies.py", "--strategy", args.strategy],
+                cwd=PROJECT_ROOT,
+                check=False,
+            )
+        else:
+            print(
+                f"\n[Step 3] Running Full GPU Training & Evaluation Pipeline ({args.epochs} epochs)...",
+                flush=True,
+            )
+            hf_env_str = (
+                f"os.environ['HF_TOKEN'] = '{hf_token}'\nos.environ['VOICERECOGNIZER_HF_TOKEN'] = '{hf_token}'\n"
+                if hf_token
+                else ""
+            )
+            run_script = (
+                f"import os, subprocess, sys\n"
+                f"os.chdir('/content/voicerecognizer')\n"
+                f"{hf_env_str}"
+                f"p = subprocess.Popen(['python', '-u', 'script/colab_train_pipeline.py', '{args.epochs}', '{args.batch_size}', '{args.lr}', '{args.freeze_layers}'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)\n"
+                f"for line in p.stdout:\n"
+                f"    print(line, end='', flush=True)\n"
+                f"p.wait()\n"
+                f"if p.returncode != 0:\n"
+                f"    raise RuntimeError(f'colab_train_pipeline failed with exit code {{p.returncode}}')\n"
+            )
+            run_wsl_stream(
+                [*colab_bin, "exec", "-s", SESSION_NAME, "--timeout", "7200"], input_text=run_script
+            )
+
+            # 4. 評価結果 JSON と HTML をローカルに回収
+            print("\n[Step 4] Downloading evaluation results to local...", flush=True)
+            local_results_dir = PROJECT_ROOT / "evaluation_results"
+            local_results_dir.mkdir(exist_ok=True)
+            local_json_dest = "/mnt/c/Users/yamadarikuto/Mycode/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.json"
+            local_html_dest = "/mnt/c/Users/yamadarikuto/Mycode/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.html"
             run_wsl_stream(
                 [
                     *colab_bin,
                     "download",
                     "-s",
                     SESSION_NAME,
-                    "/content/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.html",
-                    local_html_dest,
+                    "/content/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.json",
+                    local_json_dest,
                 ]
             )
-        except Exception as e:
-            print(f"HTML download skipped: {e}")
+            try:
+                run_wsl_stream(
+                    [
+                        *colab_bin,
+                        "download",
+                        "-s",
+                        SESSION_NAME,
+                        "/content/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.html",
+                        local_html_dest,
+                    ]
+                )
+            except Exception as e:
+                print(f"HTML download skipped: {e}")
 
     finally:
         if not args.keep_session:

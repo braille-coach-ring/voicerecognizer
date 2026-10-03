@@ -143,6 +143,22 @@ def train_ipa_kd(args: argparse.Namespace) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     base_model_path = Path(args.base_model)
+    if not (base_model_path / "model.safetensors").exists() and not (
+        base_model_path / "pytorch_model.bin"
+    ).exists():
+        logger.info(
+            "Base model weights not found at %s. Attempting to download from HF Hub...",
+            base_model_path,
+        )
+        try:
+            from voicerecognizer.utils.model_uploader import (
+                download_latest_team_weights_if_needed,
+            )
+
+            download_latest_team_weights_if_needed(model_type="wav2vec2")
+        except Exception as e:
+            logger.warning("Could not auto-download weights from HF Hub: %s", e)
+
     labels_file = base_model_path / "labels.json"
     if labels_file.exists():
         labels = json.loads(labels_file.read_text(encoding="utf-8"))
@@ -237,6 +253,7 @@ def train_ipa_kd(args: argparse.Namespace) -> Path:
 
     best_val_acc = 0.0
     best_epoch = 0
+    patience_counter = 0
 
     for epoch in range(1, args.epochs + 1):
         student.train()
@@ -293,9 +310,10 @@ def train_ipa_kd(args: argparse.Namespace) -> Path:
             val_acc * 100,
         )
 
-        if val_acc >= best_val_acc:
+        if val_acc > best_val_acc:
             best_val_acc = val_acc
             best_epoch = epoch
+            patience_counter = 0
             logger.info(
                 "--> New best validation accuracy: %.2f%% (Saving checkpoint...)", val_acc * 100
             )
@@ -321,6 +339,22 @@ def train_ipa_kd(args: argparse.Namespace) -> Path:
             (output_dir / "strategy_metrics.json").write_text(
                 json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8"
             )
+        else:
+            patience_counter += 1
+            logger.info(
+                "Validation accuracy did not improve (current: %.2f%%, best: %.2f%%, patience: %d/%d).",
+                val_acc * 100,
+                best_val_acc * 100,
+                patience_counter,
+                args.patience,
+            )
+            if args.patience > 0 and patience_counter >= args.patience:
+                logger.info(
+                    "Early stopping triggered at epoch %d after %d epochs without improvement.",
+                    epoch,
+                    patience_counter,
+                )
+                break
 
     logger.info(
         "Training complete. Best Val Acc: %.2f%% at Epoch %d.", best_val_acc * 100, best_epoch
@@ -342,6 +376,12 @@ def build_parser() -> argparse.ArgumentParser:
         description="Train Strategy 01: Wav2Vec2 + XLS-R IPA Knowledge Distillation"
     )
     parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
+    parser.add_argument(
+        "--patience",
+        type=int,
+        default=2,
+        help="Early stopping patience (number of epochs without improvement). Set to 0 to disable.",
+    )
     parser.add_argument("--batch-size", type=int, default=8, help="Batch size")
     parser.add_argument("--lr", type=float, default=3e-5, help="Learning rate")
     parser.add_argument("--weight-decay", type=float, default=0.01)
