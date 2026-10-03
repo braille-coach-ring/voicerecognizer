@@ -2,6 +2,7 @@
 認識結果の出力通知および音声データ・認識ログ (metadata.csv) の保存を管理するモジュール。
 """
 
+import csv
 import logging
 from collections.abc import Callable
 from pathlib import Path
@@ -75,8 +76,10 @@ class OutputWorker:
         # 1. 認識テキストログの保存 (4カラム: timestamp, filename, predicted_text, ground_truth)
         log_file = self.save_dir / "metadata.csv"
         try:
-            with open(log_file, "a", encoding="utf-8") as f:
-                f.write(f"{time_str},{file_name},{predicted_text},{ground_truth}\n")
+            # ground_truth / predicted_text にカンマが入っても列がずれないよう csv で書く。
+            # ここが崩れると build_index が誤ったラベルでインデックス化してしまう。
+            with open(log_file, "a", encoding="utf-8", newline="") as f:
+                csv.writer(f).writerow([time_str, file_name, predicted_text, ground_truth])
             logger.info("テキストログを保存しました: %s", log_file.name)
         except Exception:
             logger.error(

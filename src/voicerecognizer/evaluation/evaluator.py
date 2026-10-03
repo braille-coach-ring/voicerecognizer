@@ -1,4 +1,5 @@
 import csv
+import html
 import json
 import logging
 from collections.abc import Sequence
@@ -25,6 +26,9 @@ from voicerecognizer.evaluation.review import (
 )
 
 logger = logging.getLogger(__name__)
+
+# HTML レポートに載せる誤識別サンプルの最大件数
+MISCLASSIFIED_DISPLAY_LIMIT = 150
 
 
 @dataclass(frozen=True)
@@ -107,11 +111,34 @@ def _weak_speaker_metric_sort_key(item: tuple[str, SpeakerMetrics]) -> tuple[flo
     return metrics.accuracy, -metrics.total_samples
 
 
+def resolve_evaluation_labels(model: RecognitionStrategy | None) -> Sequence[str]:
+    """評価に使うラベル集合を決める。
+
+    学習側 (models/*/train.py) は実データに存在するラベルだけで Macro-F1 を計算するのに対し、
+    ここで config の全ラベルを既定にすると、モデルが一度も学習していないクラスが F1=0 として
+    平均に入り、同じモデルなのに学習ログとレポートで Macro-F1 が食い違う。
+    モデルが持つラベル (labels.json 由来) を優先して、両者の母数を揃える。
+    """
+    model_labels: Any = getattr(model, "labels", None) if model is not None else None
+    if isinstance(model_labels, (list, tuple)) and model_labels:
+        logger.info(
+            "評価ラベルにモデル自身のラベル (%d 件) を使用します。",
+            len(model_labels),
+        )
+        return list(model_labels)
+
+    logger.info(
+        "モデルのラベルを参照できないため、config の既定ラベル (%d 件) で評価します。",
+        len(DEFAULT_RECOGNITION_CONFIG.labels),
+    )
+    return DEFAULT_RECOGNITION_CONFIG.labels
+
+
 class Evaluator:
     def __init__(
         self,
         model: RecognitionStrategy | None = None,
-        labels: Sequence[str] = DEFAULT_RECOGNITION_CONFIG.labels,
+        labels: Sequence[str] | None = None,
         dataset_path: Path | str = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir,
         review_decisions_path: Path | str | None = None,
         review_config: ReviewPriorityConfig = DEFAULT_REVIEW_PRIORITY_CONFIG,
@@ -120,9 +147,12 @@ class Evaluator:
 
         Args:
             model: RecognitionStrategyの実装モデル（推論なし集計時はNone可）
-            labels: 評価対象ラベルのシーケンス (list, tuple 等)
+            labels: 評価対象ラベルのシーケンス (list, tuple 等)。
+                省略時はモデルが実際に出力しうるラベル (labels.json 由来) を使う。
             dataset_path: データセットのルートディレクトリ
         """
+        if labels is None:
+            labels = resolve_evaluation_labels(model)
         raw_labels: Any = labels
         if not isinstance(raw_labels, (tuple, list)):
             logger.error(
@@ -517,6 +547,25 @@ class Evaluator:
             )
         )
 
+    def _warn_on_unknown_labels(self, labels_list: list[str]) -> None:
+        """評価ラベル集合の外にある正解ラベルを警告する。
+
+        classification_report は labels 引数の外の正解ラベルをクラス別集計から
+        落とすため、accuracy と macro-F1 の母数がずれたまま気付けなくなる。
+        """
+        known = set(labels_list)
+        unknown = sorted({label for label in self.y_true if label not in known})
+        if not unknown:
+            return
+
+        affected = sum(1 for label in self.y_true if label not in known)
+        logger.warning(
+            "評価ラベル集合に含まれない正解ラベルが %d 件あります (%s)。"
+            "これらはクラス別指標・Macro-F1 から除外され、Accuracy とは母数がずれます。",
+            affected,
+            ", ".join(unknown[:10]),
+        )
+
     def _compute_metrics(self) -> EvaluationResult:
         """蓄積された y_true / y_pred から EvaluationResult を計算・構築する"""
         if not self.y_true:
@@ -532,6 +581,7 @@ class Evaluator:
             )
 
         labels_list = list(self.labels)
+        self._warn_on_unknown_labels(labels_list)
         acc = float(accuracy_score(self.y_true, self.y_pred))
         report_dict = cast(
             dict[str, Any],
@@ -756,21 +806,21 @@ def generate_html_report(
     insights_html = ""
     for ins in insights:
         insights_html += f"""
-        <div class="insight-card insight-{ins["type"]}">
-            <div class="insight-icon">{ins["icon"]}</div>
+        <div class="insight-card insight-{html.escape(ins["type"])}">
+            <div class="insight-icon">{html.escape(ins["icon"])}</div>
             <div class="insight-content">
-                <div class="insight-title">{ins["title"]}</div>
-                <div class="insight-desc">{ins["desc"]}</div>
+                <div class="insight-title">{html.escape(ins["title"])}</div>
+                <div class="insight-desc">{html.escape(ins["desc"])}</div>
             </div>
         </div>
         """
 
     # --- 2. 混同行列のパーセンテージ＆ヒートマップ表示 ---
-    cm_headers_html = "".join([f"<th>予測: {lbl}</th>" for lbl in labels])
+    cm_headers_html = "".join([f"<th>予測: {html.escape(lbl)}</th>" for lbl in labels])
     cm_rows_html = ""
     for true_lbl in labels:
         row_total = sum(cm.get(true_lbl, {}).values())
-        row_cells = f"<td class='row-label'>正解: {true_lbl}</td>"
+        row_cells = f"<td class='row-label'>正解: {html.escape(true_lbl)}</td>"
         for pred_lbl in labels:
             count = cm.get(true_lbl, {}).get(pred_lbl, 0)
             pct = (count / row_total * 100) if row_total > 0 else 0.0
@@ -803,7 +853,7 @@ def generate_html_report(
         rec_pct = m.recall * 100
         per_class_rows_html += f"""
         <tr>
-            <td class='class-name'><strong>{lbl}</strong></td>
+            <td class='class-name'><strong>{html.escape(lbl)}</strong></td>
             <td>{m.precision:.4f} ({prec_pct:.1f}%)</td>
             <td>{m.recall:.4f} ({rec_pct:.1f}%)</td>
             <td>
@@ -823,14 +873,15 @@ def generate_html_report(
             accuracy_pct = metrics.accuracy * 100
             macro_f1_pct = metrics.macro_f1 * 100
             confusion_summary = ", ".join(
-                f"{item['true_label']}->{item['predicted_label']}:{item['count']}"
+                f"{html.escape(str(item['true_label']))}"
+                f"->{html.escape(str(item['predicted_label']))}:{item['count']}"
                 for item in metrics.top_confusions[:3]
             )
             if not confusion_summary:
                 confusion_summary = "-"
             speaker_rows_html += f"""
             <tr>
-                <td class='class-name'><strong>{speaker}</strong></td>
+                <td class='class-name'><strong>{html.escape(speaker)}</strong></td>
                 <td>{metrics.total_samples} 件</td>
                 <td>{metrics.correct_samples} 件</td>
                 <td>{metrics.misclassified_samples} 件</td>
@@ -848,45 +899,64 @@ def generate_html_report(
         speaker_rows_html = "<tr><td colspan='7' style='text-align:center; color: var(--text-muted); padding:20px;'>話者情報がありません。</td></tr>"
 
     # --- 5. 誤識別サンプル行 ＆ インライン HTML5 音声再生プレイヤー ---
-    filter_buttons_html = f"<button class='btn-filter active' onclick='filterCategory(\"all\")'>全件 ({len(misclassified)})</button>"
+    # 表に出す件数と絞り込みボタンの件数は必ず一致させる。
+    # 全件の件数を出しつつ表だけ打ち切ると、ボタンの数字と表の行数が合わない。
+    displayed = misclassified[:MISCLASSIFIED_DISPLAY_LIMIT]
+    truncated_count = len(misclassified) - len(displayed)
 
-    # 誤認識のある正解ラベルのユニークリスト
-    mis_labels = sorted({m.true_label for m in misclassified})
+    filter_buttons_html = (
+        f"<button class='btn-filter active' data-category='all'>表示中 ({len(displayed)})</button>"
+    )
+
+    # 誤認識のある正解ラベルのユニークリスト（表示対象のみ）
+    mis_labels = sorted({m.true_label for m in displayed})
     for ml in mis_labels:
-        cnt = sum(1 for m in misclassified if m.true_label == ml)
-        filter_buttons_html += f"<button class='btn-filter' onclick='filterCategory(\"{ml}\")'>正解「{ml}」 ({cnt})</button>"
+        cnt = sum(1 for m in displayed if m.true_label == ml)
+        escaped = html.escape(ml)
+        filter_buttons_html += (
+            f"<button class='btn-filter' data-category='{escaped}'>"
+            f"正解「{escaped}」 ({cnt})</button>"
+        )
 
     mis_rows_html = ""
-    if misclassified:
-        for i, sample in enumerate(misclassified[:150], 1):
+    if displayed:
+        for i, sample in enumerate(displayed, 1):
             conf_str = f"{sample.confidence:.2f}" if sample.confidence is not None else "-"
             rel_audio = sample.filepath.replace("\\", "/")
+            safe_audio = html.escape(rel_audio, quote=True)
 
             # ブラウザから相対パスで .wav を直接再生できるインラインプレーヤー
             audio_player_html = f"""
             <audio controls preload="none" style="height: 30px; width: 220px;">
-                <source src="../{rel_audio}" type="audio/wav">
-                <source src="../../{rel_audio}" type="audio/wav">
-                <source src="{rel_audio}" type="audio/wav">
+                <source src="../{safe_audio}" type="audio/wav">
+                <source src="../../{safe_audio}" type="audio/wav">
+                <source src="{safe_audio}" type="audio/wav">
                 お使いのブラウザは音声再生に対応していません。
             </audio>
             """
 
             mis_rows_html += f"""
-            <tr class="mis-row category-{sample.true_label}">
+            <tr class="mis-row" data-category="{html.escape(sample.true_label, quote=True)}">
                 <td>{i}</td>
-                <td>{sample.speaker or "-"}</td>
-                <td><span class="badge badge-true">正解: {sample.true_label}</span></td>
-                <td><span class="badge badge-pred">予測: {sample.predicted_label}</span></td>
+                <td>{html.escape(sample.speaker or "-")}</td>
+                <td><span class="badge badge-true">正解: {html.escape(sample.true_label)}</span></td>
+                <td><span class="badge badge-pred">予測: {html.escape(sample.predicted_label)}</span></td>
                 <td>{audio_player_html}</td>
-                <td class="filepath">{rel_audio}</td>
+                <td class="filepath">{html.escape(rel_audio)}</td>
                 <td>{conf_str}</td>
             </tr>
             """
     else:
         mis_rows_html = "<tr><td colspan='7' style='text-align:center; color:#34d399; padding:20px;'>誤識別サンプルはありません（全件完全正解）！</td></tr>"
 
-    html = f"""<!DOCTYPE html>
+    truncation_note = (
+        f"（全 {len(misclassified)} 件のうち上位 {len(displayed)} 件を表示。"
+        f"残り {truncated_count} 件は JSON レポートを参照してください）"
+        if truncated_count > 0
+        else ""
+    )
+
+    document = f"""<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -1203,7 +1273,7 @@ def generate_html_report(
         <!-- 6. Misclassified Samples with Audio Player & Filtering -->
         <div class="section-card">
             <h2>誤識別サンプルの試聴 ＆ 詳細解析 (Misclassified Samples: {len(misclassified)}件)</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: -10px;">ブラウザ上で直接再生ボタンを押すと実際の音声を試聴できます。問題のある文字カテゴリをクリックして絞り込めます。</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: -10px;">ブラウザ上で直接再生ボタンを押すと実際の音声を試聴できます。問題のある文字カテゴリをクリックして絞り込めます。{truncation_note}</p>
 
             <div class="filter-container">
                 {filter_buttons_html}
@@ -1280,29 +1350,25 @@ def generate_html_report(
         }});
 
         // カテゴリ絞り込みフィルター処理
-        function filterCategory(cat) {{
-            const btns = document.querySelectorAll('.btn-filter');
-            btns.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+        // ラベルを onclick 文字列に埋め込まず data 属性で受け渡す。
+        // 暗黙のグローバル event にも依存しない。
+        document.querySelectorAll('.btn-filter').forEach(button => {{
+            button.addEventListener('click', event => {{
+                const cat = event.currentTarget.dataset.category;
+                document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+                event.currentTarget.classList.add('active');
 
-            const rows = document.querySelectorAll('.mis-row');
-            rows.forEach(row => {{
-                if (cat === 'all') {{
-                    row.style.display = '';
-                }} else {{
-                    if (row.classList.contains('category-' + cat)) {{
-                        row.style.display = '';
-                    }} else {{
-                        row.style.display = 'none';
-                    }}
-                }}
+                document.querySelectorAll('.mis-row').forEach(row => {{
+                    const matches = cat === 'all' || row.dataset.category === cat;
+                    row.style.display = matches ? '' : 'none';
+                }});
             }});
-        }}
+        }});
     </script>
 </body>
 </html>
 """
-    return html
+    return document
 
 
 def compute_evaluation_result(

@@ -68,15 +68,17 @@ class TestModelUploader(unittest.TestCase):
             self.assertTrue(res)
             mock_download.assert_not_called()
 
-    @patch("voicerecognizer.utils.model_uploader.login")
     @patch("voicerecognizer.utils.model_uploader.HfApi")
     @patch(
         "voicerecognizer.utils.model_uploader.calculate_file_sha256", return_value="dummy_hash_123"
     )
     @patch("voicerecognizer.utils.model_uploader.get_remote_file_sha256_map", return_value={})
     def test_upload_weights_cnn_only(
-        self, mock_remote_map, mock_sha, mock_hf_api_class, mock_login
-    ):
+        self,
+        mock_remote_map: MagicMock,
+        mock_sha: MagicMock,
+        mock_hf_api_class: MagicMock,
+    ) -> None:
         mock_api_instance = MagicMock()
         mock_hf_api_class.return_value = mock_api_instance
         dummy_cfg = HuggingFaceConfig(
@@ -92,10 +94,10 @@ class TestModelUploader(unittest.TestCase):
                 model_type="cnn", hf_config=dummy_cfg, weights_dir=weights_dir, force_upload=True
             )
             self.assertTrue(res)
-            mock_login.assert_called_once_with(token="dummy_token_123")
+            # login() でグローバル認証を書き換えず、トークンは HfApi にだけ渡すこと
+            mock_hf_api_class.assert_called_once_with(token="dummy_token_123")
             mock_api_instance.upload_folder.assert_called_once()
 
-    @patch("voicerecognizer.utils.model_uploader.login")
     @patch("voicerecognizer.utils.model_uploader.HfApi")
     @patch("voicerecognizer.utils.model_uploader.calculate_file_sha256", return_value="same_hash")
     @patch(
@@ -103,8 +105,11 @@ class TestModelUploader(unittest.TestCase):
         return_value={"best_model.pth": "same_hash", "labels.json": "same_hash"},
     )
     def test_upload_weights_cnn_skip_identical(
-        self, mock_remote_map, mock_sha, mock_hf_api_class, mock_login
-    ):
+        self,
+        mock_remote_map: MagicMock,
+        mock_sha: MagicMock,
+        mock_hf_api_class: MagicMock,
+    ) -> None:
         mock_api_instance = MagicMock()
         mock_hf_api_class.return_value = mock_api_instance
         dummy_cfg = HuggingFaceConfig(token="dummy_token_123", repo_id="dummy/repo-id")
@@ -120,15 +125,17 @@ class TestModelUploader(unittest.TestCase):
             self.assertTrue(res)
             mock_api_instance.upload_folder.assert_not_called()
 
-    @patch("voicerecognizer.utils.model_uploader.login")
     @patch("voicerecognizer.utils.model_uploader.HfApi")
     @patch(
         "voicerecognizer.utils.model_uploader.calculate_file_sha256", return_value="dummy_hash_123"
     )
     @patch("voicerecognizer.utils.model_uploader.get_remote_file_sha256_map", return_value={})
     def test_upload_weights_wav2vec2_essential_files_strict_count(
-        self, mock_remote_map, mock_sha, mock_hf_api_class, mock_login
-    ):
+        self,
+        mock_remote_map: MagicMock,
+        mock_sha: MagicMock,
+        mock_hf_api_class: MagicMock,
+    ) -> None:
         mock_api_instance = MagicMock()
         mock_hf_api_class.return_value = mock_api_instance
         dummy_cfg = HuggingFaceConfig(token="dummy_token_123", repo_id="dummy/repo-id")
@@ -226,7 +233,6 @@ class TestModelUploader(unittest.TestCase):
             self.assertEqual(cnn.hf_config.repo_id, "custom/cnn-repo")
             self.assertEqual(cnn.hf_config.token, "custom_token_456")
 
-    @patch("voicerecognizer.utils.model_uploader.login")
     @patch("voicerecognizer.utils.model_uploader.HfApi")
     @patch(
         "voicerecognizer.utils.model_uploader.calculate_file_sha256",
@@ -234,7 +240,7 @@ class TestModelUploader(unittest.TestCase):
     )
     @patch("voicerecognizer.utils.model_uploader.get_remote_file_sha256_map", return_value={})
     def test_upload_strategy_weights_to_hf(
-        self, mock_remote_map, mock_sha, mock_hf_api_class, mock_login
+        self, mock_remote_map, mock_sha, mock_hf_api_class
     ):
         mock_api_instance = MagicMock()
         mock_hf_api_class.return_value = mock_api_instance
@@ -255,14 +261,13 @@ class TestModelUploader(unittest.TestCase):
                 force_upload=True,
             )
             self.assertTrue(res)
-            mock_login.assert_called_once_with(token="test_token")
+            mock_hf_api_class.assert_called_once_with(token="test_token")
             mock_api_instance.upload_folder.assert_called_once()
             _, kwargs = mock_api_instance.upload_folder.call_args
             self.assertEqual(kwargs["path_in_repo"], "strategies/wav2vec2_phoneme_multi")
             self.assertIn("model_mel_int8.onnx", kwargs["allow_patterns"])
             self.assertIn("model.safetensors", kwargs["allow_patterns"])
 
-    @patch("voicerecognizer.utils.model_uploader.login")
     @patch("voicerecognizer.utils.model_uploader.HfApi")
     @patch(
         "voicerecognizer.utils.model_uploader.calculate_file_sha256", return_value="same_strat_hash"
@@ -275,7 +280,7 @@ class TestModelUploader(unittest.TestCase):
         },
     )
     def test_upload_strategy_weights_skip_identical(
-        self, mock_remote_map, mock_sha, mock_hf_api_class, mock_login
+        self, mock_remote_map, mock_sha, mock_hf_api_class
     ):
         mock_api_instance = MagicMock()
         mock_hf_api_class.return_value = mock_api_instance

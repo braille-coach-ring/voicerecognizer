@@ -1,9 +1,10 @@
 import hashlib
 import logging
+import shutil
 from pathlib import Path
 from typing import Literal
 
-from huggingface_hub import HfApi, hf_hub_download, login
+from huggingface_hub import HfApi, hf_hub_download
 
 from voicerecognizer.config import (
     DEFAULT_RECOGNITION_CONFIG,
@@ -82,7 +83,7 @@ def download_latest_team_weights_if_needed(
     target_dir.mkdir(parents=True, exist_ok=True)
 
     token = cfg.token or None
-    api = HfApi()
+    api = HfApi(token=token)
 
     files_to_sync = []
     if model_type == "cnn":
@@ -156,9 +157,10 @@ def download_latest_team_weights_if_needed(
                     raise first_exc
 
             local_file.parent.mkdir(parents=True, exist_ok=True)
-            # ダウンロードしたファイルを target_dir に配置
-            with open(downloaded_path, "rb") as src, open(local_file, "wb") as dst:
-                dst.write(src.read())
+            # ダウンロードしたファイルを target_dir に配置。
+            # read() で全体を読むと model.safetensors (数百 MB) がそのまま RAM に載り、
+            # Raspberry Pi のような低メモリ環境では OOM になる。
+            shutil.copyfile(downloaded_path, local_file)
             logger.info("%s をローカルキャッシュ (%s) に保存しました。", rel_path, local_file)
             downloaded_any = True
         except Exception as e:
@@ -236,8 +238,9 @@ def upload_weights_to_hf(
         return False
 
     try:
-        login(token=token)
-        api = HfApi()
+        # login() は ~/.cache/huggingface/token を書き換えてマシン全体の HF 認証に影響するため、
+        # 使わない。トークンはこの API クライアントにだけ渡す。
+        api = HfApi(token=token)
 
         if model_type == "cnn":
             cnn_best_path = target_dir / "best_model.pth"
@@ -440,8 +443,8 @@ def upload_strategy_weights_to_hf(
         return False
 
     try:
-        login(token=token)
-        api = HfApi()
+        # Do not call login(): it rewrites the machine-wide HF auth. Pass the token to HfApi only.
+        api = HfApi(token=token)
 
         files_to_check: list[tuple[str, Path]] = []
         for fname in STRATEGY_ESSENTIAL_FILENAMES:
@@ -533,7 +536,7 @@ def download_strategy_weights_if_needed(
     dest_dir.mkdir(parents=True, exist_ok=True)
 
     token = cfg.token or None
-    api = HfApi()
+    api = HfApi(token=token)
 
     files_to_sync = [
         f"strategies/{strategy_name}/{fname}" for fname in STRATEGY_ESSENTIAL_FILENAMES

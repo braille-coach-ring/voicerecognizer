@@ -2,6 +2,7 @@ import csv
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import soundfile as sf
@@ -112,6 +113,111 @@ class TestDatasetBuilderIsolated(unittest.TestCase):
             with open(processed_root / "index.csv", encoding="utf-8", newline="") as f:
                 rows = list(csv.DictReader(f))
             self.assertEqual(rows[0]["speaker"], "pc_12345678")
+
+
+class TestPreprocessDatasetKeepsPreviousOnFailure(unittest.TestCase):
+    """前処理が途中で失敗しても、既存の processed_dataset を壊さないことを保証する。"""
+
+    def _build_raw_dataset(self, tmp_path: Path, filenames: tuple[str, ...]) -> Path:
+        raw_root = tmp_path / "raw_dataset"
+        speaker_dir = raw_root / "speaker1" / "a"
+        speaker_dir.mkdir(parents=True, exist_ok=True)
+        dummy_audio = np.zeros(DEFAULT_AUDIO_CONFIG.sample_rate, dtype=np.float32)
+        for name in filenames:
+            sf.write(speaker_dir / name, dummy_audio, DEFAULT_AUDIO_CONFIG.sample_rate)
+        return raw_root
+
+    def _assert_no_leftover_dirs(self, processed_root: Path) -> None:
+        parent = processed_root.parent
+        self.assertFalse((parent / f".{processed_root.name}.staging").exists())
+        self.assertFalse((parent / f".{processed_root.name}.previous").exists())
+
+    def test_existing_dataset_survives_midway_failure(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            raw_root = self._build_raw_dataset(tmp_path, ("001.wav", "002.wav"))
+            merged_root = tmp_path / "merged_dataset"
+            processed_root = tmp_path / "processed_dataset"
+
+            builder = DatasetBuilder(labels=("a",))
+            builder.merge_by_label(source_root=raw_root, output_root=merged_root)
+            builder.preprocess_dataset(input_root=merged_root, output_root=processed_root)
+
+            original_index = (processed_root / "index.csv").read_text(encoding="utf-8")
+            original_wavs = sorted(p.name for p in (processed_root / "a").glob("*.wav"))
+            self.assertEqual(len(original_wavs), 2)
+
+            # 2 件目の前処理で失敗させる
+            real_preprocess = builder.preprocessor.preprocess_waveform
+            calls = {"n": 0}
+
+            def failing_preprocess(audio: Any, *args: Any, **kwargs: Any) -> np.ndarray:
+                calls["n"] += 1
+                if calls["n"] == 2:
+                    raise RuntimeError("simulated preprocessing failure")
+                return real_preprocess(audio, *args, **kwargs)
+
+            builder.preprocessor.preprocess_waveform = failing_preprocess
+            with self.assertRaises(RuntimeError):
+                builder.preprocess_dataset(input_root=merged_root, output_root=processed_root)
+
+            # 既存データセットが丸ごと残っていること
+            self.assertEqual(
+                (processed_root / "index.csv").read_text(encoding="utf-8"), original_index
+            )
+            self.assertEqual(
+                sorted(p.name for p in (processed_root / "a").glob("*.wav")), original_wavs
+            )
+            self._assert_no_leftover_dirs(processed_root)
+
+    def test_existing_dataset_survives_missing_input(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            raw_root = self._build_raw_dataset(tmp_path, ("001.wav",))
+            merged_root = tmp_path / "merged_dataset"
+            processed_root = tmp_path / "processed_dataset"
+
+            builder = DatasetBuilder(labels=("a",))
+            builder.merge_by_label(source_root=raw_root, output_root=merged_root)
+            builder.preprocess_dataset(input_root=merged_root, output_root=processed_root)
+            original_index = (processed_root / "index.csv").read_text(encoding="utf-8")
+
+            with self.assertRaises(OSError):
+                builder.preprocess_dataset(
+                    input_root=tmp_path / "does_not_exist", output_root=processed_root
+                )
+
+            self.assertEqual(
+                (processed_root / "index.csv").read_text(encoding="utf-8"), original_index
+            )
+            self.assertTrue((processed_root / "a" / "001.wav").exists())
+            self._assert_no_leftover_dirs(processed_root)
+
+    def test_successful_rerun_replaces_dataset_and_cleans_up(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            raw_root = self._build_raw_dataset(tmp_path, ("001.wav", "002.wav"))
+            merged_root = tmp_path / "merged_dataset"
+            processed_root = tmp_path / "processed_dataset"
+
+            builder = DatasetBuilder(labels=("a",))
+            builder.merge_by_label(source_root=raw_root, output_root=merged_root)
+            builder.preprocess_dataset(input_root=merged_root, output_root=processed_root)
+            self.assertEqual(len(list((processed_root / "a").glob("*.wav"))), 2)
+
+            # 入力を 1 件に減らして再実行 → 古い 2 件目は残らない
+            (raw_root / "speaker1" / "a" / "002.wav").unlink()
+            builder.merge_by_label(source_root=raw_root, output_root=merged_root)
+            builder.preprocess_dataset(input_root=merged_root, output_root=processed_root)
+
+            self.assertEqual(len(list((processed_root / "a").glob("*.wav"))), 1)
+            with open(processed_root / "index.csv", encoding="utf-8", newline="") as f:
+                rows = list(csv.DictReader(f))
+            self.assertEqual(len(rows), 1)
+            # index.csv の filepath は最終パス (processed_dataset 配下) を指すこと
+            self.assertNotIn(".staging", rows[0]["filepath"])
+            self.assertTrue(Path(rows[0]["filepath"]).name.endswith(".wav"))
+            self._assert_no_leftover_dirs(processed_root)
 
 
 if __name__ == "__main__":
