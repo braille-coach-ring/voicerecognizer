@@ -185,11 +185,18 @@ def main():
             elif args.strategy == "wav2vec2_whisper_kd":
                 train_script = "script/train_whisper_kd.py"
                 extra_flags = ""
+            elif "hybrid" in args.strategy:
+                train_script = f"script/train_{args.strategy.replace('wav2vec2_', '')}.py"
+                extra_flags = f"    '--temperature', '{args.temperature}',\n"
             else:
                 train_script = f"script/train_{args.strategy.replace('wav2vec2_', '')}.py"
                 extra_flags = ""
 
-            kd_flags = f"    '--alpha-kd', '{args.alpha_kd}',\n" if "kd" in args.strategy else ""
+            kd_flags = (
+                f"    '--alpha-kd', '{args.alpha_kd}',\n"
+                if ("kd" in args.strategy or "hybrid" in args.strategy)
+                else ""
+            )
 
             run_script = (
                 f"import os, subprocess, sys\n"

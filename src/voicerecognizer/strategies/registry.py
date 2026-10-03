@@ -144,6 +144,15 @@ DEFINED_STRATEGIES: dict[str, StrategyMetadata] = {
         status=StrategyStatus.PLANNED,
         model_dir=DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir,
     ),
+    # 11. Hybrid: Consonant/Vowel Multi-Task + XLS-R IPA KD
+    "wav2vec2_phoneme_ipa_hybrid": StrategyMetadata(
+        name="wav2vec2_phoneme_ipa_hybrid",
+        display_name="Wav2Vec2 Phoneme Multi-Task + IPA KD Hybrid",
+        category=StrategyCategory.REPRESENTATION,
+        description="Joint multi-task consonant/vowel decomposition with XLS-R IPA soft-target distillation.",
+        status=StrategyStatus.IMPLEMENTED,
+        model_dir=STRATEGIES_DIR / "wav2vec2_phoneme_ipa_hybrid",
+    ),
 }
 
 
