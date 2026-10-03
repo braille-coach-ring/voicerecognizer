@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, cast, override
 
 import torch
 import torch.nn as nn
@@ -36,6 +36,7 @@ class MultiTaskUncertaintyLoss(nn.Module):
         # Indices: 0: char, 1: consonant, 2: vowel
         self.log_vars = nn.Parameter(torch.full((3,), init_log_var, dtype=torch.float32))
 
+    @override
     def forward(
         self,
         loss_char: torch.Tensor,
@@ -76,12 +77,15 @@ class Wav2Vec2ForPhonemeMultiTaskClassification(Wav2Vec2ForSequenceClassificatio
         self.num_consonants = getattr(config, "num_consonants", len(CONSONANTS))
         self.num_vowels = getattr(config, "num_vowels", len(VOWELS))
 
-        proj_size = getattr(config, "classifier_proj_size", config.hidden_size)
+        proj_size = config.classifier_proj_size
+        if not isinstance(proj_size, int):
+            raise TypeError("classifier_proj_size must be an integer")
         self.consonant_classifier = nn.Linear(proj_size, self.num_consonants)
         self.vowel_classifier = nn.Linear(proj_size, self.num_vowels)
 
         self.post_init()
 
+    @override
     def forward(
         self,
         input_values: torch.Tensor | None = None,
@@ -98,7 +102,7 @@ class Wav2Vec2ForPhonemeMultiTaskClassification(Wav2Vec2ForSequenceClassificatio
         lambda_vowel: float = 0.5,
         uncertainty_loss_fn: MultiTaskUncertaintyLoss | None = None,
         return_phonemes: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> Any:
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -118,7 +122,7 @@ class Wav2Vec2ForPhonemeMultiTaskClassification(Wav2Vec2ForSequenceClassificatio
             pooled_output = hidden_states.mean(dim=1)
         else:
             padding_mask = self._get_feature_vector_attention_mask(
-                hidden_states.shape[1], attention_mask
+                hidden_states.shape[1], cast(torch.LongTensor, attention_mask)
             )
             hidden_states[~padding_mask] = 0.0
             pooled_output = hidden_states.sum(dim=1) / padding_mask.sum(dim=1).view(-1, 1)

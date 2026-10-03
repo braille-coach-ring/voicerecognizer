@@ -255,7 +255,11 @@ class TestEvaluator(unittest.TestCase):
         self.assertIn('data-decision="keep"', html)
         self.assertIn('data-decision="delete_candidate"', html)
         self.assertIn('data-decision="maybe"', html)
-        self.assertIn("Shortcuts: K=keep, D=delete_candidate, M=maybe", html)
+        self.assertIn('data-action="quick-relabel"', html)
+        self.assertIn('data-action="set-other"', html)
+        self.assertIn('<span class="key">A</span> 現行OK', html)
+        self.assertIn('<span class="key">D</span> 雑音(other)', html)
+        self.assertIn('<span class="key">F</span> 保留', html)
 
 
 class LabelAwareMockRecognizer(RecognitionStrategy):

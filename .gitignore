@@ -233,3 +233,6 @@ weights/*
 checkpoints/
 plots/
 *.png
+
+# Isolated experiment data and checkpoints
+experiments/
