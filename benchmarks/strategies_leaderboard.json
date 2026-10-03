@@ -38,6 +38,19 @@
       "model_size_mb": 116.6,
       "evaluated_at": "2026-10-03 11:23:01",
       "notes": "Intermediate hidden representation alignment from robust Whisper-large-v3 encoder."
+    },
+    "wav2vec2_phoneme_multi": {
+      "strategy_name": "wav2vec2_phoneme_multi",
+      "display_name": "Wav2Vec2 Consonant/Vowel Multi-Task",
+      "category": "Representation & Loss",
+      "status": "active",
+      "general_val_acc": 90.31,
+      "speakerphone_test_acc": 88.46,
+      "female_test_acc": 76.92,
+      "latency_ms": 41.29,
+      "model_size_mb": 116.6,
+      "evaluated_at": "2026-10-03 11:51:50",
+      "notes": "Joint multi-task prediction of Character (105) + Consonant (16) + Vowel (5)."
     }
   }
 }
