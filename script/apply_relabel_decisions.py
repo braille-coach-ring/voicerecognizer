@@ -24,8 +24,6 @@ if str(PROJECT_ROOT) not in sys.path:
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from voicerecognizer.evaluation.review import load_review_decisions
-
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -62,6 +60,8 @@ def apply_relabels(
     project_root: Path = PROJECT_ROOT,
     execute: bool = False,
 ) -> None:
+    from voicerecognizer.evaluation.review import load_review_decisions
+
     if not decisions_path.exists():
         logger.error("Decisions file not found: %s", decisions_path)
         return
