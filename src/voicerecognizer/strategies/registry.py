@@ -69,7 +69,7 @@ DEFINED_STRATEGIES: dict[str, StrategyMetadata] = {
         display_name="Wav2Vec2 + Whisper-large-v3 Feature KD",
         category=StrategyCategory.DISTILLATION,
         description="Intermediate hidden representation alignment from robust Whisper-large-v3 encoder.",
-        status=StrategyStatus.IMPLEMENTED,
+        status=StrategyStatus.ACTIVE,
         model_dir=STRATEGIES_DIR / "wav2vec2_whisper_kd",
     ),
     # 03. Distillation: Clean Teacher vs Noisy Student (Denoising KD)

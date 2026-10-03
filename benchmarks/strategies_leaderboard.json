@@ -25,6 +25,19 @@
       "model_size_mb": 116.6,
       "evaluated_at": "2026-10-03 09:38:52",
       "notes": "Knowledge distillation using facebook/wav2vec2-xlsr-53-espeak-cv-ft frame phoneme posteriors."
+    },
+    "wav2vec2_whisper_kd": {
+      "strategy_name": "wav2vec2_whisper_kd",
+      "display_name": "Wav2Vec2 + Whisper-large-v3 Feature KD",
+      "category": "Knowledge Distillation",
+      "status": "active",
+      "general_val_acc": 90.09,
+      "speakerphone_test_acc": 87.82,
+      "female_test_acc": 63.46,
+      "latency_ms": 40.8,
+      "model_size_mb": 116.6,
+      "evaluated_at": "2026-10-03 11:23:01",
+      "notes": "Intermediate hidden representation alignment from robust Whisper-large-v3 encoder."
     }
   }
 }
