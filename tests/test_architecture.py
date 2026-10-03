@@ -20,10 +20,11 @@ class ArchitectureTest(unittest.TestCase):
         self.assertEqual(recognizer.recognize("audio"), "recognized:audio")
 
     def test_factory_exposes_supported_strategy_names(self) -> None:
-        self.assertEqual(
-            RecognizerFactory.available_strategies(),
-            ("cnn", "wav2vec2"),
-        )
+        strategies = RecognizerFactory.available_strategies()
+        self.assertIn("cnn", strategies)
+        self.assertIn("wav2vec2", strategies)
+        self.assertIn("wav2vec2_phoneme_multi", strategies)
+        self.assertIn("wav2vec2_ipa_kd", strategies)
 
     def test_recognizers_implement_strategy(self) -> None:
         self.assertIsInstance(Wav2Vec2Recognizer(auto_download=False), RecognitionStrategy)

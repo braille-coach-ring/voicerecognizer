@@ -28,6 +28,7 @@ def main() -> None:
     parser.add_argument(
         "--model-type",
         "--model",
+        "--strategy",
         dest="model_type",
         type=str,
         default="cnn",

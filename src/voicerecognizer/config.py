@@ -33,7 +33,6 @@ DEFAULT_WEIGHTS_DIR = CACHE_DIR / "weights"
 PUBLIC_DEFAULT_HF_REPO_ID = "braille-mate/braille-mate-hiragana-recognizer"
 
 
-
 @dataclass(frozen=True)
 class AudioConfig:
     sample_rate: int = 16000
@@ -131,11 +130,13 @@ class HuggingFaceConfig:
         )
     )
     auto_upload: bool = field(
-        default_factory=lambda: os.getenv(
-            "VOICERECOGNIZER_HF_AUTO_UPLOAD",
-            os.getenv("HF_AUTO_UPLOAD", "false"),
-        ).lower()
-        == "true"
+        default_factory=lambda: (
+            os.getenv(
+                "VOICERECOGNIZER_HF_AUTO_UPLOAD",
+                os.getenv("HF_AUTO_UPLOAD", "false"),
+            ).lower()
+            == "true"
+        )
     )
 
 

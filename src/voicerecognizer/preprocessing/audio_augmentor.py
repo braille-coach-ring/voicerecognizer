@@ -255,6 +255,14 @@ class AudioAugmentor:
         except Exception:
             return waveform
 
+    def apply_mic_saturation(self, waveform: np.ndarray) -> np.ndarray:
+        """マイクの過大入力による非線形サチュレーション/ソフトクリッピングをシミュレーション"""
+        if self.rng.random() > self.p:
+            return waveform
+        drive = float(self.rng.uniform(1.2, 2.5))
+        saturated = np.tanh(waveform * drive) / np.tanh(drive)
+        return np.ascontiguousarray(saturated, dtype=np.float32)
+
     def augment(self, waveform: np.ndarray) -> np.ndarray:
         """全拡張を順次適用した新しい波形配列を返す"""
         aug_waveform = np.ascontiguousarray(waveform, dtype=np.float32).copy()
@@ -262,6 +270,7 @@ class AudioAugmentor:
         aug_waveform = self.shift_pitch(aug_waveform)
         aug_waveform = self.apply_speakerphone_eq(aug_waveform)
         aug_waveform = self.apply_room_reverb(aug_waveform)
+        aug_waveform = self.apply_mic_saturation(aug_waveform)
         aug_waveform = self.add_noise(aug_waveform)
         aug_waveform = self.mix_device_noise(aug_waveform)
         aug_waveform = self.change_gain(aug_waveform)

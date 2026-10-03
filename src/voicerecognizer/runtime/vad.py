@@ -46,11 +46,7 @@ class VoiceActivityDetector:
         rms_vol = float(np.sqrt(np.mean(audio**2)))
 
         # 動的適応閾値の算出 (暗騒音に基づくが、無音時の誤爆や大声時の検知不能を防ぐため厳格に狭い範囲でクランプ)
-        if (
-            self.adaptive
-            and self.noise_rms_floor is not None
-            and self.noise_peak_floor is not None
-        ):
+        if self.adaptive and self.noise_rms_floor is not None and self.noise_peak_floor is not None:
             raw_silence_th = self.noise_peak_floor * 1.5
             raw_rms_th = self.noise_rms_floor * 1.8
             eff_silence_th = float(
