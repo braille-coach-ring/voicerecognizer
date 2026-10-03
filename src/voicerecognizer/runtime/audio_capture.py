@@ -10,7 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 class AudioCapture:
-    """マイクデバイスを常時開きっぱなしにし、最新の音声波形をリアルタイムにバッファリングするクラス"""
+    """マイクデバイスを開いて、最新の音声波形をリアルタイムにバッファリングするクラス。
+
+    ストリームは最初に capture_once() が呼ばれた時点で開く (遅延オープン)。
+    コンストラクタで開いてしまうと、音声ファイルを 1 件認識するだけの実行や
+    マイクを持たない環境 (CI・ヘッドレス) でも不要にデバイスを掴んでしまう。
+    """
 
     def __init__(self, config: AudioConfig | None = None):
         cfg = config or DEFAULT_AUDIO_CONFIG
@@ -27,9 +32,6 @@ class AudioCapture:
         self._write_pos: int = 0
         self._lock: Lock = Lock()
         self._stream: sd.InputStream | None = None
-
-        # インスタンス生成時にマイクストリームを開始
-        self.start()
 
     def _audio_callback(
         self, indata: np.ndarray, frames: int, time_info: dict, status: sd.CallbackFlags
@@ -80,7 +82,9 @@ class AudioCapture:
         """常時録音されているバッファから、直近の音声波形（最新データ）を即座に取得する"""
         if self._stream is None or not self._stream.active:
             self.start()
-            sd.sleep(self.warmup_sleep_ms)
+            # リングバッファが 1 窓分埋まるまで待つ。
+            # warmup_sleep_ms だけでは初回取得が前方ゼロ埋めの短い波形になる。
+            sd.sleep(max(self.warmup_sleep_ms, int(self.window_seconds * 1000)))
 
         with self._lock:
             arr = np.concatenate((self._buffer[self._write_pos :], self._buffer[: self._write_pos]))

@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import shutil
 from pathlib import Path
 from typing import Literal
 
@@ -151,9 +152,10 @@ def download_latest_team_weights_if_needed(
                     raise first_exc
 
             local_file.parent.mkdir(parents=True, exist_ok=True)
-            # ダウンロードしたファイルを target_dir に配置
-            with open(downloaded_path, "rb") as src, open(local_file, "wb") as dst:
-                dst.write(src.read())
+            # ダウンロードしたファイルを target_dir に配置。
+            # read() で全体を読むと model.safetensors (数百 MB) がそのまま RAM に載り、
+            # Raspberry Pi のような低メモリ環境では OOM になる。
+            shutil.copyfile(downloaded_path, local_file)
             logger.info("%s をローカルキャッシュ (%s) に保存しました。", rel_path, local_file)
             downloaded_any = True
         except Exception as e:
