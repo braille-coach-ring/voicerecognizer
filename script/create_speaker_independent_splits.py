@@ -53,7 +53,8 @@ def main():
     unknown_samples = []
 
     for sample in all_samples:
-        filepath = sample["filepath"]
+        filepath = sample["filepath"].replace("\\", "/")
+        sample["filepath"] = filepath
         speaker = extract_speaker(filepath)
         sample["speaker"] = speaker
 

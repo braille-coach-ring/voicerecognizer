@@ -23,7 +23,12 @@ def _to_rel_path(path: Path) -> str:
         rel = path.resolve().relative_to(PROJECT_ROOT.resolve())
         return rel.as_posix()
     except ValueError:
-        return str(path)
+        pass
+    parts = path.parts
+    if "dataset" in parts:
+        idx = parts.index("dataset")
+        return Path(*parts[idx:]).as_posix()
+    return path.as_posix()
 
 
 def _row_value(row: dict[str, str], key: str, default: str = "") -> str:
@@ -34,7 +39,8 @@ def _row_value(row: dict[str, str], key: str, default: str = "") -> str:
 
 
 def _resolve_audio_path(path_value: str, *, index_base: Path) -> Path:
-    wav_path = Path(path_value)
+    normalized = path_value.replace("\\", "/")
+    wav_path = Path(normalized)
     if wav_path.is_absolute():
         return wav_path
 
