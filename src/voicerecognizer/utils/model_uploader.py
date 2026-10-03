@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import Literal
 
-from huggingface_hub import HfApi, hf_hub_download, login
+from huggingface_hub import HfApi, hf_hub_download
 
 from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, HuggingFaceConfig, load_env
 
@@ -77,7 +77,7 @@ def download_latest_team_weights_if_needed(
     target_dir.mkdir(parents=True, exist_ok=True)
 
     token = cfg.token or None
-    api = HfApi()
+    api = HfApi(token=token)
 
     files_to_sync = []
     if model_type == "cnn":
@@ -130,7 +130,12 @@ def download_latest_team_weights_if_needed(
                 )
             except Exception as first_exc:
                 err_lower = str(first_exc).lower()
-                if token and ("401" in err_lower or "403" in err_lower or "unauthorized" in err_lower or "invalid" in err_lower):
+                if token and (
+                    "401" in err_lower
+                    or "403" in err_lower
+                    or "unauthorized" in err_lower
+                    or "invalid" in err_lower
+                ):
                     logger.warning(
                         "設定された Hugging Face トークンが無効です。公開モデルのためトークンなしでもダウンロード可能ですが、設定を確認・修正してください: %s",
                         first_exc,
@@ -229,8 +234,9 @@ def upload_weights_to_hf(
         return False
 
     try:
-        login(token=token)
-        api = HfApi()
+        # login() は ~/.cache/huggingface/token を書き換えてマシン全体の HF 認証に影響するため、
+        # 使わない。トークンはこの API クライアントにだけ渡す。
+        api = HfApi(token=token)
 
         if model_type == "cnn":
             cnn_best_path = target_dir / "best_model.pth"

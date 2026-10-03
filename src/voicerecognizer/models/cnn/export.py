@@ -36,7 +36,8 @@ def export_torchscript(
             num_classes = len(DEFAULT_RECOGNITION_CONFIG.labels)
 
     model = HiraganaCNN(num_classes=num_classes)
-    model.load_state_dict(torch.load(model_path, map_location="cpu"))
+    # Hugging Face Hub から自動取得した重みも通るため、pickle 展開を禁止する
+    model.load_state_dict(torch.load(model_path, map_location="cpu", weights_only=True))
     model.eval()
 
     example = torch.randn(1, 1, n_mels, time_steps)

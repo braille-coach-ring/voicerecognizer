@@ -1,4 +1,6 @@
+import csv
 import logging
+from collections.abc import Iterator
 from pathlib import Path
 
 import librosa
@@ -14,6 +16,21 @@ from voicerecognizer.config import (
 from voicerecognizer.preprocessing.audio_preprocessor import AudioPreprocessor
 
 logger = logging.getLogger(__name__)
+
+
+def read_index_rows(index_file: Path) -> Iterator[tuple[str, str]]:
+    """index.csv から (filepath, label) を読み出す。
+
+    素朴な split(",") ではパスや predicted_text にカンマが 1 つ入っただけで列がずれ、
+    誤ったラベルで学習してしまうため、csv モジュールで解釈する。
+    """
+    with open(index_file, encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            filepath = str(row.get("filepath") or row.get("\ufefffilepath") or "").strip()
+            label = str(row.get("label") or "").strip()
+            if not filepath or not label:
+                continue
+            yield filepath, label
 
 
 class HiraganaDataset(Dataset):
@@ -46,14 +63,7 @@ class HiraganaDataset(Dataset):
 
         if self.index_file:
             # index.csv からラベル一覧を自動取得
-            labels_set = set()
-            with open(self.index_file, encoding="utf-8") as f:
-                f.readline()
-                for line in f:
-                    parts = [p.strip() for p in line.strip().split(",")]
-                    if len(parts) >= 2 and parts[1]:
-                        labels_set.add(parts[1])
-            self.labels = sorted(labels_set)
+            self.labels = sorted({label for _, label in read_index_rows(self.index_file)})
         else:
             self.labels = sorted(path.name for path in self.root.iterdir() if path.is_dir())
 
@@ -92,22 +102,16 @@ class HiraganaDataset(Dataset):
         if self.index_file and self.index_file.exists():
             from voicerecognizer.config import PROJECT_ROOT
 
-            with open(self.index_file, encoding="utf-8") as f:
-                f.readline()
-                for line in f:
-                    parts = [p.strip() for p in line.strip().split(",")]
-                    if len(parts) < 2 or not parts[0]:
-                        continue
-                    wav_path = Path(parts[0])
-                    if not wav_path.is_absolute():
-                        index_relative_path = self.index_file.parent / wav_path
-                        if index_relative_path.exists():
-                            wav_path = index_relative_path
-                        else:
-                            wav_path = PROJECT_ROOT / wav_path
-                    label = parts[1]
-                    if wav_path.exists() and label in self.label_to_idx:
-                        data.append((wav_path, self.label_to_idx[label]))
+            for filepath, label in read_index_rows(self.index_file):
+                wav_path = Path(filepath)
+                if not wav_path.is_absolute():
+                    index_relative_path = self.index_file.parent / wav_path
+                    if index_relative_path.exists():
+                        wav_path = index_relative_path
+                    else:
+                        wav_path = PROJECT_ROOT / wav_path
+                if wav_path.exists() and label in self.label_to_idx:
+                    data.append((wav_path, self.label_to_idx[label]))
             return data
 
         for label in self.labels:
