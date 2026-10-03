@@ -5,11 +5,16 @@ from typing import Literal
 
 from huggingface_hub import HfApi, hf_hub_download, login
 
-from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG, HuggingFaceConfig, load_env
+from voicerecognizer.config import (
+    DEFAULT_RECOGNITION_CONFIG,
+    PROJECT_ROOT,
+    HuggingFaceConfig,
+    load_env,
+)
 
 logger = logging.getLogger(__name__)
 
-ModelType = Literal["cnn", "wav2vec2"]
+ModelType = Literal["cnn", "wav2vec2", "strategy"]
 
 
 def calculate_file_sha256(file_path: Path) -> str:
@@ -366,6 +371,12 @@ def upload_weights_to_hf(
                 cfg.repo_id,
             )
 
+        elif model_type == "strategy":
+            logger.warning(
+                "model_type='strategy' の場合は upload_strategy_weights_to_hf(strategy_name=...) を使用してください。"
+            )
+            return False
+
         else:
             logger.warning(
                 "未対応の model_type: %s (cnn または wav2vec2 を指定してください)", model_type
@@ -376,3 +387,260 @@ def upload_weights_to_hf(
     except Exception as e:
         logger.error("Hugging Face へのアップロード中にエラーが発生しました: %s", e)
         return False
+
+
+STRATEGY_ESSENTIAL_FILENAMES: tuple[str, ...] = (
+    "model.safetensors",
+    "model_mel_int8.onnx",
+    "labels.json",
+    "config.json",
+    "preprocessor_config.json",
+    "strategy_metrics.json",
+    "best_metric.json",
+    "vocab.json",
+    "tokenizer_config.json",
+)
+
+
+def upload_strategy_weights_to_hf(
+    strategy_name: str,
+    hf_config: HuggingFaceConfig | None = None,
+    weights_dir: Path | None = None,
+    force_upload: bool = False,
+) -> bool:
+    """
+    指定された戦略 (strategy_name) の成果物を Hugging Face Hub 上の
+    strategies/<strategy_name>/ ディレクトリへスマートアップロードします。
+    ローカルとリモートで差分がないファイルは送信を自動スキップします。
+    """
+    if hf_config is not None:
+        cfg = hf_config
+    else:
+        load_env()
+        cfg = HuggingFaceConfig()
+
+    if weights_dir is not None:
+        strategy_dir = Path(weights_dir)
+    elif (PROJECT_ROOT / "weights" / "strategies" / strategy_name).exists():
+        strategy_dir = PROJECT_ROOT / "weights" / "strategies" / strategy_name
+    elif (Path("weights") / "strategies" / strategy_name).exists():
+        strategy_dir = Path("weights") / "strategies" / strategy_name
+    else:
+        strategy_dir = DEFAULT_RECOGNITION_CONFIG.weights_dir / "strategies" / strategy_name
+
+    if not strategy_dir.exists():
+        logger.error("アップロード対象の戦略ディレクトリが存在しません: %s", strategy_dir)
+        return False
+
+    token = cfg.token
+    if not token:
+        logger.warning(
+            "モデルのアップロードには認証トークンが必要です。環境変数 VOICERECOGNIZER_HF_TOKEN (または HF_TOKEN) を設定してください。"
+        )
+        return False
+
+    try:
+        login(token=token)
+        api = HfApi()
+
+        files_to_check: list[tuple[str, Path]] = []
+        for fname in STRATEGY_ESSENTIAL_FILENAMES:
+            fpath = strategy_dir / fname
+            if fpath.exists():
+                files_to_check.append((f"strategies/{strategy_name}/{fname}", fpath))
+
+        if not files_to_check:
+            logger.warning(
+                "戦略 %s のアップロード対象ファイルが見つかりません: %s",
+                strategy_name,
+                strategy_dir,
+            )
+            return True
+
+        remote_sha_map = (
+            {}
+            if force_upload
+            else get_remote_file_sha256_map(api, cfg.repo_id, [r for r, _ in files_to_check])
+        )
+        files_to_upload: list[str] = []
+
+        for rel_path, local_file in files_to_check:
+            remote_sha = remote_sha_map.get(rel_path)
+
+            if (
+                not force_upload
+                and remote_sha
+                and is_file_identical_to_remote(local_file, remote_sha)
+            ):
+                logger.debug(
+                    "[INFO] %s はリモートと一致しているため送信をスキップします。", rel_path
+                )
+                continue
+            files_to_upload.append(rel_path)
+
+        if not files_to_upload:
+            logger.info(
+                "戦略 %s のすべてのファイルは既にリモートと最新同期されています。送信をスキップします。",
+                strategy_name,
+            )
+            return True
+
+        logger.info(
+            "Hugging Face Hub (%s) へ戦略 %s の成果物 (%d 件) を一括アップロード中...",
+            cfg.repo_id,
+            strategy_name,
+            len(files_to_upload),
+        )
+        allow_patterns = [Path(rel_path).name for rel_path in files_to_upload]
+        api.upload_folder(
+            folder_path=str(strategy_dir),
+            path_in_repo=f"strategies/{strategy_name}",
+            repo_id=cfg.repo_id,
+            repo_type="model",
+            allow_patterns=allow_patterns,
+            commit_message=f"Update strategy {strategy_name} weights ({len(files_to_upload)} files)",
+        )
+        logger.info(
+            "戦略 %s のアップロードが完了しました: https://huggingface.co/%s/tree/main/strategies/%s",
+            strategy_name,
+            cfg.repo_id,
+            strategy_name,
+        )
+        return True
+
+    except Exception as e:
+        logger.error(
+            "戦略 %s の Hugging Face アップロード中にエラーが発生しました: %s",
+            strategy_name,
+            e,
+        )
+        return False
+
+
+def download_strategy_weights_if_needed(
+    strategy_name: str,
+    hf_config: HuggingFaceConfig | None = None,
+    target_dir: Path | None = None,
+) -> bool:
+    """
+    指定された戦略 (strategy_name) のモデル重みを Hugging Face Hub (strategies/<strategy_name>/)
+    から比較・ダウンロードしてローカル (weights/strategies/<strategy_name>) に同期します。
+    model_mel_int8.onnx が未存在かつ model.safetensors が存在する場合、自動的にローカル ONNX エクスポートを実行します。
+    """
+    cfg = hf_config or HuggingFaceConfig()
+    dest_dir = target_dir or (DEFAULT_RECOGNITION_CONFIG.weights_dir / "strategies" / strategy_name)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    token = cfg.token or None
+    api = HfApi()
+
+    files_to_sync = [
+        f"strategies/{strategy_name}/{fname}" for fname in STRATEGY_ESSENTIAL_FILENAMES
+    ]
+
+    logger.info(
+        "Hugging Face Hub (%s) より戦略 %s のファイル情報を確認中...", cfg.repo_id, strategy_name
+    )
+    remote_sha_map = get_remote_file_sha256_map(api, cfg.repo_id, files_to_sync)
+
+    downloaded_any = False
+    any_failed = False
+
+    for rel_path in files_to_sync:
+        fname = Path(rel_path).name
+        local_file = dest_dir / fname
+        remote_sha = remote_sha_map.get(rel_path)
+
+        if not remote_sha:
+            # リモートに存在しないファイル（オプショナルな指標ファイルなど）はスキップ
+            continue
+
+        if local_file.exists() and is_file_identical_to_remote(local_file, remote_sha):
+            logger.debug("[INFO] 手元の %s はリモートと一致しています。(スキップ)", rel_path)
+            continue
+
+        logger.info("戦略ファイル (%s) を Hugging Face Hub よりダウンロード中...", rel_path)
+        try:
+            try:
+                downloaded_path = hf_hub_download(
+                    repo_id=cfg.repo_id,
+                    filename=rel_path,
+                    repo_type="model",
+                    token=token,
+                )
+            except Exception as first_exc:
+                err_lower = str(first_exc).lower()
+                if token and (
+                    "401" in err_lower
+                    or "403" in err_lower
+                    or "unauthorized" in err_lower
+                    or "invalid" in err_lower
+                ):
+                    logger.warning(
+                        "設定された Hugging Face トークンが無効です。公開モデルのためトークンなしで再試行します: %s",
+                        first_exc,
+                    )
+                    downloaded_path = hf_hub_download(
+                        repo_id=cfg.repo_id,
+                        filename=rel_path,
+                        repo_type="model",
+                        token=None,
+                    )
+                else:
+                    raise first_exc
+
+            local_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(downloaded_path, "rb") as src, open(local_file, "wb") as dst:
+                dst.write(src.read())
+            logger.info("%s をローカル (%s) に保存しました。", rel_path, local_file)
+            downloaded_any = True
+        except Exception as e:
+            err_str = str(e).lower()
+            if "entrynotfounderror" in err_str or "404" in err_str:
+                logger.debug(
+                    "Hugging Face Hub 上に %s は存在しませんでした (スキップ): %s",
+                    rel_path,
+                    e,
+                )
+            else:
+                logger.warning("戦略ファイル (%s) のダウンロードに失敗しました: %s", rel_path, e)
+                any_failed = True
+
+    # ONNX 自動生成判定:
+    # model_mel_int8.onnx が未存在で model.safetensors が存在する場合、
+    # またはダウンロード直後で model_mel_int8.onnx がない場合
+    mel_int8_path = dest_dir / DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_int8_onnx_filename
+    safetensors_path = dest_dir / "model.safetensors"
+
+    if safetensors_path.exists() and (not mel_int8_path.exists() or downloaded_any):
+        try:
+            logger.info(
+                "ダウンロードした戦略モデル (%s) からローカル ONNX を自動生成中...",
+                strategy_name,
+            )
+            from voicerecognizer.models.wav2vec2.export_onnx import export_and_benchmark
+
+            export_and_benchmark(model_dir=dest_dir, skip_benchmark=True)
+        except Exception as e:
+            logger.warning("ダウンロード後の ONNX 自動生成中にエラーが発生しました: %s", e)
+
+    return not any_failed
+
+
+def list_remote_strategies(hf_config: HuggingFaceConfig | None = None) -> list[str]:
+    """Hugging Face リモートリポジトリ上の strategies/ フォルダにある戦略一覧を取得します。"""
+    cfg = hf_config or HuggingFaceConfig()
+    api = HfApi()
+    try:
+        files = api.list_repo_tree(
+            repo_id=cfg.repo_id, repo_type="model", path_in_repo="strategies"
+        )
+        strategies: set[str] = set()
+        for item in files:
+            parts = item.path.split("/")
+            if len(parts) >= 2 and parts[0] == "strategies":
+                strategies.add(parts[1])
+        return sorted(strategies)
+    except Exception as e:
+        logger.debug("リモート戦略一覧の取得に失敗しました: %s", e)
+        return []

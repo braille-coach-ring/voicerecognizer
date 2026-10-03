@@ -77,6 +77,19 @@
       "model_size_mb": 116.6,
       "evaluated_at": "2026-10-03 13:55:20",
       "notes": "Joint multi-task consonant/vowel decomposition with XLS-R IPA soft-target distillation."
+    },
+    "wav2vec2_rir_simulation": {
+      "strategy_name": "wav2vec2_rir_simulation",
+      "display_name": "Wav2Vec2 + RIR & Mic Simulation",
+      "category": "Acoustic Augmentation",
+      "status": "active",
+      "general_val_acc": 89.2,
+      "speakerphone_test_acc": 85.26,
+      "female_test_acc": 69.23,
+      "latency_ms": 44.21,
+      "model_size_mb": 116.6,
+      "evaluated_at": "2026-10-03 14:21:40",
+      "notes": "Room impulse response convolution (RT60 0.1-0.6s) and dynamic microphone distortion simulation."
     }
   }
 }

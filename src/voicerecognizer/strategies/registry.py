@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
@@ -13,6 +14,8 @@ from voicerecognizer.config import (
     RecognitionConfig,
 )
 from voicerecognizer.core.interfaces import RecognitionStrategy
+
+logger = logging.getLogger(__name__)
 
 
 class StrategyCategory(StrEnum):
@@ -180,13 +183,32 @@ def create_strategy_recognizer(
     config: RecognitionConfig = DEFAULT_RECOGNITION_CONFIG,
     use_last: bool = False,
     model_path: str | Path | None = None,
+    auto_download: bool = True,
 ) -> RecognitionStrategy:
     """Instantiate a recognizer corresponding to the strategy."""
     from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
+    from voicerecognizer.utils.model_uploader import download_strategy_weights_if_needed
 
     meta = get_strategy_metadata(strategy_name)
 
     target_dir = Path(model_path) if model_path is not None else meta.model_dir
+
+    if auto_download and strategy_name != "wav2vec2_baseline":
+        onnx_candidates = [
+            target_dir / config.wav2vec2_mel_int8_onnx_filename,
+            target_dir / config.wav2vec2_mel_fp32_onnx_filename,
+            target_dir / config.wav2vec2_int8_onnx_filename,
+            target_dir / config.wav2vec2_fp32_onnx_filename,
+        ]
+        has_onnx = any(f.exists() for f in onnx_candidates)
+        has_safetensors = (target_dir / "model.safetensors").exists()
+
+        if not target_dir.exists() or (not has_onnx and not has_safetensors):
+            logger.info(
+                "ローカルに戦略 '%s' のモデルが見つかりません。Hugging Face Hub より自動ダウンロードを試みます...",
+                strategy_name,
+            )
+            download_strategy_weights_if_needed(strategy_name=strategy_name, target_dir=target_dir)
 
     # Fallback to wav2vec2_best if target_dir doesn't exist yet
     if not target_dir.exists():
@@ -202,4 +224,5 @@ def create_strategy_recognizer(
         model_path=target_dir,
         labels=config.labels,
         target_length_seconds=config.target_length_seconds,
+        auto_download=auto_download,
     )
