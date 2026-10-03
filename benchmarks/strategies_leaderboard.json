@@ -64,6 +64,19 @@
       "model_size_mb": 116.5,
       "evaluated_at": "2026-10-03 13:13:23",
       "notes": "Additive Angular Margin Loss to strictly separate acoustically close phoneme pairs."
+    },
+    "wav2vec2_phoneme_ipa_hybrid": {
+      "strategy_name": "wav2vec2_phoneme_ipa_hybrid",
+      "display_name": "Wav2Vec2 Phoneme Multi-Task + IPA KD Hybrid",
+      "category": "Representation & Loss",
+      "status": "implemented",
+      "general_val_acc": 87.48,
+      "speakerphone_test_acc": 85.9,
+      "female_test_acc": 59.62,
+      "latency_ms": 71.44,
+      "model_size_mb": 116.6,
+      "evaluated_at": "2026-10-03 13:55:20",
+      "notes": "Joint multi-task consonant/vowel decomposition with XLS-R IPA soft-target distillation."
     }
   }
 }

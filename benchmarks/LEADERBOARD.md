@@ -9,6 +9,7 @@
 | `wav2vec2_whisper_kd` | Knowledge Distillation | active | 90.1% | 87.8% | 63.5% | 40.8 ms | 116.6 MB |
 | `wav2vec2_phoneme_multi` | Representation & Loss | active | 90.3% | 88.5% | 76.9% | 41.3 ms | 116.6 MB |
 | `wav2vec2_arcface` | Representation & Loss | active | 24.9% | 11.5% | 9.6% | 50.4 ms | 116.5 MB |
+| `wav2vec2_phoneme_ipa_hybrid` | Representation & Loss | implemented | 87.5% | 85.9% | 59.6% | 71.4 ms | 116.6 MB |
 | `wav2vec2_denoise_kd` | Knowledge Distillation | planned | - | - | - | - | - |
 | `wav2vec2_onset_focused` | Representation & Loss | planned | - | - | - | - | - |
 | `wav2vec2_rir_simulation` | Acoustic Augmentation | planned | - | - | - | - | - |
