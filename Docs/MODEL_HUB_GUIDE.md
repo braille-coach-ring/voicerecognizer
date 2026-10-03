@@ -72,6 +72,55 @@ uv run python script/upload_to_hf.py
 # Wav2Vec2 のベストモデル成果物を同期
 uv run python script/upload_to_hf.py --type wav2vec2
 
+# 特定の実験ストラテジー成果物を同期 (例: 最高精度モデル phoneme_multi)
+uv run python script/upload_to_hf.py --strategy wav2vec2_phoneme_multi
+
+# 実装・ベンチマーク済みの全アクティブ戦略を一括同期
+uv run python script/upload_to_hf.py --strategy all-active
+
 # ローカルハッシュチェックを無視して強制再送信
 uv run python script/upload_to_hf.py --force
 ```
+
+---
+
+## 5. 実験ストラテジーの Hugging Face 管理と個別自動ダウンロード
+
+本プロジェクトでは、汎用認識精度・女性話者・実機環境ロバストネス向上のために複数のアーキテクチャ・学習戦略（Strategies）を検証しています。各戦略のモデル成果物は、Hugging Face Hub の `strategies/<strategy_name>/` ディレクトリ配下に独立して保持されます。
+
+### リモート管理構造
+```text
+braille-mate/braille-mate-hiragana-recognizer
+├── best_model.pth                  # CNN ベースライン
+├── labels.json
+├── wav2vec2_best/                  # Wav2Vec2 ベースライン
+│   ├── model.safetensors
+│   └── ...
+└── strategies/                     # 実験戦略別ディレクトリ
+    ├── wav2vec2_phoneme_multi/     # ★ 最高精度モデル（子音・母音マルチタスク）
+    │   ├── model_mel_int8.onnx     # 超軽量 CPU 推論モデル (~122MB)
+    │   ├── model.safetensors
+    │   ├── labels.json
+    │   └── config.json
+    ├── wav2vec2_ipa_kd/            # XLS-R IPA 知識蒸留
+    ├── wav2vec2_whisper_kd/        # Whisper-large-v3 特徴量蒸留
+    └── wav2vec2_rir_simulation/    # 部屋音響・マイク歪みシミュレーション
+```
+
+### 他端末（Raspberry Pi や新規 PC）での個別自動ダウンロード
+手元にモデル重み（`weights/strategies/<strategy_name>`）が存在しない端末でも、コマンドラインまたは Python API で戦略名を指定するだけで、**Hugging Face Hub から該当モデルのみが個別自動ダウンロード**されます。
+
+```powershell
+# 手元にモデルがなくても、自動ダウンロードされて即座に実行可能
+uv run python main.py --strategy wav2vec2_phoneme_multi sample.wav
+```
+
+Python からの利用:
+```python
+from voicerecognizer.core.factory.recognizer_factory import RecognizerFactory
+
+# 未ダウンロード時は自動的に HF Hub から取得・配置
+recognizer = RecognizerFactory.create("wav2vec2_phoneme_multi")
+result = recognizer.recognize("sample.wav")
+```
+
