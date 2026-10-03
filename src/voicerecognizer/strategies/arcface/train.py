@@ -207,17 +207,44 @@ def train_arcface(args: argparse.Namespace) -> Path:
                 p.requires_grad = False
         logger.info("Froze feature extractor and bottom %d encoder layers.", args.freeze_layers)
 
+    head_lr = args.head_lr if args.head_lr is not None else args.lr * 20.0
+    backbone_params = [
+        p
+        for n, p in student.named_parameters()
+        if not n.startswith("arcface_head") and p.requires_grad
+    ]
+    head_params = [p for p in student.arcface_head.parameters() if p.requires_grad]
+
     optimizer = torch.optim.AdamW(
-        student.parameters(),
-        lr=args.lr,
+        [
+            {"params": backbone_params, "lr": args.lr},
+            {"params": head_params, "lr": head_lr},
+        ],
         weight_decay=args.weight_decay,
     )
+    logger.info("Optimizer configured: backbone_lr=%.2e, head_lr=%.2e", args.lr, head_lr)
 
     best_val_acc = 0.0
     best_epoch = 0
     patience_counter = 0
+    warmup_epochs = max(1, args.margin_warmup_epochs)
+    target_margin = args.margin
 
     for epoch in range(1, args.epochs + 1):
+        # Margin Warmup schedule
+        if epoch <= warmup_epochs:
+            current_margin = target_margin * (epoch / warmup_epochs)
+        else:
+            current_margin = target_margin
+        student.arcface_head.set_margin(current_margin)
+        logger.info(
+            "Epoch %d/%d - Active ArcFace margin m = %.3f rad (%.1f deg)",
+            epoch,
+            args.epochs,
+            current_margin,
+            np.degrees(current_margin),
+        )
+
         student.train()
         total_loss = 0.0
         correct_train = 0
@@ -334,20 +361,32 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Train Strategy 04: Wav2Vec2 + ArcFace Angular Margin Loss"
     )
-    parser.add_argument("--epochs", type=int, default=12, help="Number of training epochs")
+    parser.add_argument("--epochs", type=int, default=18, help="Number of training epochs")
     parser.add_argument(
         "--patience",
         type=int,
-        default=2,
+        default=3,
         help="Early stopping patience (number of epochs without improvement). Set to 0 to disable.",
     )
     parser.add_argument("--batch-size", type=int, default=8, help="Batch size")
-    parser.add_argument("--lr", type=float, default=2e-5, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=2e-5, help="Learning rate for backbone")
+    parser.add_argument(
+        "--head-lr",
+        type=float,
+        default=None,
+        help="Learning rate for ArcFace head (defaults to lr * 20.0)",
+    )
     parser.add_argument("--weight-decay", type=float, default=0.01)
     parser.add_argument("--freeze-layers", type=int, default=4, help="Bottom layers to freeze")
     parser.add_argument("--scale", "-s", type=float, default=24.0, help="ArcFace radius scale s")
     parser.add_argument(
-        "--margin", "-m", type=float, default=0.30, help="ArcFace angular margin m in radians"
+        "--margin", "-m", type=float, default=0.20, help="ArcFace angular margin m in radians"
+    )
+    parser.add_argument(
+        "--margin-warmup-epochs",
+        type=int,
+        default=3,
+        help="Number of epochs to linearly ramp up margin from 0 to target margin",
     )
     parser.add_argument(
         "--alpha-kd",

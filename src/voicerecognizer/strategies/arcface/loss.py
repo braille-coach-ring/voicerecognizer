@@ -49,6 +49,14 @@ class ArcMarginProduct(nn.Module):
         self.th = math.cos(math.pi - m)
         self.mm = math.sin(math.pi - m) * m
 
+    def set_margin(self, m: float) -> None:
+        """Dynamically update angular margin for warmup."""
+        self.m = max(0.0, float(m))
+        self.cos_m = math.cos(self.m)
+        self.sin_m = math.sin(self.m)
+        self.th = math.cos(math.pi - self.m)
+        self.mm = math.sin(math.pi - self.m) * self.m
+
     def forward(
         self, input_features: torch.Tensor, labels: torch.Tensor | None = None
     ) -> tuple[torch.Tensor, torch.Tensor]:
