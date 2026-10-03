@@ -213,12 +213,9 @@ def upload_weights_to_hf(
 
     if weights_dir is not None:
         target_dir = Path(weights_dir)
-    elif (
-        Path("weights").exists()
-        and (
-            (model_type == "wav2vec2" and (Path("weights") / "wav2vec2_best").exists())
-            or (model_type == "cnn" and (Path("weights") / "best_model.pth").exists())
-        )
+    elif Path("weights").exists() and (
+        (model_type == "wav2vec2" and (Path("weights") / "wav2vec2_best").exists())
+        or (model_type == "cnn" and (Path("weights") / "best_model.pth").exists())
     ):
         target_dir = Path("weights")
     else:

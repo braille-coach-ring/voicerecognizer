@@ -199,7 +199,9 @@ def main():
         else:
             patience_counter += 1
             if patience_counter >= patience:
-                logger.info("Early stopping triggered after %d epochs without improvement.", epoch + 1)
+                logger.info(
+                    "Early stopping triggered after %d epochs without improvement.", epoch + 1
+                )
                 break
 
     logger.info("=== Fine-tuning completed! Best Val Macro-F1: %.4f ===", best_val_macro_f1)
@@ -225,6 +227,27 @@ def main():
         title="Speakerphone Adaptation Test Report (After Training)",
     )
     logger.info("Report saved to evaluation_results/speakerphone_test_after.html and .json")
+
+    # 未見の女性話者 Test セット (52件) の評価
+    fem_test_dir = splits_dir / "female_test_eval"
+    if fem_test_dir.exists():
+        logger.info("=== Evaluating on unseen Female Test Set (52 samples) ===")
+        fem_evaluator = Evaluator(
+            model=test_recognizer,
+            dataset_path=fem_test_dir,
+        )
+        fem_result = fem_evaluator.evaluate()
+        logger.info("--- Female Test Set Final Results ---")
+        logger.info("Accuracy    : %.4f (Before was: 0.0865)", fem_result.overall.accuracy)
+        logger.info("Macro F1    : %.4f", fem_result.overall.macro_f1)
+        logger.info("Total       : %d samples", fem_result.overall.total_samples)
+
+        fem_evaluator.export_json(PROJECT_ROOT / "evaluation_results" / "female_test_after.json")
+        fem_evaluator.export_html(
+            PROJECT_ROOT / "evaluation_results" / "female_test_after.html",
+            title="Female Voice Adaptation Test Report (After Training)",
+        )
+        logger.info("Report saved to evaluation_results/female_test_after.html and .json")
 
 
 if __name__ == "__main__":

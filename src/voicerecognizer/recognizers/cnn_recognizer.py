@@ -92,6 +92,7 @@ class CNNRecognizer(RecognitionStrategy):
         self.n_fft = n_fft
         self.hop_length = hop_length
         self.model: HiraganaCNN | None = None
+        self.last_timing_stats: dict[str, Any] = {}
         logger.info("CNNレコグナイザーの初期化完了")
 
     def warmup(self, audio_seconds: float = 1.0) -> None:
@@ -138,7 +139,6 @@ class CNNRecognizer(RecognitionStrategy):
             "     ネットワーク接続を確認の上、再度実行してください。\n"
             "  2. [Hugging Face 認証トークン]\n"
             "     アクセス制限やレートリミットを回避する場合は環境変数を設定してください:\n"
-
             '     - Windows (PowerShell): $env:HF_TOKEN = "your_token"\n'
             '     - Linux / macOS (Bash): export HF_TOKEN="your_token"\n'
             "     - または .env ファイルに HF_TOKEN=your_token を記述\n"
@@ -164,6 +164,16 @@ class CNNRecognizer(RecognitionStrategy):
         predicted_index = int(torch.argmax(probabilities).item())
         confidence = float(probabilities[predicted_index].item())
 
+        top_k = min(3, len(self.labels))
+        top_k_res = torch.topk(probabilities, k=top_k)
+        self.last_top_candidates = [
+            (
+                self._label_for_index(int(idx), output_format=output_format),
+                float(val),
+            )
+            for idx, val in zip(top_k_res.indices.tolist(), top_k_res.values.tolist(), strict=False)
+        ]
+
         prep_stats = getattr(self.audio_preprocessor, "last_stats", {})
         self.last_timing_stats = {
             "onset_ms": prep_stats.get("onset_ms", 0.0),
@@ -173,6 +183,7 @@ class CNNRecognizer(RecognitionStrategy):
             "inference_latency_ms": (t_inf_end - t_inf_start) * 1000.0,
             "total_latency_ms": (t_inf_end - t_start) * 1000.0,
             "confidence": confidence,
+            "top_candidates": self.last_top_candidates,
         }
 
         logger.debug("CNN 推論確率: %s", probabilities)

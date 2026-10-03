@@ -63,6 +63,20 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def format_top_candidates_display(top_candidates: list[tuple[str, float]]) -> list[str]:
+    """上位候補（Top 3）の確信度をプログレスバー付きで整形する。"""
+    if not top_candidates:
+        return []
+    lines = ["上位候補 (Top 3):"]
+    for rank, (cand_label, cand_conf) in enumerate(top_candidates, start=1):
+        cand_hira = ROMAJI_TO_HIRAGANA.get(cand_label, cand_label)
+        cand_disp = f"{cand_label} ({cand_hira})" if cand_hira != cand_label else cand_label
+        bar_len = round(cand_conf * 20)
+        bar = "■" * bar_len + " " * (20 - bar_len)
+        lines.append(f"  [{rank}] {cand_disp:<12} : {cand_conf * 100:5.1f}% [{bar}]")
+    return lines
+
+
 def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
     """
     連続対話・人間丸付け（採点）セッション。
@@ -109,8 +123,13 @@ def run_interactive_grading_session(pipeline: AudioPipeline) -> None:
             if "confidence" in stats:
                 confidence_str = f" (確信度: {stats['confidence'] * 100:.1f}%)"
 
+            top_lines = format_top_candidates_display(stats.get("top_candidates", []))
+
             print("\n" + "─" * 60)
-            print(f"予測結果: 【 {disp_pred} 】{confidence_str}")
+            print(f"予測結果 (Top 1): 【 {disp_pred} 】{confidence_str}")
+            if top_lines:
+                for line in top_lines:
+                    print(line)
             print("─" * 60)
 
             # 詳細タイムライン & 計測内訳の表示
@@ -232,9 +251,29 @@ def main() -> None:
         run_interactive_grading_session(pipeline)
         return
 
-    logger.info("音声ファイルを入力します...")
+    logger.info("音声ファイルを入力します: %s", args.audio)
     result = pipeline.run(args.audio)
-    logger.info("ファイル認識結果: %s", result)
+    if result is None:
+        logger.warning(
+            "音声認識の結果が得られませんでした（音声区間が検出されなかった可能性があります）。"
+        )
+        return
+
+    stats = getattr(pipeline.recognizer, "last_timing_stats", {})
+    confidence_str = ""
+    if "confidence" in stats:
+        confidence_str = f" (確信度: {stats['confidence'] * 100:.1f}%)"
+
+    hiragana_pred = ROMAJI_TO_HIRAGANA.get(result, result)
+    disp_pred = f"{result} ({hiragana_pred})" if hiragana_pred != result else result
+    top_lines = format_top_candidates_display(stats.get("top_candidates", []))
+
+    print("\n" + "─" * 60)
+    print(f"予測結果 (Top 1): 【 {disp_pred} 】{confidence_str}")
+    if top_lines:
+        for line in top_lines:
+            print(line)
+    print("─" * 60)
 
 
 if __name__ == "__main__":
