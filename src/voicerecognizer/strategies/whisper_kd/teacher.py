@@ -63,13 +63,14 @@ class WhisperTeacher:
             sampling_rate=sample_rate,
             return_tensors="pt",
         )
-        input_features = inputs.input_features.to(self.device)
+        dtype = next(self.encoder.parameters()).dtype
+        input_features = inputs.input_features.to(device=self.device, dtype=dtype)
         encoder_outputs = self.encoder(input_features)
         hidden_states = encoder_outputs.last_hidden_state  # (B, T, D)
 
         # Average pool over time
         pooled = hidden_states.mean(dim=1)  # (B, D)
-        normalized = F.normalize(pooled, p=2, dim=-1)
+        normalized = F.normalize(pooled.float(), p=2, dim=-1)
         return normalized.cpu()
 
 
