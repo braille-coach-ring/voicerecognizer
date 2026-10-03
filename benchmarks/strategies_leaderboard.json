@@ -51,6 +51,19 @@
       "model_size_mb": 116.6,
       "evaluated_at": "2026-10-03 11:51:50",
       "notes": "Joint multi-task prediction of Character (105) + Consonant (16) + Vowel (5)."
+    },
+    "wav2vec2_arcface": {
+      "strategy_name": "wav2vec2_arcface",
+      "display_name": "Wav2Vec2 + ArcFace Angular Margin",
+      "category": "Representation & Loss",
+      "status": "active",
+      "general_val_acc": 21.39,
+      "speakerphone_test_acc": 7.05,
+      "female_test_acc": 11.54,
+      "latency_ms": 41.3,
+      "model_size_mb": 116.5,
+      "evaluated_at": "2026-10-03 12:29:38",
+      "notes": "Additive Angular Margin Loss to strictly separate acoustically close phoneme pairs."
     }
   }
 }
