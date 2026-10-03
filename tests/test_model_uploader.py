@@ -13,6 +13,8 @@ from voicerecognizer.recognizers.cnn_recognizer import CNNRecognizer
 from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
 from voicerecognizer.utils.model_uploader import (
     download_latest_team_weights_if_needed,
+    download_strategy_weights_if_needed,
+    upload_strategy_weights_to_hf,
     upload_weights_to_hf,
 )
 
@@ -230,6 +232,101 @@ class TestModelUploader(unittest.TestCase):
             )
             self.assertEqual(cnn.hf_config.repo_id, "custom/cnn-repo")
             self.assertEqual(cnn.hf_config.token, "custom_token_456")
+
+    @patch("voicerecognizer.utils.model_uploader.HfApi")
+    @patch(
+        "voicerecognizer.utils.model_uploader.calculate_file_sha256",
+        return_value="dummy_strat_hash",
+    )
+    @patch("voicerecognizer.utils.model_uploader.get_remote_file_sha256_map", return_value={})
+    def test_upload_strategy_weights_to_hf(
+        self, mock_remote_map, mock_sha, mock_hf_api_class
+    ):
+        mock_api_instance = MagicMock()
+        mock_hf_api_class.return_value = mock_api_instance
+        dummy_cfg = HuggingFaceConfig(token="test_token", repo_id="dummy/repo")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            strat_dir = Path(tmpdir) / "wav2vec2_phoneme_multi"
+            strat_dir.mkdir(parents=True)
+            (strat_dir / "model.safetensors").write_text("dummy safetensors")
+            (strat_dir / "config.json").write_text("{}")
+            (strat_dir / "labels.json").write_text("[]")
+            (strat_dir / "model_mel_int8.onnx").write_text("dummy onnx")
+
+            res = upload_strategy_weights_to_hf(
+                strategy_name="wav2vec2_phoneme_multi",
+                hf_config=dummy_cfg,
+                weights_dir=strat_dir,
+                force_upload=True,
+            )
+            self.assertTrue(res)
+            mock_hf_api_class.assert_called_once_with(token="test_token")
+            mock_api_instance.upload_folder.assert_called_once()
+            _, kwargs = mock_api_instance.upload_folder.call_args
+            self.assertEqual(kwargs["path_in_repo"], "strategies/wav2vec2_phoneme_multi")
+            self.assertIn("model_mel_int8.onnx", kwargs["allow_patterns"])
+            self.assertIn("model.safetensors", kwargs["allow_patterns"])
+
+    @patch("voicerecognizer.utils.model_uploader.HfApi")
+    @patch(
+        "voicerecognizer.utils.model_uploader.calculate_file_sha256", return_value="same_strat_hash"
+    )
+    @patch(
+        "voicerecognizer.utils.model_uploader.get_remote_file_sha256_map",
+        return_value={
+            "strategies/wav2vec2_phoneme_multi/model.safetensors": "same_strat_hash",
+            "strategies/wav2vec2_phoneme_multi/labels.json": "same_strat_hash",
+        },
+    )
+    def test_upload_strategy_weights_skip_identical(
+        self, mock_remote_map, mock_sha, mock_hf_api_class
+    ):
+        mock_api_instance = MagicMock()
+        mock_hf_api_class.return_value = mock_api_instance
+        dummy_cfg = HuggingFaceConfig(token="test_token", repo_id="dummy/repo")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            strat_dir = Path(tmpdir) / "wav2vec2_phoneme_multi"
+            strat_dir.mkdir(parents=True)
+            (strat_dir / "model.safetensors").write_text("dummy safetensors")
+            (strat_dir / "labels.json").write_text("[]")
+
+            res = upload_strategy_weights_to_hf(
+                strategy_name="wav2vec2_phoneme_multi",
+                hf_config=dummy_cfg,
+                weights_dir=strat_dir,
+                force_upload=False,
+            )
+            self.assertTrue(res)
+            mock_api_instance.upload_folder.assert_not_called()
+
+    @patch("voicerecognizer.utils.model_uploader.get_remote_file_sha256_map")
+    @patch("voicerecognizer.utils.model_uploader.hf_hub_download")
+    def test_download_strategy_weights_if_needed(self, mock_download, mock_remote_map):
+        mock_remote_map.return_value = {
+            "strategies/wav2vec2_phoneme_multi/labels.json": "remote_hash_1",
+            "strategies/wav2vec2_phoneme_multi/config.json": "remote_hash_2",
+        }
+
+        with tempfile.TemporaryDirectory() as tmp_download_src:
+            src_file = Path(tmp_download_src) / "dummy.txt"
+            src_file.write_text("downloaded_content")
+            mock_download.return_value = str(src_file)
+
+            with tempfile.TemporaryDirectory() as tmpdir:
+                dest_dir = Path(tmpdir) / "wav2vec2_phoneme_multi"
+                dummy_cfg = HuggingFaceConfig(token="dummy_token", repo_id="dummy/repo")
+
+                res = download_strategy_weights_if_needed(
+                    strategy_name="wav2vec2_phoneme_multi",
+                    hf_config=dummy_cfg,
+                    target_dir=dest_dir,
+                )
+                self.assertTrue(res)
+                self.assertTrue((dest_dir / "labels.json").exists())
+                self.assertTrue((dest_dir / "config.json").exists())
+                self.assertEqual(mock_download.call_count, 2)
 
 
 if __name__ == "__main__":

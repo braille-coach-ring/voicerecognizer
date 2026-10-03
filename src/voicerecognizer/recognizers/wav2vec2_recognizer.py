@@ -69,11 +69,29 @@ class Wav2Vec2Recognizer(RecognitionStrategy):
                 self.model_path,
             )
             try:
-                download_latest_team_weights_if_needed(
-                    model_type="wav2vec2",
-                    hf_config=self.hf_config,
-                    weights_dir=self.model_path.parent,
+                # 戦略ディレクトリ (weights/strategies/<name>) の判定
+                is_strategy = self.model_path.parent.name == "strategies" or (
+                    self.model_path.parent.parent.name == "strategies"
+                    if self.model_path.parent
+                    else False
                 )
+                if is_strategy:
+                    from voicerecognizer.utils.model_uploader import (
+                        download_strategy_weights_if_needed,
+                    )
+
+                    strategy_name = self.model_path.name
+                    download_strategy_weights_if_needed(
+                        strategy_name=strategy_name,
+                        hf_config=self.hf_config,
+                        target_dir=self.model_path,
+                    )
+                else:
+                    download_latest_team_weights_if_needed(
+                        model_type="wav2vec2",
+                        hf_config=self.hf_config,
+                        weights_dir=self.model_path.parent,
+                    )
                 self.onnx_model_path = self._find_onnx_model()
                 if self.onnx_model_path is not None:
                     logger.info(
