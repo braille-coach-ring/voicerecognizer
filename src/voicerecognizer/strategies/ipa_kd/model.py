@@ -6,7 +6,7 @@ from typing import NamedTuple
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F  # noqa: N812
+from torch.nn.functional import kl_div, log_softmax
 from transformers import Wav2Vec2ForSequenceClassification
 
 from voicerecognizer.strategies.ipa_kd.teacher import IPA_VOCAB_SIZE
@@ -99,12 +99,12 @@ class Wav2Vec2ForIPAKDClassification(Wav2Vec2ForSequenceClassification):
             if teacher_ipa_posteriors is not None:
                 # Soft-target distillation loss via KL-divergence
                 # student log-probabilities with temperature scaling
-                student_log_probs = F.log_softmax(ipa_logits / self.temperature, dim=-1)
+                student_log_probs = log_softmax(ipa_logits / self.temperature, dim=-1)
                 # target is already a soft probability distribution from teacher
                 target_probs = teacher_ipa_posteriors.to(student_log_probs.device).float()
 
                 # KL divergence: KL(teacher || student)
-                loss_kd = F.kl_div(student_log_probs, target_probs, reduction="batchmean")
+                loss_kd = kl_div(student_log_probs, target_probs, reduction="batchmean")
                 loss_kd = loss_kd * (self.temperature**2)
 
                 loss = (1.0 - alpha_kd) * loss_char + alpha_kd * loss_kd

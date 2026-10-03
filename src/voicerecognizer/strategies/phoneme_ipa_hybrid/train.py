@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import csv
 import json
 import logging
@@ -249,10 +250,10 @@ def precompute_ipa_cache_if_needed(
                     posteriors_by_key[str(bp.resolve())] = fp16_post
                     posteriors_by_key[bp.as_posix()] = fp16_post
                     posteriors_by_key[bp.name] = fp16_post
-                    try:
-                        posteriors_by_key[bp.resolve().relative_to(PROJECT_ROOT).as_posix()] = fp16_post
-                    except Exception:
-                        pass
+                    with contextlib.suppress(Exception):
+                        posteriors_by_key[bp.resolve().relative_to(PROJECT_ROOT).as_posix()] = (
+                            fp16_post
+                        )
                 batch_wavs = []
                 batch_paths = []
         except Exception as e:
@@ -265,10 +266,8 @@ def precompute_ipa_cache_if_needed(
             posteriors_by_key[str(bp.resolve())] = fp16_post
             posteriors_by_key[bp.as_posix()] = fp16_post
             posteriors_by_key[bp.name] = fp16_post
-            try:
+            with contextlib.suppress(Exception):
                 posteriors_by_key[bp.resolve().relative_to(PROJECT_ROOT).as_posix()] = fp16_post
-            except Exception:
-                pass
 
     torch.save(posteriors_by_key, cache_path)
     logger.info("Successfully cached %d entries into %s", len(posteriors_by_key), cache_path)
@@ -284,9 +283,10 @@ def train_phoneme_ipa_hybrid(args: argparse.Namespace) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     base_model_path = Path(args.base_model)
-    if not (base_model_path / "model.safetensors").exists() and not (
-        base_model_path / "pytorch_model.bin"
-    ).exists():
+    if (
+        not (base_model_path / "model.safetensors").exists()
+        and not (base_model_path / "pytorch_model.bin").exists()
+    ):
         logger.info(
             "Base model weights not found at %s. Attempting to download from HF Hub...",
             base_model_path,
@@ -324,7 +324,9 @@ def train_phoneme_ipa_hybrid(args: argparse.Namespace) -> Path:
     augmentor = None
     if getattr(args, "augmentation", False):
         augmentor = AudioAugmentor(p=getattr(args, "augmentation_prob", 0.5))
-        logger.info("Audio Data Augmentation enabled (speakerphone EQ, reverb, noise, pitch/speed).")
+        logger.info(
+            "Audio Data Augmentation enabled (speakerphone EQ, reverb, noise, pitch/speed)."
+        )
 
     train_ds = PhonemeIPAHybridDataset(
         csv_path=train_csv,
@@ -427,7 +429,9 @@ def train_phoneme_ipa_hybrid(args: argparse.Namespace) -> Path:
             preds = torch.argmax(output.logits, dim=-1)
             correct_train += (preds == batch["labels"]).sum().item()
             total_train += len(batch["labels"])
-            pbar.set_postfix({"loss": f"{loss.item():.4f}", "acc": f"{correct_train / total_train:.2%}"})
+            pbar.set_postfix(
+                {"loss": f"{loss.item():.4f}", "acc": f"{correct_train / total_train:.2%}"}
+            )
 
         train_loss = total_loss / len(train_loader)
         train_acc = correct_train / total_train
@@ -471,7 +475,9 @@ def train_phoneme_ipa_hybrid(args: argparse.Namespace) -> Path:
             best_val_acc = val_acc
             best_epoch = epoch
             patience_counter = 0
-            logger.info("--> New best validation accuracy: %.2f%% (Saving checkpoint...)", val_acc * 100.0)
+            logger.info(
+                "--> New best validation accuracy: %.2f%% (Saving checkpoint...)", val_acc * 100.0
+            )
 
             # Extract standard inference model (stripping consonant, vowel, and ipa auxiliary heads)
             inference_model = student.extract_inference_model()

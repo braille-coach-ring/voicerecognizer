@@ -457,11 +457,12 @@ def upload_strategy_weights_to_hf(
             )
             return True
 
-        remote_sha_map = (
+        remote_sha_map: dict[str, str] = (
             {}
             if force_upload
             else get_remote_file_sha256_map(api, cfg.repo_id, [r for r, _ in files_to_check])
         )
+
         files_to_upload: list[str] = []
 
         for rel_path, local_file in files_to_check:

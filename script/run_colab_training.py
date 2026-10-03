@@ -230,10 +230,18 @@ def main():
             strat_dest_dir.mkdir(parents=True, exist_ok=True)
             wsl_dest = f"/mnt/c/Users/yamadarikuto/Mycode/voicerecognizer/weights/strategies/{args.strategy}/weights.tar.gz"
             run_wsl_stream(
-                [*colab_bin, "download", "-s", SESSION_NAME, "/content/strategy_weights.tar.gz", wsl_dest]
+                [
+                    *colab_bin,
+                    "download",
+                    "-s",
+                    SESSION_NAME,
+                    "/content/strategy_weights.tar.gz",
+                    wsl_dest,
+                ]
             )
 
             import tarfile
+
             local_tar = strat_dest_dir / "weights.tar.gz"
             if local_tar.exists():
                 with tarfile.open(local_tar, "r:gz") as tar:
@@ -242,7 +250,9 @@ def main():
                 print(f"[Info] Unpacked strategy weights to {strat_dest_dir}", flush=True)
 
             # 4.5 ローカルベンチマーク実行
-            print(f"\n[Step 4.5] Running unified strategy benchmark on {args.strategy}...", flush=True)
+            print(
+                f"\n[Step 4.5] Running unified strategy benchmark on {args.strategy}...", flush=True
+            )
             subprocess.run(
                 [sys.executable, "script/benchmark_strategies.py", "--strategy", args.strategy],
                 cwd=PROJECT_ROOT,

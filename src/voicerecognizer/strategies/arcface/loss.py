@@ -6,7 +6,7 @@ import math
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F  # noqa: N812
+from torch.nn.functional import linear, normalize
 
 
 class ArcMarginProduct(nn.Module):
@@ -69,10 +69,11 @@ class ArcMarginProduct(nn.Module):
         Returns:
             tuple (penalized_scaled_logits, raw_unpenalized_logits)
         """
-        cosine = F.linear(
-            F.normalize(input_features, p=2, dim=-1),
-            F.normalize(self.weight, p=2, dim=-1),
+        cosine = linear(
+            normalize(input_features, p=2, dim=-1),
+            normalize(self.weight, p=2, dim=-1),
         )
+
         cosine = torch.clamp(cosine, -1.0 + 1e-7, 1.0 - 1e-7)
 
         raw_logits = cosine * self.s

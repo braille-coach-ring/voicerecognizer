@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F  # noqa: N812
+from torch.nn.functional import softmax
 from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForCTC
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ class IPATeacher(nn.Module):
         scaled_logits = logits / self.temperature
 
         # Compute frame posteriors then pool temporally, capturing full mora articulation
-        frame_probs = F.softmax(scaled_logits, dim=-1)
+        frame_probs = softmax(scaled_logits, dim=-1)
         pooled_posteriors = torch.mean(frame_probs, dim=1)  # shape: (batch, vocab_size)
 
         return pooled_posteriors.cpu()
@@ -111,9 +111,7 @@ def precompute_ipa_posteriors_cache(
                 counts[lb] = counts.get(lb, 0) + 1
                 filtered_rows.append(r)
         rows = filtered_rows
-        logger.info(
-            "Filtered to %d samples (max %d per class).", len(rows), max_samples_per_class
-        )
+        logger.info("Filtered to %d samples (max %d per class).", len(rows), max_samples_per_class)
 
     posteriors_by_path: dict[str, torch.Tensor] = {}
 

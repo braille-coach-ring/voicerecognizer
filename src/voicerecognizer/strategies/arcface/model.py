@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, NamedTuple
 
 import torch
-import torch.nn.functional as F  # noqa: N812
+from torch.nn.functional import cross_entropy, normalize
 from transformers import Wav2Vec2ForSequenceClassification
 
 from voicerecognizer.strategies.arcface.loss import ArcMarginProduct
@@ -83,7 +83,7 @@ class Wav2Vec2ForArcFaceClassification(Wav2Vec2ForSequenceClassification):
         loss: torch.Tensor | None = None
         if labels is not None:
             penalized_logits, raw_logits = self.arcface_head(pooled_output, labels)
-            loss = F.cross_entropy(penalized_logits, labels)
+            loss = cross_entropy(penalized_logits, labels)
         else:
             penalized_logits, raw_logits = self.arcface_head(pooled_output, labels=None)
 
@@ -101,8 +101,9 @@ class Wav2Vec2ForArcFaceClassification(Wav2Vec2ForSequenceClassification):
 
         # Set normalized classifier weights scaled by s
         with torch.no_grad():
-            norm_weight = self.s * F.normalize(self.arcface_head.weight, p=2, dim=1)
+            norm_weight = self.s * normalize(self.arcface_head.weight, p=2, dim=1)
             standard_model.classifier.weight.copy_(norm_weight)
+
             if standard_model.classifier.bias is not None:
                 standard_model.classifier.bias.zero_()
 

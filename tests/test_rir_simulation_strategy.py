@@ -1,7 +1,6 @@
 """Unit tests for Strategy 07: Wav2Vec2 + RIR Simulation & Mic Distortion Augmentation."""
 
 import numpy as np
-import pytest
 import torch
 from transformers import Wav2Vec2Config
 

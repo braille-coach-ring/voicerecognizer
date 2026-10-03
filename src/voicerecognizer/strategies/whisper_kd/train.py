@@ -143,9 +143,10 @@ def train_whisper_kd(args: argparse.Namespace) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     base_model_path = Path(args.base_model)
-    if not (base_model_path / "model.safetensors").exists() and not (
-        base_model_path / "pytorch_model.bin"
-    ).exists():
+    if (
+        not (base_model_path / "model.safetensors").exists()
+        and not (base_model_path / "pytorch_model.bin").exists()
+    ):
         logger.info(
             "Base model weights not found at %s. Attempting to download from HF Hub...",
             base_model_path,

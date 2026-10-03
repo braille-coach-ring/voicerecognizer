@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 import torch
-import torch.nn.functional as F
+from torch.nn.functional import normalize
 from tqdm import tqdm
 from transformers import WhisperFeatureExtractor, WhisperModel
 
@@ -70,7 +70,7 @@ class WhisperTeacher:
 
         # Average pool over time
         pooled = hidden_states.mean(dim=1)  # (B, D)
-        normalized = F.normalize(pooled.float(), p=2, dim=-1)
+        normalized = normalize(pooled.float(), p=2, dim=-1)
         return normalized.cpu()
 
 
@@ -141,5 +141,7 @@ def precompute_whisper_embeddings_cache(
             cache[resolved_key] = emb.clone()
 
     torch.save(cache, output_cache_path)
-    logger.info("Saved Whisper embeddings cache with %d items to: %s", len(cache), output_cache_path)
+    logger.info(
+        "Saved Whisper embeddings cache with %d items to: %s", len(cache), output_cache_path
+    )
     return output_cache_path

@@ -137,15 +137,18 @@ def collate_rir_batch(batch: list[dict[str, Any]]) -> dict[str, torch.Tensor]:
 def train_rir_simulation(args: argparse.Namespace) -> Path:
     fix_seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logger.info("Training Strategy 07: Wav2Vec2 + RIR Simulation & Mic Distortion on device: %s", device)
+    logger.info(
+        "Training Strategy 07: Wav2Vec2 + RIR Simulation & Mic Distortion on device: %s", device
+    )
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     base_model_path = Path(args.base_model)
-    if not (base_model_path / "model.safetensors").exists() and not (
-        base_model_path / "pytorch_model.bin"
-    ).exists():
+    if (
+        not (base_model_path / "model.safetensors").exists()
+        and not (base_model_path / "pytorch_model.bin").exists()
+    ):
         logger.info(
             "Base model weights not found at %s. Attempting to download from HF Hub...",
             base_model_path,
@@ -179,7 +182,10 @@ def train_rir_simulation(args: argparse.Namespace) -> Path:
         p=args.augmentation_prob,
         seed=args.seed,
     )
-    logger.info("Configured AudioAugmentor with p=%.2f (RIR, speakerphone EQ, mic saturation, pitch/speed).", args.augmentation_prob)
+    logger.info(
+        "Configured AudioAugmentor with p=%.2f (RIR, speakerphone EQ, mic saturation, pitch/speed).",
+        args.augmentation_prob,
+    )
 
     train_csv = Path(args.train_csv)
     val_csv = Path(args.val_csv)
@@ -279,7 +285,9 @@ def train_rir_simulation(args: argparse.Namespace) -> Path:
             preds = torch.argmax(output.logits, dim=-1)
             correct_train += (preds == batch["labels"]).sum().item()
             total_train += len(batch["labels"])
-            pbar.set_postfix({"loss": f"{loss.item():.4f}", "acc": f"{correct_train / total_train:.2%}"})
+            pbar.set_postfix(
+                {"loss": f"{loss.item():.4f}", "acc": f"{correct_train / total_train:.2%}"}
+            )
 
         train_loss = total_loss / len(train_loader)
         train_acc = correct_train / total_train
@@ -321,7 +329,9 @@ def train_rir_simulation(args: argparse.Namespace) -> Path:
             best_val_acc = val_acc
             best_epoch = epoch
             patience_counter = 0
-            logger.info("--> New best validation accuracy: %.2f%% (Saving checkpoint...)", val_acc * 100.0)
+            logger.info(
+                "--> New best validation accuracy: %.2f%% (Saving checkpoint...)", val_acc * 100.0
+            )
 
             inference_model = student.extract_inference_model()
             inference_model.save_pretrained(output_dir)

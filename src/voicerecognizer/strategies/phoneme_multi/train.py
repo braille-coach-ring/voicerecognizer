@@ -131,9 +131,10 @@ def train_phoneme_multi(args: argparse.Namespace) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     base_model_path = Path(args.base_model)
-    if not (base_model_path / "model.safetensors").exists() and not (
-        base_model_path / "pytorch_model.bin"
-    ).exists():
+    if (
+        not (base_model_path / "model.safetensors").exists()
+        and not (base_model_path / "pytorch_model.bin").exists()
+    ):
         logger.info(
             "Base model weights not found at %s. Attempting to download from HF Hub...",
             base_model_path,
@@ -302,9 +303,10 @@ def train_phoneme_multi(args: argparse.Namespace) -> Path:
         cons_acc = val_correct_cons / max(1, total_val)
         vow_acc = val_correct_vow / max(1, total_val)
 
-        weights_info = (
-            uncertainty_loss_fn.get_effective_weights() if uncertainty_loss_fn else {}
+        weights_info: dict[str, Any] = (
+            uncertainty_loss_fn.get_effective_weights() if uncertainty_loss_fn is not None else {}
         )
+
         logger.info(
             "Epoch %d/%d - Loss: %.4f | Val Char Acc: %.2f%%, Cons Acc: %.2f%%, Vow Acc: %.2f%% | Weights: %s",
             epoch,
@@ -401,7 +403,9 @@ def build_parser() -> argparse.ArgumentParser:
         default=True,
         help="Use Kendall homoscedastic uncertainty weighting",
     )
-    parser.add_argument("--lambda-cons", type=float, default=0.5, help="Fixed consonant loss weight")
+    parser.add_argument(
+        "--lambda-cons", type=float, default=0.5, help="Fixed consonant loss weight"
+    )
     parser.add_argument("--lambda-vowel", type=float, default=0.5, help="Fixed vowel loss weight")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--num-workers", type=int, default=0)

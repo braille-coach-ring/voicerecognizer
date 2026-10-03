@@ -6,7 +6,7 @@ from typing import NamedTuple
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F  # noqa: N812
+from torch.nn.functional import cosine_similarity, normalize
 from transformers import Wav2Vec2ForSequenceClassification
 
 
@@ -82,7 +82,7 @@ class Wav2Vec2ForWhisperKDClassification(Wav2Vec2ForSequenceClassification):
         char_logits = self.classifier(pooled_output)
 
         # Auxiliary projection to Whisper embedding space
-        student_emb = F.normalize(self.whisper_projector(pooled_output), p=2, dim=-1)
+        student_emb = normalize(self.whisper_projector(pooled_output), p=2, dim=-1)
 
         loss = None
         loss_ce = None
@@ -95,7 +95,7 @@ class Wav2Vec2ForWhisperKDClassification(Wav2Vec2ForSequenceClassification):
             if teacher_whisper_embeddings is not None:
                 # Cosine distance loss: 1.0 - cos_sim
                 target_emb = teacher_whisper_embeddings.to(student_emb.device).float()
-                cos_sim = F.cosine_similarity(student_emb, target_emb, dim=-1)
+                cos_sim = cosine_similarity(student_emb, target_emb, dim=-1)
                 loss_kd = (1.0 - cos_sim).mean()
 
                 loss = (1.0 - alpha_kd) * loss_ce + alpha_kd * loss_kd
