@@ -80,6 +80,10 @@ def step2_train_wav2vec2(
         "--patience", "5",
         "--skip-prep",
         "--no-hf-upload",
+        "--no-confusion-pair-sampler",
+        "--normalize-homophones",
+        "--train-csv", str(PROJECT_ROOT / "data_splits/speaker_independent/train.csv"),
+        "--val-csv", str(PROJECT_ROOT / "data_splits/speaker_independent/val.csv"),
     ]
     if from_scratch:
         train_args.append("--no-resume")
@@ -168,7 +172,8 @@ def main():
         from_scratch=from_scratch,
     )
     step3_evaluate_unseen_test()
-    step4_upload_to_hf()
+    if "--upload-to-hf" in sys.argv:
+        step4_upload_to_hf()
     elapsed = time.time() - t0
     logger.info("=== All Pipeline Steps Completed Successfully in %.1f seconds ===", elapsed)
 

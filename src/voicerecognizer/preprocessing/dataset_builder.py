@@ -261,7 +261,7 @@ class DatasetBuilder:
                             "filepath": _to_rel_path(processed_path),
                             "label": label,
                             "source_filepath": _to_rel_path(wav_path),
-                            "speaker": _infer_speaker_from_source(wav_path, label),
+                            "speaker": _row_value(row, "speaker") or _infer_speaker_from_source(wav_path, label),
                             "predicted_text": _row_value(row, "predicted_text"),
                             "onset_ms": _format_optional_float(stats.get("onset_ms")),
                             "offset_ms": _format_optional_float(stats.get("offset_ms")),

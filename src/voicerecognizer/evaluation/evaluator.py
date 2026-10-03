@@ -40,6 +40,7 @@ class PerClassMetrics:
 HOMOPHONE_MAP: dict[str, str] = {
     "di": "ji",
     "du": "zu",
+    "wo": "o",
 }
 
 
@@ -1323,3 +1324,85 @@ def compute_evaluation_result(
     evaluator.speakers = list(speakers) if speakers else ["unknown"] * len(y_true)
     evaluator.result = None
     return evaluator._compute_metrics()
+
+
+def score_predictions(
+    y_true: Sequence[str],
+    y_pred: Sequence[str],
+    speakers: Sequence[str],
+    labels: Sequence[str],
+) -> dict[str, Any]:
+    """Strict, support-aware scores; normalization never changes stored predictions."""
+    if not y_true or len(y_true) != len(y_pred) or len(y_true) != len(speakers):
+        raise ValueError("Nonempty, equally sized truth/prediction/speaker arrays required")
+    unknown = (set(y_true) | set(y_pred)) - set(labels)
+    if unknown:
+        raise ValueError(f"Unknown labels: {sorted(unknown)}")
+
+    def metrics(
+        truth: Sequence[str], pred: Sequence[str], inventory: Sequence[str]
+    ) -> dict[str, Any]:
+        supported = [label for label in inventory if label in set(truth)]
+        report: Any = classification_report(
+            truth,
+            pred,
+            labels=list(inventory),
+            output_dict=True,
+            zero_division=0,
+        )
+        support_report: Any = classification_report(
+            truth,
+            pred,
+            labels=supported,
+            output_dict=True,
+            zero_division=0,
+        )
+        return {
+            "accuracy": float(accuracy_score(truth, pred)),
+            "macro_f1": float(support_report["macro avg"]["f1-score"]),
+            "inventory_macro_f1": float(report["macro avg"]["f1-score"]),
+            "weighted_f1": float(support_report["weighted avg"]["f1-score"]),
+            "total_samples": len(truth),
+            "correct_samples": sum(t == p for t, p in zip(truth, pred, strict=True)),
+            "supported_labels": supported,
+            "missing_labels": [label for label in inventory if label not in supported],
+            "per_class": {label: report[label] for label in inventory},
+        }
+
+    output: dict[str, Any] = {
+        "metric_definition": {
+            "macro_f1": "mean over labels with true support in this fixed split/cohort",
+            "inventory_macro_f1": "mean over full declared label inventory, zero_division=0",
+            "normalization": HOMOPHONE_MAP,
+        }
+    }
+    for name, normalize in (("raw", False), ("normalized", True)):
+        mapping = HOMOPHONE_MAP if normalize else {}
+        truth = [mapping.get(label, label) for label in y_true]
+        pred = [mapping.get(label, label) for label in y_pred]
+        inventory = list(dict.fromkeys(mapping.get(label, label) for label in labels))
+        group_scores = {}
+        for speaker in sorted(set(speakers)):
+            indices = [i for i, s in enumerate(speakers) if s == speaker]
+            group_scores[speaker] = metrics(
+                [truth[i] for i in indices],
+                [pred[i] for i in indices],
+                inventory,
+            )
+        cohort_scores = {}
+        for cohort, is_tts in (("real", False), ("tts", True)):
+            indices = [i for i, s in enumerate(speakers) if s.startswith("tts_") == is_tts]
+            if indices:
+                cohort_scores[cohort] = metrics(
+                    [truth[i] for i in indices],
+                    [pred[i] for i in indices],
+                    inventory,
+                )
+        output[name] = {
+            "overall": metrics(truth, pred, inventory),
+            "speakers": group_scores,
+            "cohorts": cohort_scores,
+            "speaker_balanced_accuracy": sum(value["accuracy"] for value in group_scores.values())
+            / len(group_scores),
+        }
+    return output

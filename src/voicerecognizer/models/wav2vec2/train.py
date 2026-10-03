@@ -43,12 +43,13 @@ from voicerecognizer.config import (
     PROJECT_ROOT,
 )
 from voicerecognizer.dataset.hiragana_dataset import HiraganaDataset
-from voicerecognizer.evaluation.evaluator import compute_evaluation_result
+from voicerecognizer.evaluation.evaluator import score_predictions
 from voicerecognizer.models.wav2vec2.export_onnx import export_and_benchmark
 from voicerecognizer.preprocessing.audio_augmentor import AudioAugmentor
 from voicerecognizer.preprocessing.dataset_builder import ensure_merged_and_preprocessed
 from voicerecognizer.utils.plot_saver import save_history_plots
 from voicerecognizer.utils.split_helper import (
+    fixed_manifest_indices,
     safe_stratified_split,
     speaker_aware_stratified_split,
 )
@@ -530,6 +531,23 @@ def move_batch(batch: dict[str, torch.Tensor], device: torch.device) -> dict[str
     return {key: value.to(device) for key, value in batch.items()}
 
 
+def training_loss(
+    model: Any,
+    outputs: Any,
+    labels: torch.Tensor,
+    loss_fct: torch.nn.Module | None = None,
+) -> torch.Tensor:
+    loss = loss_fct(outputs.logits, labels) if loss_fct is not None else outputs.loss
+    if hasattr(model, "c_table"):
+        loss = loss + 0.5 * torch.nn.functional.cross_entropy(
+            outputs.cons_logits, model.c_table[labels]
+        )
+        loss = loss + 0.5 * torch.nn.functional.cross_entropy(
+            outputs.vowel_logits, model.v_table[labels]
+        )
+    return loss
+
+
 def train_epoch(
     model: torch.nn.Module,
     loader: DataLoader,
@@ -557,10 +575,7 @@ def train_epoch(
         if use_amp and scaler is not None:
             with autocast():
                 outputs = model(**batch)
-                if loss_fct is not None:
-                    loss = loss_fct(outputs.logits, batch["labels"])
-                else:
-                    loss = outputs.loss
+                loss = training_loss(model, outputs, batch["labels"], loss_fct)
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
@@ -568,10 +583,7 @@ def train_epoch(
             scaler.update()
         else:
             outputs = model(**batch)
-            if loss_fct is not None:
-                loss = loss_fct(outputs.logits, batch["labels"])
-            else:
-                loss = outputs.loss
+            loss = training_loss(model, outputs, batch["labels"], loss_fct)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
             optimizer.step()
@@ -1070,7 +1082,9 @@ def train(args: argparse.Namespace) -> None:
 
     seed = getattr(args, "seed", 42)
     root_dir = (
-        DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir
+        Path(args.dataset_dir)
+        if getattr(args, "dataset_dir", None) is not None
+        else DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir
         if DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir.exists()
         else DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir
     )
@@ -1123,12 +1137,26 @@ def train(args: argparse.Namespace) -> None:
         target_length_seconds=target_length_seconds,
         top_db=top_db,
     )
-    train_subset, val_dataset = split_dataset(
-        dataset,
-        val_rate,
-        seed,
-        speaker_aware=getattr(args, "speaker_aware_split", False),
-    )
+    if getattr(args, "train_csv", None) or getattr(args, "val_csv", None):
+        if not args.train_csv or not args.val_csv:
+            raise ValueError("--train-csv and --val-csv must be supplied together")
+        train_idx, val_idx = fixed_manifest_indices(
+            dataset.data,
+            root_dir / "index.csv",
+            args.train_csv,
+            args.val_csv,
+            PROJECT_ROOT,
+        )
+        train_subset, val_dataset = Subset(dataset, train_idx), Subset(dataset, val_idx)
+        if getattr(args, "use_confusion_pair_sampler", True):
+            raise ValueError("Fixed-split experiments require --no-confusion-pair-sampler")
+    else:
+        train_subset, val_dataset = split_dataset(
+            dataset,
+            val_rate,
+            seed,
+            speaker_aware=getattr(args, "speaker_aware_split", False),
+        )
 
     use_class_weights = getattr(args, "use_class_weights", True)
     augment = getattr(args, "augment", True)
@@ -1146,6 +1174,7 @@ def train(args: argparse.Namespace) -> None:
         )
         train_augmentor = AudioAugmentor(
             sample_rate=sample_rate,
+            seed=seed,
             noise_file_paths=augmentation_noise_files,
         )
         train_dataset = AugmentedSubset(train_subset, train_augmentor)
@@ -1266,6 +1295,12 @@ def train(args: argparse.Namespace) -> None:
 
     label2id = {label: index for index, label in enumerate(dataset.labels)}
     id2label = {index: label for label, index in label2id.items()}
+    if getattr(args, "phoneme_multitask", False):
+        from voicerecognizer.strategies.phoneme_multi.model import (
+            Wav2Vec2ForPhonemeMultiTaskClassification,
+        )
+
+        wav2vec2_model_cls = Wav2Vec2ForPhonemeMultiTaskClassification
     model = load_wav2vec2_classifier(
         wav2vec2_model_cls,
         auto_config_cls,
@@ -1274,6 +1309,18 @@ def train(args: argparse.Namespace) -> None:
         label2id,
         id2label,
     )
+    if getattr(args, "phoneme_multitask", False):
+        from voicerecognizer.strategies.phoneme_multi.phoneme_mapping import (
+            build_label_phoneme_tables,
+        )
+
+        c_indices, v_indices = build_label_phoneme_tables(dataset.labels)
+        model.register_buffer(
+            "c_table", torch.tensor(c_indices, dtype=torch.long), persistent=False
+        )
+        model.register_buffer(
+            "v_table", torch.tensor(v_indices, dtype=torch.long), persistent=False
+        )
     freeze_wav2vec2_layers(
         model,
         freeze_feature_encoder=freeze_feature_encoder,
@@ -1315,8 +1362,13 @@ def train(args: argparse.Namespace) -> None:
             _, val_acc, val_true, val_pred = validate(
                 baseline_model, val_loader, device, labels=dataset.labels
             )
-            init_result = compute_evaluation_result(val_true, val_pred, labels=dataset.labels)
-            best_macro_f1 = init_result.overall.macro_f1
+            metric_mode = "normalized" if getattr(args, "normalize_homophones", False) else "raw"
+            best_macro_f1 = score_predictions(
+                val_true,
+                val_pred,
+                ["validation"] * len(val_true),
+                dataset.labels,
+            )[metric_mode]["overall"]["macro_f1"]
             logger.info(
                 "チーム最高精度モデル (%s) のベースラインスコア - Val Acc: %.4f, Val Macro-F1: %.4f",
                 best_model_path,
@@ -1361,8 +1413,13 @@ def train(args: argparse.Namespace) -> None:
             val_loss, val_acc, val_true, val_pred = validate(
                 model, val_loader, device, labels=dataset.labels
             )
-            eval_result = compute_evaluation_result(val_true, val_pred, labels=dataset.labels)
-            macro_f1 = eval_result.overall.macro_f1
+            metric_mode = "normalized" if getattr(args, "normalize_homophones", False) else "raw"
+            macro_f1 = score_predictions(
+                val_true,
+                val_pred,
+                ["validation"] * len(val_true),
+                dataset.labels,
+            )[metric_mode]["overall"]["macro_f1"]
 
             history["train_loss"].append(train_loss)
             history["val_loss"].append(val_loss)
@@ -1702,6 +1759,17 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Number of DataLoader background worker processes (default: auto-detected based on CPU cores)",
     )
+    parser.add_argument("--dataset-dir", type=Path)
+    parser.add_argument("--train-csv", type=Path)
+    parser.add_argument("--val-csv", type=Path)
+    parser.add_argument(
+        "--best-model-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir
+    )
+    parser.add_argument(
+        "--last-model-path", type=Path, default=DEFAULT_RECOGNITION_CONFIG.wav2vec2_last_model_dir
+    )
+    parser.add_argument("--normalize-homophones", action="store_true")
+    parser.add_argument("--phoneme-multitask", action="store_true")
     return parser
 
 

@@ -1,6 +1,7 @@
 import logging
 from collections import Counter
 from collections.abc import Sequence
+from pathlib import Path
 
 import numpy as np
 from sklearn.model_selection import StratifiedGroupKFold, StratifiedShuffleSplit
@@ -127,3 +128,72 @@ def speaker_aware_stratified_split(
         key=validation_size_delta,
     )
     return list(train_idx), list(val_idx)
+
+
+def fixed_manifest_indices(
+    data: Sequence[tuple[Path, int]],
+    processed_index: str | Path,
+    train_csv: str | Path,
+    val_csv: str | Path,
+    project_root: str | Path,
+) -> tuple[list[int], list[int]]:
+    """Resolve explicit source manifests to dataset indices; never fall back to random split."""
+    import csv
+
+    def resolve(value: str, base: Path) -> str:
+        path = Path(value.replace("\\", "/"))
+        if not path.is_absolute():
+            path = base / path if (base / path).exists() else Path(project_root) / path
+        return str(path.resolve())
+
+    speaker_groups: list[set[str]] = []
+
+    def source_set(csv_path: str | Path) -> set[str]:
+        path = Path(csv_path)
+        with path.open(encoding="utf-8-sig", newline="") as stream:
+            rows = list(csv.DictReader(stream))
+        speakers = {row.get("speaker", "").strip() for row in rows}
+        if not speakers or "" in speakers:
+            raise ValueError(f"Missing speaker identity: {path}")
+        speaker_groups.append(speakers)
+        keys = [resolve(row["filepath"], path.parent) for row in rows]
+        if not keys or len(keys) != len(set(keys)):
+            raise ValueError(f"Empty or duplicate manifest: {path}")
+        return set(keys)
+
+    train_sources, val_sources = source_set(train_csv), source_set(val_csv)
+    if speaker_groups[0] & speaker_groups[1]:
+        raise ValueError("Train and validation speaker IDs overlap")
+    if train_sources & val_sources:
+        raise ValueError("Train and validation manifests overlap")
+    index_path = Path(processed_index)
+    with index_path.open(encoding="utf-8-sig", newline="") as stream:
+        rows = list(csv.DictReader(stream))
+    source_by_processed = {
+        resolve(row["filepath"], index_path.parent): resolve(
+            row.get("source_filepath") or row["filepath"], index_path.parent
+        )
+        for row in rows
+    }
+    indices: tuple[list[int], list[int]] = ([], [])
+    used: tuple[set[str], set[str]] = (set(), set())
+    for i, (wav_path, _) in enumerate(data):
+        key = str(Path(wav_path).resolve())
+        if key not in source_by_processed:
+            raise ValueError(f"Dataset file missing from processed index: {key}")
+        source = source_by_processed[key]
+        if source in train_sources:
+            group = 0
+        elif source in val_sources:
+            group = 1
+        else:
+            raise ValueError(f"Unexpected processed source: {source}")
+        if source in used[group]:
+            raise ValueError(f"Duplicate processed source: {source}")
+        indices[group].append(i)
+        used[group].add(source)
+    if used != (train_sources, val_sources):
+        raise ValueError(
+            "Processed dataset does not exactly cover fixed train/validation manifests"
+        )
+    return indices
