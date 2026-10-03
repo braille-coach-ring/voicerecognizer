@@ -5,7 +5,7 @@
 | Strategy | Category | Status | General Val Acc | Speakerphone Acc | Female Acc | CPU Latency | Model Size |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | `wav2vec2_baseline` | Baseline | active | 92.8% | 90.4% | 67.3% | 70.1 ms | 116.6 MB |
-| `wav2vec2_ipa_kd` | Knowledge Distillation | active | 89.9% | 85.9% | 59.6% | 53.3 ms | 116.6 MB |
+| `wav2vec2_ipa_kd` | Knowledge Distillation | active | 90.2% | 89.1% | 71.2% | 44.6 ms | 116.6 MB |
 | `wav2vec2_whisper_kd` | Knowledge Distillation | planned | - | - | - | - | - |
 | `wav2vec2_denoise_kd` | Knowledge Distillation | planned | - | - | - | - | - |
 | `wav2vec2_arcface` | Representation & Loss | planned | - | - | - | - | - |
