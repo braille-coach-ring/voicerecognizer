@@ -20,6 +20,7 @@ from voicerecognizer.models.wav2vec2.train import (
     compute_class_weights,
     load_confusion_label_multipliers,
     resolve_training_settings,
+    seed_dataloader_worker,
 )
 from voicerecognizer.preprocessing.audio_augmentor import AudioAugmentor
 
@@ -234,6 +235,77 @@ class TestClassWeightAndAugmentation(unittest.TestCase):
 
         group_lrs = sorted(group["lr"] for group in optimizer.param_groups)
         self.assertEqual(group_lrs, [5e-5, 5e-4])
+
+
+class TestAugmentationRandomness(unittest.TestCase):
+    """データ拡張の乱数がシードで再現でき、ワーカー間で独立していることを保証する。"""
+
+    def _waveform(self) -> np.ndarray:
+        return np.sin(np.linspace(0, 8 * np.pi, 1600, dtype=np.float32)).astype(np.float32)
+
+    def test_same_seed_reproduces_augmentation(self) -> None:
+        waveform = self._waveform()
+        first = AudioAugmentor(seed=123).augment(waveform)
+        second = AudioAugmentor(seed=123).augment(waveform)
+        np.testing.assert_allclose(first, second)
+
+    def test_different_seed_changes_augmentation(self) -> None:
+        waveform = self._waveform()
+        first = AudioAugmentor(seed=123).augment(waveform)
+        second = AudioAugmentor(seed=456).augment(waveform)
+        self.assertFalse(np.allclose(first, second))
+
+    def _run_worker_init(self, augmentor: AudioAugmentor, worker_seed: int) -> None:
+        """ワーカープロセス内での worker_init_fn 実行を再現する"""
+        fake_worker_info = type(
+            "WorkerInfo", (), {"dataset": AugmentedSubset.__new__(AugmentedSubset)}
+        )()
+        fake_worker_info.dataset.augmentor = augmentor
+        with (
+            patch(
+                "voicerecognizer.models.wav2vec2.train.torch.initial_seed", return_value=worker_seed
+            ),
+            patch(
+                "voicerecognizer.models.wav2vec2.train.get_worker_info",
+                return_value=fake_worker_info,
+            ),
+        ):
+            seed_dataloader_worker(0)
+
+    def test_worker_init_gives_each_worker_an_independent_stream(self) -> None:
+        """同一シードから fork された 2 ワーカーが同じ拡張列を引かないこと"""
+        waveform = self._waveform()
+
+        worker_a = AudioAugmentor(seed=42)
+        worker_b = AudioAugmentor(seed=42)
+        # worker_init_fn を通さない場合は完全に同じ列になる（修正前の挙動）
+        np.testing.assert_allclose(worker_a.augment(waveform), worker_b.augment(waveform))
+
+        worker_a = AudioAugmentor(seed=42)
+        worker_b = AudioAugmentor(seed=42)
+        self._run_worker_init(worker_a, worker_seed=1000)
+        self._run_worker_init(worker_b, worker_seed=1001)
+        self.assertFalse(
+            np.allclose(worker_a.augment(waveform), worker_b.augment(waveform)),
+            "worker_init_fn 適用後もワーカー間で拡張が一致している",
+        )
+
+    def test_worker_init_is_deterministic_for_a_given_worker_seed(self) -> None:
+        waveform = self._waveform()
+
+        first = AudioAugmentor(seed=42)
+        self._run_worker_init(first, worker_seed=2024)
+        second = AudioAugmentor(seed=99)
+        self._run_worker_init(second, worker_seed=2024)
+
+        np.testing.assert_allclose(first.augment(waveform), second.augment(waveform))
+
+    def test_worker_init_without_worker_info_is_a_noop(self) -> None:
+        with (
+            patch("voicerecognizer.models.wav2vec2.train.torch.initial_seed", return_value=7),
+            patch("voicerecognizer.models.wav2vec2.train.get_worker_info", return_value=None),
+        ):
+            seed_dataloader_worker(0)
 
 
 if __name__ == "__main__":

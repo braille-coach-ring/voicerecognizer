@@ -286,7 +286,14 @@ def get_pyrefly_baseline_errors(path: Path) -> list[dict[str, Any]]:
 
 def sync_pyrefly_baseline() -> None:
     print_status("Syncing Pyrefly Strict baseline...", "PYREFLY-SYNC")
-    cmd = ["pyrefly", "check", f"--baseline={PYREFLY_BASELINE_PATH.name}", "--update-baseline"]
+    cmd = [
+        sys.executable,
+        "-m",
+        "pyrefly",
+        "check",
+        f"--baseline={PYREFLY_BASELINE_PATH.name}",
+        "--update-baseline",
+    ]
     res = subprocess.run(cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8")
     if res.returncode == 0 or PYREFLY_BASELINE_PATH.exists():
         errs = get_pyrefly_baseline_errors(PYREFLY_BASELINE_PATH)
@@ -383,7 +390,7 @@ def check_pyrefly_baseline() -> int:
 
     fixed_count = max(0, base_count - current_count)
 
-    cmd = ["pyrefly", "check", f"--baseline={PYREFLY_BASELINE_PATH.name}"]
+    cmd = [sys.executable, "-m", "pyrefly", "check", f"--baseline={PYREFLY_BASELINE_PATH.name}"]
     res = subprocess.run(cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8")
     if res.stdout.strip():
         print(res.stdout.strip())

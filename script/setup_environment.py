@@ -46,7 +46,11 @@ def setup_directories() -> None:
     # プロジェクト直下の旧 weights ディレクトリの残存検知
     project_weights = PROJECT_ROOT / "weights"
     if project_weights.exists():
-        model_artifacts = list(project_weights.glob("**/*.onnx")) + list(project_weights.glob("**/*.pth")) + list(project_weights.glob("**/*.safetensors"))
+        model_artifacts = (
+            list(project_weights.glob("**/*.onnx"))
+            + list(project_weights.glob("**/*.pth"))
+            + list(project_weights.glob("**/*.safetensors"))
+        )
         if model_artifacts:
             logger.warning(
                 "プロジェクト直下の weights ディレクトリ (%s) にモデルファイル (%d 件) が検出されました。voicerecognizer は中央キャッシュ (%s) を標準で使用するため、プロジェクト直下の weights ディレクトリは削除して問題ありません。",
@@ -76,9 +80,7 @@ def setup_dataset(raw_dir: Path | None = None, force: bool = False) -> None:
     """生データが存在する場合、データセット統合と前処理を実行します。"""
     logger.info("--- ステップ 3: データセットの統合 ＆ 前処理 ---")
     target_raw_dir = raw_dir or DEFAULT_RECOGNITION_CONFIG.raw_dataset_dir
-    raw_files: list[Path] = (
-        list(target_raw_dir.glob("*/*.wav")) if target_raw_dir.exists() else []
-    )
+    raw_files: list[Path] = list(target_raw_dir.glob("*/*.wav")) if target_raw_dir.exists() else []
 
     if not raw_files:
         logger.info(
@@ -87,7 +89,9 @@ def setup_dataset(raw_dir: Path | None = None, force: bool = False) -> None:
         )
         return
 
-    logger.info("生音声データ (%d 件) を検出しました。インデックス作成を開始します...", len(raw_files))
+    logger.info(
+        "生音声データ (%d 件) を検出しました。インデックス作成を開始します...", len(raw_files)
+    )
     builder = DatasetBuilder()
     index_file = builder.build_index()
     logger.info("データセット統合インデックスを作成しました: %s", index_file)

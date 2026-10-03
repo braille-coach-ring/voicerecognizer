@@ -476,5 +476,3 @@ def format_label(label: str, target_format: LabelFormat = "hiragana") -> str:
     raise ValueError(
         f"未知の target_format です: {target_format} (有効値: 'raw', 'hiragana', 'katakana', 'romaji')"
     )
-
-

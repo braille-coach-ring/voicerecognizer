@@ -4,11 +4,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from voicerecognizer.config import DEFAULT_RECOGNITION_CONFIG
 from voicerecognizer.core.interfaces import RecognitionStrategy
 from voicerecognizer.evaluation.evaluator import (
     EvaluationResult,
     Evaluator,
     compute_evaluation_result,
+    resolve_evaluation_labels,
 )
 
 
@@ -254,6 +256,77 @@ class TestEvaluator(unittest.TestCase):
         self.assertIn('data-decision="delete_candidate"', html)
         self.assertIn('data-decision="maybe"', html)
         self.assertIn("Shortcuts: K=keep, D=delete_candidate, M=maybe", html)
+
+
+class LabelAwareMockRecognizer(RecognitionStrategy):
+    """labels.json を読み込んだ recognizer 相当 (自分が出力しうるラベルを持つ)"""
+
+    def __init__(self, labels: list[str]) -> None:
+        self.labels = labels
+
+    def recognize(self, audio: str) -> str:
+        return self.labels[0]
+
+
+class TestEvaluationLabelResolution(unittest.TestCase):
+    """評価ラベル集合が、学習側と同じ母数になることを保証する。"""
+
+    def _write_index(self, tmp_path: Path, rows: list[tuple[str, str, str]]) -> None:
+        lines = ["filepath,label,predicted_text"]
+        lines += [f"{filepath},{label},{predicted}" for filepath, label, predicted in rows]
+        (tmp_path / "index.csv").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    def test_resolve_uses_model_labels_when_available(self) -> None:
+        model = LabelAwareMockRecognizer(["a", "i", "u"])
+        self.assertEqual(list(resolve_evaluation_labels(model)), ["a", "i", "u"])
+
+    def test_resolve_falls_back_to_config_labels_without_model(self) -> None:
+        self.assertEqual(tuple(resolve_evaluation_labels(None)), DEFAULT_RECOGNITION_CONFIG.labels)
+
+    def test_evaluator_defaults_to_model_labels(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            self._write_index(tmp_path, [("f1.wav", "a", "a")])
+            model = LabelAwareMockRecognizer(["a", "i", "u"])
+
+            evaluator = Evaluator(model=model, dataset_path=tmp_path)
+
+            # config の 105 ラベルではなく、モデル自身のラベルが使われること
+            self.assertEqual(evaluator.labels, ("a", "i", "u"))
+            self.assertNotEqual(len(evaluator.labels), len(DEFAULT_RECOGNITION_CONFIG.labels))
+
+    def test_explicit_labels_still_win(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            self._write_index(tmp_path, [("f1.wav", "a", "a")])
+            model = LabelAwareMockRecognizer(["a", "i", "u"])
+
+            evaluator = Evaluator(model=model, labels=["a", "e"], dataset_path=tmp_path)
+            self.assertEqual(evaluator.labels, ("a", "e"))
+
+    def test_macro_f1_is_not_diluted_by_untrained_classes(self) -> None:
+        """モデルが学習していないクラスを母数に入れると Macro-F1 が不当に下がる。"""
+        y_true = ["a", "i", "u"]
+        y_pred = ["a", "i", "u"]
+
+        trained_only = compute_evaluation_result(y_true, y_pred, labels=("a", "i", "u"))
+        with_untrained = compute_evaluation_result(
+            y_true, y_pred, labels=("a", "i", "u", "kya", "pyo")
+        )
+
+        self.assertEqual(trained_only.overall.macro_f1, 1.0)
+        self.assertLess(with_untrained.overall.macro_f1, 1.0)
+
+    def test_warns_when_true_label_is_outside_evaluation_labels(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            self._write_index(tmp_path, [("f1.wav", "a", "a"), ("f2.wav", "zzz", "a")])
+            evaluator = Evaluator(model=None, labels=["a", "i"], dataset_path=tmp_path)
+
+            with self.assertLogs("voicerecognizer.evaluation.evaluator", level="WARNING") as cm:
+                evaluator.update_from_dataset()
+
+            self.assertTrue(any("zzz" in line for line in cm.output))
 
 
 if __name__ == "__main__":

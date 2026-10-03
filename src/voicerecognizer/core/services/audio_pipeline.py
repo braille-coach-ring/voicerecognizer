@@ -111,7 +111,9 @@ class AudioPipeline:
                     offset_sec = stats.get("offset_ms", 0.0) / 1000.0
 
                     # settle_sec の待機込みでの raw_audio の先頭時刻
-                    raw_start_dt = speech_detected_dt + timedelta(seconds=settle_sec - total_audio_sec)
+                    raw_start_dt = speech_detected_dt + timedelta(
+                        seconds=settle_sec - total_audio_sec
+                    )
                     stats["speech_start_time"] = raw_start_dt + timedelta(seconds=onset_sec)
                     stats["speech_end_time"] = raw_start_dt + timedelta(seconds=offset_sec)
 
