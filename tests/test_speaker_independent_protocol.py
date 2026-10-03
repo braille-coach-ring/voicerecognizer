@@ -164,3 +164,27 @@ def test_colab_output_redaction_and_windows_console():
         pytest.raises(subprocess.CalledProcessError),
     ):
         colab("test", ["status"])
+
+
+def test_registered_multitask_recognizer_uses_explicit_checkpoint(tmp_path: Path):
+    from unittest.mock import patch
+
+    from voicerecognizer.core.factory.recognizer_factory import RecognizerFactory
+    from voicerecognizer.strategies.registry import create_strategy_recognizer
+
+    assert "wav2vec2_phoneme_multi" in RecognizerFactory.available_strategies()
+    checkpoint = tmp_path / "measured-checkpoint"
+    checkpoint.mkdir()
+    (checkpoint / "model.safetensors").touch()
+    with (
+        patch("voicerecognizer.recognizers.wav2vec2_recognizer.Wav2Vec2Recognizer") as recognizer,
+        patch("voicerecognizer.utils.model_uploader.download_strategy_weights_if_needed") as download,
+    ):
+        result = RecognizerFactory.create("wav2vec2_phoneme_multi", model_path=checkpoint)
+        assert result is recognizer.return_value
+        assert recognizer.call_args.kwargs["model_path"] == checkpoint
+        download.assert_not_called()
+    with pytest.raises(FileNotFoundError):
+        create_strategy_recognizer(
+            "wav2vec2_phoneme_multi", model_path=tmp_path / "missing", auto_download=False
+        )

@@ -17,11 +17,13 @@ Wav2Vec2 + ONNX Runtime の推論で、CPU 環境でも使いやすい低遅延�
 ## 現在の特徴
 
 - 105 ラベル分類: 清音 46、濁音 20、半濁音 5、拗音 33、その他 1
-- Wav2Vec2 推論: `Wav2Vec2Recognizer` が既定の認識器
-- CNN 推論: 軽量な代替認識器として `CNNRecognizer` も利用可能
-- モデル自動取得: Hugging Face Hub の公開モデルをローカルキャッシュへ同期
+- Wav2Vec2 推論: `Wav2Vec2Recognizer` が既定の認識器（前処理内包型 ONNX INT8 で CPU 約 41ms）
+- 実験ストラテジー & リーダーボード: 子音・母音マルチタスク（`wav2vec2_phoneme_multi`: 女性話者 76.9%）、XLS-R IPA 蒸留（`wav2vec2_ipa_kd`）、Whisper 特徴量蒸留（`wav2vec2_whisper_kd`）等を整備（詳細は [benchmarks/LEADERBOARD.md](benchmarks/LEADERBOARD.md) 参照）
+- モデル個別自動取得: Hugging Face Hub (`braille-mate/braille-mate-hiragana-recognizer`) から各戦略モデルを個別自動ダウンロード
+- Top-3 予測候補表示: リアルタイムマイク推論時に上位3候補のラベルと確信度バーを表示
+- CNN 推論: 超軽量な代替認識器として `CNNRecognizer` も利用可能
 - 精度優先の前処理: `dynamic_trimming=False` を Wav2Vec2 の既定値に設定
-- 学習時 augmentation: ノイズ、音量、時間シフト、軽い速度変化、軽いピッチ変化、実機ノイズ混合
+- 学習時 augmentation: ノイズ、音量、時間シフト、軽い速度変化、軽いピッチ変化、実機ノイズ混合、RIR 部屋残響シミュレーション
 - 混同ペア重点サンプラー: 過去の混同行列から間違えやすいラベルを多めに学習
 - speaker-aware split: 話者単位で validation を分ける評価モード
 - dataset audit: 欠損、古い前処理済みデータ、ラベル偏り、重複、未レビュー候補を一括確認
@@ -54,38 +56,46 @@ uv run python script\download_from_hf.py --type cnn
 
 ## クイックスタート
 
-音声ファイルを 1 つ認識します。
+音声ファイルを 1 つ認識します（最高精度モデル `wav2vec2_phoneme_multi` やベースラインを指定可能。手元に未ダウンロードの場合は自動ダウンロードされます）。
 
 ```powershell
+# 最高精度モデル（子音・母音マルチタスク）で認識
+uv run python main.py dataset\mikeryu\a\001.wav --strategy wav2vec2_phoneme_multi
+
+# ベースライン Wav2Vec2 で認識
 uv run python main.py dataset\mikeryu\a\001.wav --model wav2vec2
+
+# CNN で認識
 uv run python main.py dataset\mikeryu\a\001.wav --model cnn
 ```
 
 音声ファイルを省略すると、マイクからの連続認識と人間による丸付けセッションを開始します。丸付け結果は
-`dataset/collected/` に保存されます。
+`dataset/collected/` に保存されます（推論時に Top-3 予測候補と確信度バーが表示されます）。
 
 ```powershell
-uv run python main.py --model wav2vec2
+uv run python main.py --strategy wav2vec2_phoneme_multi
 ```
 
 VAD のしきい値を調整して起動する例:
 
 ```powershell
-uv run python main.py --model wav2vec2 --silence-threshold 0.03 --rms-threshold 0.008
+uv run python main.py --strategy wav2vec2_phoneme_multi --silence-threshold 0.03 --rms-threshold 0.008
 ```
 
 Python から使う例:
 
 ```python
-import voicerecognizer as vr
+from voicerecognizer.core.factory.recognizer_factory import RecognizerFactory
 
-recognizer = vr.Wav2Vec2Recognizer()
+# 任意の戦略モデルをワンタッチでインスタンス化（未所持時は HF Hub から自動取得）
+recognizer = RecognizerFactory.create("wav2vec2_phoneme_multi")
 text = recognizer.recognize("sample.wav")
-print(text)
+print(f"認識結果: {text}")
 
-cnn = vr.CNNRecognizer()
-print(cnn.recognize("sample.wav"))
+# 利用可能な戦略一覧を取得
+print(RecognizerFactory.available_strategies())
 ```
+
 
 ## データセット構成
 

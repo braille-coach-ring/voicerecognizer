@@ -33,7 +33,13 @@ import torch.cuda
 import torch.nn
 import torch.optim
 from torch.cuda.amp import GradScaler, autocast
-from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
+from torch.utils.data import (
+    DataLoader,
+    Dataset,
+    Subset,
+    WeightedRandomSampler,
+    get_worker_info,
+)
 from tqdm import tqdm
 
 from voicerecognizer.config import (
@@ -377,6 +383,24 @@ class AugmentedSubset(Dataset):
         if self.augmentor is not None:
             waveform = self.augmentor.augment(waveform)
         return waveform, label
+
+
+def seed_dataloader_worker(worker_id: int) -> None:
+    """DataLoader ワーカーごとに乱数列を分離する。
+
+    ワーカーは親プロセスの状態を複製して起動するため、何もしないと全ワーカーが
+    AudioAugmentor の同一の乱数列を引いてしまい、拡張の多様性がワーカー数分だけ失われる。
+    torch がワーカーごとに割り当てるシードを使って、各ワーカーの RNG を貼り直す。
+    """
+    worker_seed = torch.initial_seed() % (2**32)
+    random.seed(worker_seed)
+    np.random.seed(worker_seed)
+
+    worker_info = get_worker_info()
+    dataset = getattr(worker_info, "dataset", None) if worker_info is not None else None
+    augmentor = getattr(dataset, "augmentor", None)
+    if augmentor is not None:
+        augmentor.rng = np.random.default_rng(worker_seed)
 
 
 def compute_class_weights(
@@ -1283,6 +1307,7 @@ def train(args: argparse.Namespace) -> None:
         pin_memory=pin_memory,
         persistent_workers=persistent_workers,
         collate_fn=collate_fn,
+        worker_init_fn=seed_dataloader_worker,
     )
     val_loader = DataLoader(
         val_dataset,

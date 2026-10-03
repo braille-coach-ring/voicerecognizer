@@ -4,7 +4,8 @@ Wav2Vec2 ONNX Export & Benchmark Script
 役割:
   Fine-tuned Wav2Vec2 PyTorch モデルを ONNX フォーマットにエクスポートし、
   ONNX Runtime の Graph Optimization により CPU 推論を高速化します (model_fp32.onnx)。
-  また、`labels.json` が欠損している場合は自動的に生成・修復します。
+  また、`labels.json` が欠損している場合は復元を試み、復元したラベル数が
+  チェックポイントの分類ヘッドと一致しない場合は ONNX を出力せず中断します。
 
 使い方:
   uv run python models/wav2vec2/export_onnx.py
@@ -203,6 +204,78 @@ def export_mel_prepended_onnx(
     )
 
 
+def _read_labels_file(labels_file: Path) -> list[str] | None:
+    """labels.json を読み込む。存在しない・壊れている場合は None を返す。"""
+    if not labels_file.exists():
+        logger.warning("labels.json が存在しません: %s", labels_file)
+        return None
+
+    try:
+        with open(labels_file, encoding="utf-8") as f:
+            loaded = json.load(f)
+    except Exception as exc:
+        logger.warning("labels.json の読み込みに失敗しました (%s): %s", labels_file, exc)
+        return None
+
+    if not isinstance(loaded, list) or not loaded:
+        logger.warning("labels.json が空、または list 形式ではありません: %s", labels_file)
+        return None
+
+    return [str(label) for label in loaded]
+
+
+def _restore_label_candidates() -> list[str]:
+    """labels.json が失われている場合のラベルリスト復元候補を返す。"""
+    try:
+        from voicerecognizer.dataset.hiragana_dataset import HiraganaDataset
+
+        ds = HiraganaDataset(
+            root_dir=DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir, sample_rate=16000
+        )
+        labels = list(ds.labels)
+        if labels:
+            logger.info("HiraganaDataset からラベルリスト (%d 件) を復元しました。", len(labels))
+            return labels
+    except Exception as exc:
+        logger.warning("HiraganaDataset からのラベル復元に失敗しました: %s", exc)
+
+    logger.info(
+        "config の既定ラベル (%d 件) を復元候補として使用します。",
+        len(DEFAULT_RECOGNITION_CONFIG.labels),
+    )
+    return list(DEFAULT_RECOGNITION_CONFIG.labels)
+
+
+def _verify_label_count(
+    labels: list[str],
+    checkpoint_num_labels: int,
+    model_path: Path,
+    *,
+    restored: bool,
+) -> None:
+    """ラベル数がチェックポイントの分類ヘッドと一致することを検証する。"""
+    if len(labels) == checkpoint_num_labels:
+        return
+
+    source = (
+        "labels.json が失われていたため復元したラベルリスト"
+        if restored
+        else f"{model_path / 'labels.json'}"
+    )
+    raise ValueError(
+        f"ラベル数がチェックポイントの分類ヘッドと一致しません: "
+        f"{source} は {len(labels)} クラス、"
+        f"チェックポイント ({model_path}) は {checkpoint_num_labels} クラスです。\n"
+        "分類ヘッドをランダム初期化したままの ONNX を出力すると、"
+        "推論は成功するのに結果だけ不正になるため中断しました。\n"
+        "対処:\n"
+        "  1. 学習時に保存された正しい labels.json をチェックポイントディレクトリに戻す\n"
+        f"     ({model_path / 'labels.json'})\n"
+        "  2. または該当チェックポイントを再学習・再取得する\n"
+        "     (uv run python -m voicerecognizer.models.wav2vec2.train)"
+    )
+
+
 def export_and_benchmark(
     model_dir: Path | str = DEFAULT_RECOGNITION_CONFIG.wav2vec2_best_model_dir,
     export_int8: bool = True,
@@ -215,30 +288,7 @@ def export_and_benchmark(
         raise FileNotFoundError(f"Wav2Vec2 モデルディレクトリが存在しません: {model_path}")
 
     labels_file = model_path / "labels.json"
-    labels: list[str] | None = None
-
-    if labels_file.exists():
-        try:
-            with open(labels_file, encoding="utf-8") as f:
-                labels = json.load(f)
-        except Exception:
-            pass
-
-    if not labels:
-        try:
-            from voicerecognizer.dataset.hiragana_dataset import HiraganaDataset
-
-            ds = HiraganaDataset(
-                root_dir=DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir, sample_rate=16000
-            )
-            labels = list(ds.labels)
-            logger.info("HiraganaDataset からラベルリスト (%d 件) を復元しました。", len(labels))
-        except Exception:
-            labels = list(DEFAULT_RECOGNITION_CONFIG.labels)
-
-        with open(labels_file, "w", encoding="utf-8") as f:
-            json.dump(labels, f, ensure_ascii=False, indent=2)
-        logger.info("labels.json を修復・保存しました: %s", labels_file)
+    labels = _read_labels_file(labels_file)
 
     try:
         feature_extractor = AutoFeatureExtractor.from_pretrained(model_path)
@@ -249,11 +299,21 @@ def export_and_benchmark(
         with contextlib.suppress(Exception):
             feature_extractor.save_pretrained(model_path)
 
-    model = Wav2Vec2ForSequenceClassification.from_pretrained(
-        model_path,
-        num_labels=len(labels),
-        ignore_mismatched_sizes=True,
-    )
+    # チェックポイント自身の config に従ってロードする。
+    # num_labels を上書きして ignore_mismatched_sizes=True を渡すと、クラス数が食い違ったときに
+    # 分類ヘッドがランダム初期化されたまま ONNX に書き出され、推論は成功するのに結果だけ
+    # でたらめになる。クラス数の不一致は必ず例外にする。
+    model = Wav2Vec2ForSequenceClassification.from_pretrained(model_path)
+    checkpoint_num_labels = int(model.config.num_labels)
+
+    if labels is None:
+        labels = _restore_label_candidates()
+        _verify_label_count(labels, checkpoint_num_labels, model_path, restored=True)
+        with open(labels_file, "w", encoding="utf-8") as f:
+            json.dump(labels, f, ensure_ascii=False, indent=2)
+        logger.info("labels.json を復元・保存しました: %s (%d クラス)", labels_file, len(labels))
+    else:
+        _verify_label_count(labels, checkpoint_num_labels, model_path, restored=False)
 
     # 1. 前処理内包型 ONNX (model_mel_*.onnx - 最速・最優先モデル) の生成
     mel_fp32_onnx_path = model_path / DEFAULT_RECOGNITION_CONFIG.wav2vec2_mel_fp32_onnx_filename

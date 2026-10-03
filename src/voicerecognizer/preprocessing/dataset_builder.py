@@ -70,6 +70,32 @@ def _infer_speaker_from_source(wav_path: Path, label: str) -> str:
     return wav_path.parent.name
 
 
+def _final_rel_path(processed_path: Path, staging_root: Path, output_root: Path) -> str:
+    """ステージング中のパスを、入れ替え後の最終パスとして記録用に変換する"""
+    return _to_rel_path(output_root / processed_path.relative_to(staging_root))
+
+
+def _swap_dataset_dir(staging_root: Path, output_root: Path) -> None:
+    """完成した staging_root を output_root に差し替える。失敗時は元の状態へ戻す。"""
+    backup_root = output_root.parent / f".{output_root.name}.previous"
+    if backup_root.exists():
+        shutil.rmtree(backup_root)
+
+    had_previous = output_root.exists()
+    if had_previous:
+        output_root.rename(backup_root)
+
+    try:
+        staging_root.rename(output_root)
+    except OSError:
+        if had_previous and not output_root.exists():
+            backup_root.rename(output_root)
+        shutil.rmtree(staging_root, ignore_errors=True)
+        raise
+
+    shutil.rmtree(backup_root, ignore_errors=True)
+
+
 def _format_optional_float(value: Any) -> str:
     if value is None or value == "":
         return ""
@@ -142,9 +168,11 @@ class DatasetBuilder:
         if collected_dir is not None and collected_dir.exists():
             for metadata_file in collected_dir.rglob("metadata.csv"):
                 folder = metadata_file.parent
-                with open(metadata_file, encoding="utf-8") as f:
-                    for line in f:
-                        parts = [p.strip() for p in line.strip().split(",")]
+                with open(metadata_file, encoding="utf-8", newline="") as f:
+                    # metadata.csv はヘッダなし 3〜4 列。カンマを含む値でも列がずれないよう
+                    # csv モジュールで解釈する。
+                    for parts in csv.reader(f):
+                        parts = [value.strip() for value in parts]
                         if len(parts) < 3 or not parts[0]:
                             continue
                         filename = parts[1]
@@ -165,11 +193,11 @@ class DatasetBuilder:
                                     (_to_rel_path(wav_path), ground_truth, predicted_text)
                                 )
 
-        # 3. index.csv の書き出し
-        with open(index_file, "w", encoding="utf-8") as f:
-            f.write("filepath,label,predicted_text\n")
-            for filepath, label, pred_text in entries:
-                f.write(f"{filepath},{label},{pred_text}\n")
+        # 3. index.csv の書き出し（値にカンマが含まれても壊れないよう csv モジュールで書く）
+        with open(index_file, "w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["filepath", "label", "predicted_text"])
+            writer.writerows(entries)
 
         logger.info("インデックスファイルを作成しました: %s (全 %d 件)", index_file, len(entries))
         return index_file
@@ -193,20 +221,51 @@ class DatasetBuilder:
         input_root: str | Path = DEFAULT_RECOGNITION_CONFIG.merged_dataset_dir,
         output_root: str | Path = DEFAULT_RECOGNITION_CONFIG.processed_dataset_dir,
     ) -> None:
+        """index.csv (またはディレクトリ構造) から前処理済みデータセットを構築する。
+
+        既存の出力は、新しい出力が最後まで成功してから置き換える。先に削除すると、
+        入力の欠損や途中の例外で前処理済みデータセットが丸ごと失われてしまう。
+        """
         input_root = Path(input_root)
         output_root = Path(output_root)
-        if output_root.exists():
-            shutil.rmtree(output_root)
-        output_root.mkdir(parents=True)
-
         index_file = input_root / "index.csv" if input_root.is_dir() else input_root
 
+        staging_root = output_root.parent / f".{output_root.name}.staging"
+        if staging_root.exists():
+            shutil.rmtree(staging_root)
+        staging_root.mkdir(parents=True)
+
+        try:
+            self._preprocess_into(
+                index_file=index_file,
+                input_root=input_root,
+                staging_root=staging_root,
+                output_root=output_root,
+            )
+        except BaseException:
+            shutil.rmtree(staging_root, ignore_errors=True)
+            raise
+
+        _swap_dataset_dir(staging_root, output_root)
+
+    def _preprocess_into(
+        self,
+        *,
+        index_file: Path,
+        input_root: Path,
+        staging_root: Path,
+        output_root: Path,
+    ) -> None:
+        """staging_root に前処理結果を書き出す。
+
+        index.csv に記録する filepath は、入れ替え後の最終パス (output_root 配下) に揃える。
+        """
         if index_file.exists() and index_file.is_file():
             # インデックス CSV ファイルから直接読み込んで前処理
             counts: dict[str, int] = {}
             processed_count = 0
             skipped_missing = 0
-            processed_index_file = output_root / "index.csv"
+            processed_index_file = staging_root / "index.csv"
             with (
                 open(index_file, encoding="utf-8", newline="") as src,
                 open(processed_index_file, "w", encoding="utf-8", newline="") as dst,
@@ -240,7 +299,7 @@ class DatasetBuilder:
                         skipped_missing += 1
                         continue
 
-                    label_dir = output_root / label
+                    label_dir = staging_root / label
                     label_dir.mkdir(parents=True, exist_ok=True)
 
                     count = counts.get(label, 1)
@@ -258,7 +317,7 @@ class DatasetBuilder:
                     processed_duration_ms = len(waveform) / self.preprocessor.sample_rate * 1000.0
                     writer.writerow(
                         {
-                            "filepath": _to_rel_path(processed_path),
+                            "filepath": _final_rel_path(processed_path, staging_root, output_root),
                             "label": label,
                             "source_filepath": _to_rel_path(wav_path),
                             "speaker": _row_value(row, "speaker") or _infer_speaker_from_source(wav_path, label),
@@ -285,7 +344,7 @@ class DatasetBuilder:
             return
 
         # 従来のディレクトリベース処理（後方互換用）
-        processed_index_file = output_root / "index.csv"
+        processed_index_file = staging_root / "index.csv"
         with open(processed_index_file, "w", encoding="utf-8", newline="") as dst:
             writer = csv.DictWriter(
                 dst,
@@ -308,8 +367,8 @@ class DatasetBuilder:
                 if not label_dir.is_dir():
                     continue
 
-                output_dir = output_root / label_dir.name
-                output_dir.mkdir(exist_ok=True)
+                output_dir = staging_root / label_dir.name
+                output_dir.mkdir(parents=True, exist_ok=True)
                 file_number = 1
 
                 for wav_path in sorted(label_dir.glob("*.wav")):
@@ -324,7 +383,7 @@ class DatasetBuilder:
                     processed_duration_ms = len(waveform) / self.preprocessor.sample_rate * 1000.0
                     writer.writerow(
                         {
-                            "filepath": _to_rel_path(processed_path),
+                            "filepath": _final_rel_path(processed_path, staging_root, output_root),
                             "label": label_dir.name,
                             "source_filepath": _to_rel_path(wav_path),
                             "speaker": _infer_speaker_from_source(wav_path, label_dir.name),
@@ -341,7 +400,11 @@ class DatasetBuilder:
                         }
                     )
                     file_number += 1
-                logger.info(f"{label_dir.name}の音声データを{output_dir}にコピーしました")
+                logger.info(
+                    "%s の音声データを %s に出力しました",
+                    label_dir.name,
+                    output_root / label_dir.name,
+                )
 
 
 def ensure_merged_and_preprocessed(skip_prep: bool = False) -> None:

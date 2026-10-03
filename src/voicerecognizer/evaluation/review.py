@@ -302,7 +302,6 @@ def generate_review_html_report(
     payload = [asdict(candidate) for candidate in sorted_candidates]
     candidates_json = _json_for_script(payload)
     escaped_title = html.escape(title)
-    escaped_results_path = html.escape(str(review_results_path or "review_decisions.json"))
     storage_key_json = _json_for_script(storage_key)
 
     return f"""<!DOCTYPE html>
@@ -490,6 +489,7 @@ def generate_review_html_report(
     .other-btn {{ background: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-weight: 600; }}
     .other-btn:hover {{ background: #fef3c7; }}
     .other-btn.selected {{ background: #f59e0b; color: #fff; border-color: #d97706; font-weight: 700; }}
+    button[data-decision="delete_candidate"].selected {{ background: var(--delete-bg); color: var(--delete); }}
     button[data-decision="maybe"].selected {{ background: var(--maybe-bg); color: var(--maybe); border-color: #fcd34d; font-weight: 700; }}
     .quick-relabel-btn {{
       background: #f0fdf4;
@@ -788,6 +788,7 @@ def generate_review_html_report(
               <button type="button" data-decision="keep" class="${{selected === "keep" ? "selected" : ""}}" title="音声は正しく発音されている [1 / A]"><span class="kbd-hint">1/A</span>現行OK</button>
               <button type="button" data-action="quick-relabel" data-target="${{escapeHtml(candidate.predicted_label)}}" class="quick-relabel-btn ${{selected === "relabel" && current && current.new_label === candidate.predicted_label ? "selected" : ""}}" title="予測 '${{escapeHtml(candidate.predicted_label)}}' を適用 [2 / S]"><span class="kbd-hint">2/S</span>予測 [${{escapeHtml(candidate.predicted_label)}}]</button>
               <button type="button" data-action="set-other" class="other-btn ${{isOther ? "selected" : ""}}" title="雑音・咳・無音など [3 / D]"><span class="kbd-hint">3/D</span>雑音 (other)</button>
+              <button type="button" data-decision="delete_candidate" class="${{selected === "delete_candidate" ? "selected" : ""}}" title="学習データからの削除候補として記録">削除候補</button>
               <button type="button" data-decision="maybe" class="${{selected === "maybe" ? "selected" : ""}}" title="判断保留 [4 / F]"><span class="kbd-hint">4/F</span>保留</button>
             </div>
             <div class="relabel-box">

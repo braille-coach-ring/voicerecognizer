@@ -32,6 +32,21 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger(__name__)
 
 
+# 保存する review_decisions.json は小さい JSON なので、上限を超える POST は読まずに弾く
+MAX_POST_BYTES = 4 * 1024 * 1024
+
+API_PATH = "/api/review-decisions"
+
+
+def _is_hidden_path(url_path: str) -> bool:
+    """ドット始まりの要素を含むパスかどうか。
+
+    静的配信のルートはプロジェクト全体 (音声ファイルを相対パスで再生するため必要) なので、
+    .env / .git / .venv などがそのまま読めてしまう。ドット始まりは一律で拒否する。
+    """
+    return any(part.startswith(".") for part in url_path.split("/") if part not in ("", "."))
+
+
 def _optional_float(value: Any) -> float | None:
     if value is None or value == "":
         return None
@@ -56,9 +71,30 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
         self._send_json({"error": message}, status=status)
 
     @override
+    def send_head(self) -> Any:
+        # GET / HEAD の両方がここを通る
+        if _is_hidden_path(urlparse(self.path).path):
+            self.send_error(HTTPStatus.FORBIDDEN, "Forbidden")
+            return None
+        return super().send_head()
+
+    def _is_same_origin_request(self) -> bool:
+        """ブラウザが付ける Origin が自分自身かどうか。
+
+        Origin 検査がないと、ユーザーが開いた任意のサイトから 127.0.0.1 の
+        この API に POST して review_decisions.json を書き換えられる。
+        """
+        origin = self.headers.get("Origin")
+        if origin is None:
+            # curl など、ブラウザ経由でないリクエストは Origin を付けない
+            return True
+        host = self.headers.get("Host")
+        return bool(host) and urlparse(origin).netloc == host
+
+    @override
     def do_GET(self) -> None:
         path = urlparse(self.path).path
-        if path == "/api/review-decisions":
+        if path == API_PATH:
             decisions = load_review_decisions(self.decisions_path)
             self._send_json(
                 {
@@ -71,14 +107,33 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
-        if path != "/api/review-decisions":
+        if path != API_PATH:
             self._send_error_json("Unknown endpoint", HTTPStatus.NOT_FOUND)
             return
 
-        length = int(self.headers.get("Content-Length", "0"))
+        if not self._is_same_origin_request():
+            logger.warning("Rejected cross-origin POST from %s", self.headers.get("Origin"))
+            self._send_error_json("Cross-origin request rejected", HTTPStatus.FORBIDDEN)
+            return
+
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            self._send_error_json("Invalid Content-Length", HTTPStatus.BAD_REQUEST)
+            return
+        if length < 0:
+            self._send_error_json("Invalid Content-Length", HTTPStatus.BAD_REQUEST)
+            return
+        if length > MAX_POST_BYTES:
+            self._send_error_json(
+                f"Payload too large (limit {MAX_POST_BYTES} bytes)",
+                HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
+            )
+            return
+
         try:
             payload = json.loads(self.rfile.read(length).decode("utf-8"))
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             self._send_error_json("Invalid JSON", HTTPStatus.BAD_REQUEST)
             return
 
@@ -149,6 +204,13 @@ def main() -> None:
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     report_url = f"http://{args.host}:{args.port}/evaluation_results/review_report.html"
     logger.info("Serving %s", root)
+    if args.host not in ("127.0.0.1", "localhost", "::1"):
+        logger.warning(
+            "%s 配下を %s で公開します。ローカル以外に bind するとプロジェクトのファイルが"
+            "ネットワークから読めるため、必要な場合のみにしてください。",
+            root,
+            args.host,
+        )
     logger.info("Saving decisions to %s", resolved_decisions_path)
     logger.info("Open %s", report_url)
     try:
