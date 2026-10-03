@@ -114,7 +114,7 @@ DEFINED_STRATEGIES: dict[str, StrategyMetadata] = {
         display_name="Wav2Vec2 + RIR & Mic Simulation",
         category=StrategyCategory.ACOUSTIC_AUGMENTATION,
         description="Room impulse response convolution (RT60 0.1-0.6s) and dynamic microphone distortion simulation.",
-        status=StrategyStatus.PLANNED,
+        status=StrategyStatus.ACTIVE,
         model_dir=STRATEGIES_DIR / "wav2vec2_rir_simulation",
     ),
     # 08. Augmentation: Teacher Pseudo-Labeling Scaling
@@ -150,7 +150,7 @@ DEFINED_STRATEGIES: dict[str, StrategyMetadata] = {
         display_name="Wav2Vec2 Phoneme Multi-Task + IPA KD Hybrid",
         category=StrategyCategory.REPRESENTATION,
         description="Joint multi-task consonant/vowel decomposition with XLS-R IPA soft-target distillation.",
-        status=StrategyStatus.IMPLEMENTED,
+        status=StrategyStatus.ACTIVE,
         model_dir=STRATEGIES_DIR / "wav2vec2_phoneme_ipa_hybrid",
     ),
 }
