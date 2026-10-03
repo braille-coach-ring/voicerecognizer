@@ -87,7 +87,7 @@ DEFINED_STRATEGIES: dict[str, StrategyMetadata] = {
         display_name="Wav2Vec2 + ArcFace Angular Margin",
         category=StrategyCategory.REPRESENTATION,
         description="Additive Angular Margin Loss to strictly separate acoustically close phoneme pairs.",
-        status=StrategyStatus.PLANNED,
+        status=StrategyStatus.IMPLEMENTED,
         model_dir=STRATEGIES_DIR / "wav2vec2_arcface",
     ),
     # 05. Representation: Onset-Focused Transient Loss
