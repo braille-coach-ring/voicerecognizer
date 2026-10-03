@@ -179,25 +179,35 @@ def main():
                 if hf_token
                 else ""
             )
+            if args.strategy == "wav2vec2_ipa_kd":
+                train_script = "script/train_ipa_kd.py"
+                extra_flags = f"    '--temperature', '{args.temperature}',\n"
+            elif args.strategy == "wav2vec2_whisper_kd":
+                train_script = "script/train_whisper_kd.py"
+                extra_flags = ""
+            else:
+                train_script = f"script/train_{args.strategy.replace('wav2vec2_', '')}.py"
+                extra_flags = ""
+
             run_script = (
                 f"import os, subprocess, sys\n"
                 f"os.chdir('/content/voicerecognizer')\n"
                 f"{hf_env_str}"
                 f"p = subprocess.Popen([\n"
-                f"    'python', '-u', 'script/train_ipa_kd.py',\n"
+                f"    'python', '-u', '{train_script}',\n"
                 f"    '--epochs', '{args.epochs}',\n"
                 f"    '--patience', '{args.patience}',\n"
                 f"    '--batch-size', '{args.batch_size}',\n"
                 f"    '--lr', '{args.lr}',\n"
                 f"    '--freeze-layers', '{args.freeze_layers}',\n"
                 f"    '--alpha-kd', '{args.alpha_kd}',\n"
-                f"    '--temperature', '{args.temperature}',\n"
+                f"{extra_flags}"
                 f"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)\n"
                 f"for line in p.stdout:\n"
                 f"    print(line, end='', flush=True)\n"
                 f"p.wait()\n"
                 f"if p.returncode != 0:\n"
-                f"    raise RuntimeError(f'train_ipa_kd failed with exit code {{p.returncode}}')\n"
+                f"    raise RuntimeError(f'{train_script} failed with exit code {{p.returncode}}')\n"
                 f"subprocess.run(['tar', '-czf', '/content/strategy_weights.tar.gz', '-C', '/content/voicerecognizer/weights/strategies/{args.strategy}', '.'], check=True)\n"
                 f"print('Strategy weights archived successfully.', flush=True)\n"
             )
