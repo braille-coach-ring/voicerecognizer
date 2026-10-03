@@ -291,6 +291,8 @@ def sync_pyrefly_baseline() -> None:
         "-m",
         "pyrefly",
         "check",
+        "--python-interpreter-path",
+        sys.executable,
         f"--baseline={PYREFLY_BASELINE_PATH.name}",
         "--update-baseline",
     ]
@@ -390,7 +392,15 @@ def check_pyrefly_baseline() -> int:
 
     fixed_count = max(0, base_count - current_count)
 
-    cmd = [sys.executable, "-m", "pyrefly", "check", f"--baseline={PYREFLY_BASELINE_PATH.name}"]
+    cmd = [
+        sys.executable,
+        "-m",
+        "pyrefly",
+        "check",
+        "--python-interpreter-path",
+        sys.executable,
+        f"--baseline={PYREFLY_BASELINE_PATH.name}",
+    ]
     res = subprocess.run(cmd, cwd=ROOT_DIR, capture_output=True, text=True, encoding="utf-8")
     if res.stdout.strip():
         print(res.stdout.strip())

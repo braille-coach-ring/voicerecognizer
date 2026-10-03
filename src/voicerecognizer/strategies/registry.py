@@ -107,7 +107,7 @@ DEFINED_STRATEGIES: dict[str, StrategyMetadata] = {
         name="wav2vec2_phoneme_multi",
         display_name="Wav2Vec2 Consonant/Vowel Multi-Task",
         category=StrategyCategory.REPRESENTATION,
-        description="Joint multi-task prediction of Character (105) + Consonant (16) + Vowel (5).",
+        description="Joint multi-task prediction of Character (105) + Consonant (30) + Vowel (7).",
         status=StrategyStatus.ACTIVE,
         model_dir=STRATEGIES_DIR / "wav2vec2_phoneme_multi",
     ),
