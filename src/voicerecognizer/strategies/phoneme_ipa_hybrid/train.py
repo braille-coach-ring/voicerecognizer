@@ -200,7 +200,7 @@ def precompute_ipa_cache_if_needed(
 
     logger.info("IPA cache not found at %s. Precomputing via %s...", cache_path, teacher_model_name)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
-    teacher = IPATeacher(model_name=teacher_model_name, device=device, temperature=temperature)
+    teacher = IPATeacher(model_id=teacher_model_name, device=device, temperature=temperature)
 
     unique_paths: set[Path] = set()
     for cp in csv_paths:
