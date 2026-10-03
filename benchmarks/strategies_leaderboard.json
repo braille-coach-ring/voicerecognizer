@@ -57,12 +57,12 @@
       "display_name": "Wav2Vec2 + ArcFace Angular Margin",
       "category": "Representation & Loss",
       "status": "active",
-      "general_val_acc": 21.39,
-      "speakerphone_test_acc": 7.05,
-      "female_test_acc": 11.54,
-      "latency_ms": 41.3,
+      "general_val_acc": 24.89,
+      "speakerphone_test_acc": 11.54,
+      "female_test_acc": 9.62,
+      "latency_ms": 50.43,
       "model_size_mb": 116.5,
-      "evaluated_at": "2026-10-03 12:29:38",
+      "evaluated_at": "2026-10-03 13:13:23",
       "notes": "Additive Angular Margin Loss to strictly separate acoustically close phoneme pairs."
     }
   }
