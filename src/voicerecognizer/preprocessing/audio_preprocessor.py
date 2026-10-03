@@ -31,13 +31,16 @@ class AudioPreprocessor:
         target_length_seconds: float = DEFAULT_RECOGNITION_CONFIG.target_length_seconds,
         top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,
         target_rms: float = DEFAULT_PREPROCESS_CONFIG.target_rms,
+        enable_trimming: bool = False,
     ):
         self.sample_rate = sample_rate
         self.target_length_seconds = target_length_seconds
         self.top_db = top_db
         self.target_rms = target_rms
+        self.enable_trimming = enable_trimming
         logger.info(
-            "AudioPreprocessorの初期化完了 (RMSダイナミックレンジ補正 + お(o)ブツ切れ防止適用)"
+            "AudioPreprocessorの初期化完了 (トリミング=%s, RMSダイナミックレンジ補正適用)",
+            self.enable_trimming,
         )
 
     def load(self, audio: str | Path | np.ndarray) -> np.ndarray:
@@ -56,40 +59,38 @@ class AudioPreprocessor:
         t_prep_start = time.perf_counter()
         waveform = self.load(audio)
 
-        intervals = librosa.effects.split(
-            waveform,
-            top_db=self.top_db,
-            frame_length=1024,
-            hop_length=256,
-        )
         onset_ms = 0.0
-        offset_ms = 0.0
-        speech_duration_ms = 0.0
+        offset_ms = float(len(waveform) / self.sample_rate * 1000.0)
+        speech_duration_ms = offset_ms
 
-        if len(intervals) > 0:
-            start_idx = intervals[0][0]
-            end_idx = intervals[-1][1]
-            onset_ms = float(start_idx / self.sample_rate * 1000.0)
-            offset_ms = float(end_idx / self.sample_rate * 1000.0)
-            speech_duration_ms = float((end_idx - start_idx) / self.sample_rate * 1000.0)
-
-            # 「頭切れ・語尾切れ」防止マージン (先頭120ms / 末尾150ms)
-            start_margin = int(self.sample_rate * 0.12)
-            end_margin = int(self.sample_rate * 0.15)
-            start_idx = max(0, start_idx - start_margin)
-            end_idx = min(len(waveform), end_idx + end_margin)
-            waveform = waveform[start_idx:end_idx]
-
-        # Raised-Cosine フェード処理
-        fade_samples = int(self.sample_rate * 0.020)
-        if len(waveform) > fade_samples * 2:
-            fade_in = 0.5 * (
-                1.0 - np.cos(np.pi * np.linspace(0, 1, fade_samples, dtype=np.float32))
+        if self.enable_trimming:
+            intervals = librosa.effects.split(
+                waveform,
+                top_db=self.top_db,
+                frame_length=1024,
+                hop_length=256,
             )
+            if len(intervals) > 0:
+                start_idx = intervals[0][0]
+                end_idx = intervals[-1][1]
+                onset_ms = float(start_idx / self.sample_rate * 1000.0)
+                offset_ms = float(end_idx / self.sample_rate * 1000.0)
+                speech_duration_ms = float((end_idx - start_idx) / self.sample_rate * 1000.0)
+
+                # 「頭切れ・語尾切れ」防止マージン (先頭120ms / 末尾150ms)
+                start_margin = int(self.sample_rate * 0.12)
+                end_margin = int(self.sample_rate * 0.15)
+                start_idx = max(0, start_idx - start_margin)
+                end_idx = min(len(waveform), end_idx + end_margin)
+                waveform = waveform[start_idx:end_idx]
+
+        # ※ 子音のアタックエネルギー（5〜15ms）を保持するため、先頭フェードインは適用しない
+        # 末尾の急激な切断ノイズのみ最小限(5ms)ケア
+        fade_samples = int(self.sample_rate * 0.005)
+        if len(waveform) > fade_samples * 2:
             fade_out = 0.5 * (
                 1.0 + np.cos(np.pi * np.linspace(0, 1, fade_samples, dtype=np.float32))
             )
-            waveform[:fade_samples] *= fade_in
             waveform[-fade_samples:] *= fade_out
 
         waveform = self._normalize_volume(waveform)

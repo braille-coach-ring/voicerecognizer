@@ -98,7 +98,7 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
 
             filepath = normalize_filepath(str(item.get("filepath", "")))
             decision = item.get("decision")
-            if not filepath or decision not in {"keep", "delete_candidate", "maybe"}:
+            if not filepath or decision not in {"keep", "delete_candidate", "maybe", "relabel", "other"}:
                 continue
             decision_value = cast(ReviewDecisionValue, decision)
 
@@ -108,6 +108,7 @@ class ReviewRequestHandler(SimpleHTTPRequestHandler):
                 prediction=str(item.get("prediction", item.get("predicted_label", ""))),
                 confidence=_optional_float(item.get("confidence")),
                 decision=decision_value,
+                new_label=str(item.get("new_label", "")),
                 decided_at=str(item.get("decided_at") or utc_now_iso()),
             )
 

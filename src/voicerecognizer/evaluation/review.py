@@ -8,12 +8,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, cast
 
-ReviewDecisionValue = Literal["keep", "delete_candidate", "maybe"]
+ReviewDecisionValue = Literal["keep", "delete_candidate", "maybe", "relabel", "other"]
 
 VALID_REVIEW_DECISIONS: tuple[ReviewDecisionValue, ...] = (
     "keep",
     "delete_candidate",
     "maybe",
+    "relabel",
+    "other",
 )
 
 
@@ -42,6 +44,7 @@ class ReviewDecision:
     prediction: str
     confidence: float | None
     decision: ReviewDecisionValue
+    new_label: str = ""
     decided_at: str = ""
 
 
@@ -219,6 +222,7 @@ def load_review_decisions(path: Path | str | None) -> dict[str, ReviewDecision]:
             prediction=str(item.get("prediction", item.get("predicted_label", ""))),
             confidence=_optional_float(item.get("confidence")),
             decision=decision,
+            new_label=str(item.get("new_label", "")),
             decided_at=str(item.get("decided_at", "")),
         )
 
@@ -323,43 +327,56 @@ def generate_review_html_report(
       --accent: #2563eb;
     }}
     * {{ box-sizing: border-box; }}
-    body {{
+    html, body {{
+      height: 100%;
       margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }}
+    body {{
       background: var(--bg);
       color: var(--text);
       font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
       line-height: 1.5;
+      display: flex;
+      flex-direction: column;
     }}
     header {{
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: rgba(246, 247, 249, 0.96);
+      flex-shrink: 0;
+      background: var(--panel);
       border-bottom: 1px solid var(--border);
-      padding: 16px 24px;
-      backdrop-filter: blur(8px);
+      padding: 12px 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      z-index: 20;
     }}
-    h1 {{ margin: 0 0 10px; font-size: 1.35rem; }}
+    .header-top {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }}
+    h1 {{ margin: 0; font-size: 1.25rem; white-space: nowrap; }}
     .summary {{
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
       color: var(--muted);
-      font-size: 0.92rem;
+      font-size: 0.88rem;
     }}
     .metric {{
-      background: var(--panel);
+      background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 4px 8px;
+      padding: 3px 8px;
     }}
     .toolbar {{
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       align-items: center;
-      margin-top: 12px;
+      margin-bottom: 8px;
     }}
     input, select, button {{
       font: inherit;
@@ -369,50 +386,65 @@ def generate_review_html_report(
       border-radius: 6px;
       background: #fff;
       color: var(--text);
-      padding: 7px 9px;
+      padding: 6px 9px;
+      font-size: 0.88rem;
     }}
     button {{
       border: 1px solid var(--border);
       border-radius: 6px;
       background: #fff;
       color: var(--text);
-      padding: 7px 10px;
+      padding: 6px 10px;
       cursor: pointer;
+      font-size: 0.88rem;
     }}
     button:hover {{ border-color: var(--accent); }}
-    main {{ padding: 18px 24px 32px; }}
+    main {{
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px 32px;
+    }}
     table {{
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 8px;
-      overflow: hidden;
       table-layout: fixed;
     }}
     th, td {{
       border-bottom: 1px solid var(--border);
-      padding: 10px;
+      padding: 8px 10px;
       vertical-align: top;
       text-align: left;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
     }}
     th {{
       background: #eef1f5;
       color: #374151;
       position: sticky;
-      top: 95px;
-      z-index: 5;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }}
-    tr.is-reviewed {{ background: #fbfcfd; }}
+    tr.is-reviewed {{ background: #fafafa; }}
     tr.is-hidden {{ display: none; }}
-    .num {{ width: 56px; }}
-    .priority {{ width: 88px; }}
-    .labels {{ width: 148px; }}
-    .confidence {{ width: 108px; }}
-    .audio {{ width: 270px; }}
-    .decision {{ width: 230px; }}
-    .path {{ word-break: break-all; color: var(--muted); font-family: Consolas, monospace; }}
+    tr.is-active td {{
+      background-color: #e0f2fe !important;
+      border-top: 2px solid #0284c7;
+      border-bottom: 2px solid #0284c7;
+    }}
+    tr.is-active td:first-child {{
+      border-left: 4px solid #0284c7;
+    }}
+    .num {{ width: 50px; text-align: center; }}
+    .priority {{ width: 75px; }}
+    .labels {{ width: 140px; }}
+    .confidence {{ width: 95px; }}
+    .audio {{ width: 260px; }}
+    .decision {{ width: 330px; }}
+    .path {{ word-break: break-all; color: var(--muted); font-family: Consolas, monospace; font-size: 0.82rem; }}
     .badge {{
       display: inline-block;
       border-radius: 999px;
@@ -420,7 +452,7 @@ def generate_review_html_report(
       margin: 1px 3px 3px 0;
       background: #eef2ff;
       color: #3730a3;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       white-space: nowrap;
     }}
     .flag {{ background: #fff7ed; color: #9a3412; }}
@@ -431,21 +463,94 @@ def generate_review_html_report(
     .top-list li {{ margin-bottom: 2px; }}
     .decision-buttons {{
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 6px;
-      margin-bottom: 7px;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+      margin-bottom: 5px;
     }}
     .decision-buttons button {{
-      padding: 6px 4px;
-      overflow-wrap: anywhere;
+      padding: 5px 6px;
+      font-size: 0.82rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left;
+    }}
+    .kbd-hint {{
+      display: inline-block;
+      background: rgba(0, 0, 0, 0.07);
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      border-radius: 3px;
+      padding: 1px 4px;
+      font-size: 0.72rem;
+      font-family: monospace;
+      font-weight: bold;
+      margin-right: 4px;
     }}
     button[data-decision="keep"].selected {{ background: var(--keep-bg); color: var(--keep); border-color: #86efac; font-weight: 700; }}
-    button[data-decision="delete_candidate"].selected {{ background: var(--delete-bg); color: var(--delete); border-color: #fca5a5; font-weight: 700; }}
+    .other-btn {{ background: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-weight: 600; }}
+    .other-btn:hover {{ background: #fef3c7; }}
+    .other-btn.selected {{ background: #f59e0b; color: #fff; border-color: #d97706; font-weight: 700; }}
     button[data-decision="maybe"].selected {{ background: var(--maybe-bg); color: var(--maybe); border-color: #fcd34d; font-weight: 700; }}
-    .status-line {{ font-size: 0.82rem; color: var(--muted); min-height: 1.2em; }}
-    audio {{ width: 245px; max-width: 100%; height: 32px; }}
+    .quick-relabel-btn {{
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #15803d;
+      font-weight: 600;
+    }}
+    .quick-relabel-btn:hover {{ background: #dcfce7; }}
+    .quick-relabel-btn.selected {{ background: #16a34a; color: #fff; border-color: #15803d; font-weight: 700; }}
+    .relabel-box {{
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      margin-bottom: 4px;
+    }}
+    .relabel-input {{
+      flex: 1;
+      min-width: 0;
+      padding: 4px 6px;
+      font-size: 0.82rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: #fff;
+    }}
+    .relabel-btn {{
+      padding: 4px 8px;
+      font-size: 0.8rem;
+      background: #f0f9ff;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+    }}
+    .relabel-btn:hover {{ background: #e0f2fe; }}
+    .relabel-btn.selected {{ background: #0284c7; color: #fff; border-color: #0369a1; font-weight: 700; }}
+    .status-line {{ font-size: 0.8rem; color: var(--muted); min-height: 1.2em; font-weight: 500; }}
+    audio {{ width: 245px; max-width: 100%; height: 30px; }}
+    .guide-banner {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      background: #1e293b;
+      color: #f8fafc;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      align-items: center;
+    }}
+    .guide-banner .key {{
+      display: inline-block;
+      background: #334155;
+      border: 1px solid #64748b;
+      color: #38bdf8;
+      font-family: monospace;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }}
     @media (max-width: 900px) {{
-      header {{ position: static; }}
+      html, body {{ height: auto; overflow: visible; }}
       main {{ padding: 12px; }}
       table, thead, tbody, th, td, tr {{ display: block; }}
       thead {{ display: none; }}
@@ -464,26 +569,43 @@ def generate_review_html_report(
 </head>
 <body>
   <header>
-    <h1>{escaped_title}</h1>
-    <div class="summary">
-      <span class="metric">Total: <strong id="countTotal">0</strong></span>
-      <span class="metric">Pending: <strong id="countPending">0</strong></span>
-      <span class="metric">Keep: <strong id="countKeep">0</strong></span>
-      <span class="metric">Delete candidate: <strong id="countDelete">0</strong></span>
-      <span class="metric">Maybe: <strong id="countMaybe">0</strong></span>
-      <span id="saveState" class="muted">Decisions: {escaped_results_path}</span>
+    <div class="header-top">
+      <h1>{escaped_title}</h1>
+      <div class="summary">
+        <span class="metric">全件: <strong id="countTotal">0</strong></span>
+        <span class="metric">未確認: <strong id="countPending">0</strong></span>
+        <span class="metric" style="color:var(--keep)">現行OK: <strong id="countKeep">0</strong></span>
+        <span class="metric" style="color:#b45309">雑音: <strong id="countOther">0</strong></span>
+        <span class="metric" style="color:#0284c7">修正: <strong id="countRelabel">0</strong></span>
+        <span class="metric">保留: <strong id="countMaybe">0</strong></span>
+        <span id="saveState" class="muted" style="margin-left: 4px;"></span>
+      </div>
     </div>
     <div class="toolbar">
-      <input id="searchBox" type="search" placeholder="Search label or path">
+      <input id="searchBox" type="search" placeholder="音素名・パスで検索">
       <select id="filterMode">
-        <option value="all">All candidates</option>
-        <option value="pending">Pending only</option>
-        <option value="mismatch">Mismatch</option>
-        <option value="low_confidence">Low confidence</option>
-        <option value="quality">Quality flags</option>
+        <option value="all" selected>全サンプル表示</option>
+        <option value="pending">未確認のみ</option>
+        <option value="mismatch">モデル不一致のみ</option>
+        <option value="other">雑音 (other) のみ</option>
+        <option value="relabel">音素修正のみ</option>
+        <option value="low_confidence">低確信度 (&lt; 0.6)</option>
+        <option value="quality">品質フラグあり</option>
       </select>
-      <button id="exportJson" type="button">Export JSON</button>
-      <span class="muted">Shortcuts: K=keep, D=delete_candidate, M=maybe</span>
+      <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-weight:600; font-size:0.86rem; user-select:none;">
+        <input type="checkbox" id="autoPlayToggle" checked> 音声自動再生 (Auto Play)
+      </label>
+      <button id="exportJson" type="button" style="margin-left:auto;">Export JSON</button>
+    </div>
+    <div class="guide-banner">
+      <span>⚡ <strong>キー操作</strong>:</span>
+      <span><span class="key">1</span> or <span class="key">A</span> 現行OK</span>
+      <span><span class="key">2</span> or <span class="key">S</span> 予測適用</span>
+      <span><span class="key">3</span> or <span class="key">D</span> 雑音(other)</span>
+      <span><span class="key">4</span> or <span class="key">F</span> 保留</span>
+      <span><span class="key">Space</span> 音声再生</span>
+      <span><span class="key">E</span> 音素手動入力</span>
+      <span><span class="key">↓</span> / <span class="key">J</span> 次 / <span class="key">↑</span> / <span class="key">K</span> 前</span>
     </div>
   </header>
   <main>
@@ -497,7 +619,7 @@ def generate_review_html_report(
           <th>Top candidates / Quality</th>
           <th class="audio">Audio</th>
           <th>Path</th>
-          <th class="decision">Decision</th>
+          <th class="decision">判定アクション</th>
         </tr>
       </thead>
       <tbody id="reviewRows"></tbody>
@@ -506,11 +628,13 @@ def generate_review_html_report(
   <script>
     const candidates = {candidates_json};
     const storageKey = {storage_key_json};
-    const validDecisions = new Set(["keep", "delete_candidate", "maybe"]);
+    const validDecisions = new Set(["keep", "delete_candidate", "maybe", "relabel", "other"]);
     const decisionLabels = {{
-      keep: "正しい",
-      delete_candidate: "間違い",
-      maybe: "保留"
+      keep: "現行ラベルでOK",
+      other: "雑音・その他 (other)",
+      relabel: "音素ラベル修正",
+      maybe: "保留",
+      delete_candidate: "削除"
     }};
     const qualityLabels = {{
       no_speech_detected: "無音候補",
@@ -536,13 +660,14 @@ def generate_review_html_report(
       return Number(value).toFixed(3);
     }}
 
-    function decisionRecord(candidate, decision) {{
+    function decisionRecord(candidate, decision, newLabel = "") {{
       return {{
         filepath: candidate.filepath,
         label: candidate.true_label,
         prediction: candidate.predicted_label,
         confidence: candidate.confidence,
         decision,
+        new_label: newLabel,
         decided_at: new Date().toISOString()
       }};
     }}
@@ -550,7 +675,7 @@ def generate_review_html_report(
     function loadDecisions() {{
       for (const candidate of candidates) {{
         if (validDecisions.has(candidate.decision)) {{
-          decisions.set(candidate.filepath, decisionRecord(candidate, candidate.decision));
+          decisions.set(candidate.filepath, decisionRecord(candidate, candidate.decision, candidate.new_label || ""));
         }}
       }}
       try {{
@@ -617,7 +742,21 @@ def generate_review_html_report(
       const matchClass = candidate.true_label === candidate.predicted_label ? "match" : "mismatch";
       const current = decisions.get(candidate.filepath);
       const selected = current ? current.decision : "";
-      const decisionText = selected ? decisionLabels[selected] : "未レビュー";
+      const isOther = selected === "other" || (selected === "relabel" && current && current.new_label === "other");
+
+      let decisionText = "未確認";
+      if (selected === "keep") {{
+        decisionText = "✅ 現行ラベルでOK";
+      }} else if (isOther) {{
+        decisionText = "🔇 雑音 ➔ other フォルダへ移動";
+      }} else if (selected === "relabel" && current && current.new_label) {{
+        decisionText = `✏️ 修正 ➔ ${{escapeHtml(current.new_label)}} フォルダへ移動`;
+      }} else if (selected === "maybe") {{
+        decisionText = "⏳ 保留";
+      }}
+
+      const inputVal = (current && current.new_label && current.new_label !== "other") ? current.new_label : "";
+
       return `
         <tr data-filepath="${{escapeHtml(candidate.filepath)}}" data-index="${{index}}">
           <td class="num" data-label="#">${{index + 1}}</td>
@@ -646,9 +785,14 @@ def generate_review_html_report(
           <td class="path" data-label="Path">${{escapeHtml(candidate.filepath)}}</td>
           <td class="decision" data-label="Decision">
             <div class="decision-buttons">
-              <button type="button" data-decision="keep" class="${{selected === "keep" ? "selected" : ""}}">正しい</button>
-              <button type="button" data-decision="delete_candidate" class="${{selected === "delete_candidate" ? "selected" : ""}}">間違い</button>
-              <button type="button" data-decision="maybe" class="${{selected === "maybe" ? "selected" : ""}}">保留</button>
+              <button type="button" data-decision="keep" class="${{selected === "keep" ? "selected" : ""}}" title="音声は正しく発音されている [1 / A]"><span class="kbd-hint">1/A</span>現行OK</button>
+              <button type="button" data-action="quick-relabel" data-target="${{escapeHtml(candidate.predicted_label)}}" class="quick-relabel-btn ${{selected === "relabel" && current && current.new_label === candidate.predicted_label ? "selected" : ""}}" title="予測 '${{escapeHtml(candidate.predicted_label)}}' を適用 [2 / S]"><span class="kbd-hint">2/S</span>予測 [${{escapeHtml(candidate.predicted_label)}}]</button>
+              <button type="button" data-action="set-other" class="other-btn ${{isOther ? "selected" : ""}}" title="雑音・咳・無音など [3 / D]"><span class="kbd-hint">3/D</span>雑音 (other)</button>
+              <button type="button" data-decision="maybe" class="${{selected === "maybe" ? "selected" : ""}}" title="判断保留 [4 / F]"><span class="kbd-hint">4/F</span>保留</button>
+            </div>
+            <div class="relabel-box">
+              <input type="text" class="relabel-input" placeholder="手動修正 (Eで入力, Enter確定)" value="${{escapeHtml(inputVal)}}">
+              <button type="button" data-action="relabel" class="relabel-btn ${{selected === "relabel" && !isOther && (!current || current.new_label !== candidate.predicted_label) ? "selected" : ""}}" title="手動入力で変更">変更</button>
             </div>
             <div class="status-line">${{escapeHtml(decisionText)}}</div>
           </td>
@@ -659,11 +803,66 @@ def generate_review_html_report(
       const record = decisions.get(candidate.filepath);
       if (mode === "pending" && record) return false;
       if (mode === "mismatch" && candidate.true_label === candidate.predicted_label) return false;
+      if (mode === "other" && (!record || (record.decision !== "other" && record.new_label !== "other"))) return false;
+      if (mode === "relabel" && (!record || record.decision !== "relabel" || record.new_label === "other")) return false;
       if (mode === "low_confidence" && !(candidate.confidence !== null && candidate.confidence < 0.60)) return false;
       if (mode === "quality" && (!candidate.quality_flags || candidate.quality_flags.length === 0)) return false;
       if (!search) return true;
       const haystack = `${{candidate.filepath}} ${{candidate.true_label}} ${{candidate.predicted_label}}`.toLowerCase();
       return haystack.includes(search);
+    }}
+
+    let activeFilepath = null;
+
+    function getVisibleRows() {{
+      return Array.from(document.querySelectorAll("#reviewRows tr[data-filepath]"));
+    }}
+
+    function getActiveRow() {{
+      if (!activeFilepath) return null;
+      return rowByPath.get(activeFilepath) || null;
+    }}
+
+    function playRowAudio(row) {{
+      if (!row) return;
+      document.querySelectorAll("audio").forEach((a) => {{
+        if (!a.paused) {{
+          a.pause();
+          a.currentTime = 0;
+        }}
+      }});
+      const audio = row.querySelector("audio");
+      if (audio) {{
+        audio.currentTime = 0;
+        audio.play().catch((err) => {{
+          console.warn("Autoplay blocked or audio load error:", err);
+        }});
+      }}
+    }}
+
+    function setActiveRow(row, autoPlay = true) {{
+      document.querySelectorAll("tr.is-active").forEach((r) => r.classList.remove("is-active"));
+      if (!row) {{
+        activeFilepath = null;
+        return;
+      }}
+      row.classList.add("is-active");
+      activeFilepath = row.dataset.filepath;
+      row.scrollIntoView({{ behavior: "smooth", block: "nearest" }});
+      if (autoPlay && document.getElementById("autoPlayToggle").checked) {{
+        playRowAudio(row);
+      }}
+    }}
+
+    function moveActiveRow(delta) {{
+      const rows = getVisibleRows();
+      if (rows.length === 0) return;
+      const current = getActiveRow();
+      let index = current ? rows.indexOf(current) : -1;
+      let nextIndex = index + delta;
+      if (nextIndex < 0) nextIndex = 0;
+      if (nextIndex >= rows.length) nextIndex = rows.length - 1;
+      setActiveRow(rows[nextIndex], true);
     }}
 
     function render() {{
@@ -685,6 +884,20 @@ def generate_review_html_report(
         applyRowDecision(row.dataset.filepath);
       }});
       updateCounts();
+
+      // Maintain or find active row
+      const visibleRows = getVisibleRows();
+      if (visibleRows.length > 0) {{
+        const existing = activeFilepath ? rowByPath.get(activeFilepath) : null;
+        if (existing && visibleRows.includes(existing)) {{
+          setActiveRow(existing, false);
+        }} else {{
+          const firstPending = visibleRows.find((r) => !decisions.has(r.dataset.filepath)) || visibleRows[0];
+          setActiveRow(firstPending, false);
+        }}
+      }} else {{
+        activeFilepath = null;
+      }}
     }}
 
     function applyRowDecision(filepath) {{
@@ -692,21 +905,57 @@ def generate_review_html_report(
       if (!row) return;
       const record = decisions.get(filepath);
       row.classList.toggle("is-reviewed", Boolean(record));
+
+      const selected = record ? record.decision : "";
+      const isOther = selected === "other" || (selected === "relabel" && record && record.new_label === "other");
+
       row.querySelectorAll("button[data-decision]").forEach((button) => {{
         button.classList.toggle("selected", Boolean(record && button.dataset.decision === record.decision));
       }});
+      const otherBtn = row.querySelector("button[data-action='set-other']");
+      if (otherBtn) {{
+        otherBtn.classList.toggle("selected", Boolean(isOther));
+      }}
+      const quickBtn = row.querySelector("button[data-action='quick-relabel']");
+      if (quickBtn) {{
+        quickBtn.classList.toggle("selected", Boolean(record && record.decision === "relabel" && record.new_label === quickBtn.dataset.target));
+      }}
+      const relabelBtn = row.querySelector("button[data-action='relabel']");
+      if (relabelBtn) {{
+        const isQuick = quickBtn && record && record.new_label === quickBtn.dataset.target;
+        relabelBtn.classList.toggle("selected", Boolean(record && record.decision === "relabel" && !isOther && !isQuick));
+      }}
+      const input = row.querySelector(".relabel-input");
+      if (input && record && record.new_label && record.new_label !== "other") {{
+        input.value = record.new_label;
+      }}
       const status = row.querySelector(".status-line");
-      status.textContent = record ? decisionLabels[record.decision] : "未レビュー";
+      if (selected === "keep") {{
+        status.textContent = "✅ 現行ラベルでOK";
+      }} else if (isOther) {{
+        status.textContent = "🔇 雑音 ➔ other フォルダへ移動";
+      }} else if (selected === "relabel" && record && record.new_label) {{
+        status.textContent = `✏️ 修正 ➔ ${{escapeHtml(record.new_label)}} フォルダへ移動`;
+      }} else if (selected === "maybe") {{
+        status.textContent = "⏳ 保留";
+      }} else {{
+        status.textContent = "未確認";
+      }}
     }}
 
     function updateCounts() {{
-      const counts = {{ keep: 0, delete_candidate: 0, maybe: 0 }};
+      const counts = {{ keep: 0, delete_candidate: 0, maybe: 0, relabel: 0, other: 0 }};
       for (const record of decisions.values()) {{
-        if (record.decision in counts) counts[record.decision] += 1;
+        if (record.decision === "other" || record.new_label === "other") {{
+          counts.other += 1;
+        }} else if (record.decision in counts) {{
+          counts[record.decision] += 1;
+        }}
       }}
       document.getElementById("countTotal").textContent = String(candidates.length);
       document.getElementById("countKeep").textContent = String(counts.keep);
-      document.getElementById("countDelete").textContent = String(counts.delete_candidate);
+      document.getElementById("countOther").textContent = String(counts.other);
+      document.getElementById("countRelabel").textContent = String(counts.relabel);
       document.getElementById("countMaybe").textContent = String(counts.maybe);
       document.getElementById("countPending").textContent = String(
         Math.max(0, candidates.length - decisions.size)
@@ -714,22 +963,23 @@ def generate_review_html_report(
     }}
 
     function focusNextPending(fromRow) {{
-      const rows = Array.from(document.querySelectorAll("tr[data-filepath]"));
+      const rows = getVisibleRows();
+      if (rows.length === 0) return;
       const start = fromRow ? rows.indexOf(fromRow) + 1 : 0;
       const rotated = rows.slice(start).concat(rows.slice(0, start));
       const next = rotated.find((row) => !decisions.has(row.dataset.filepath));
       if (next) {{
-        next.scrollIntoView({{ behavior: "smooth", block: "center" }});
-        const audio = next.querySelector("audio");
-        if (audio) audio.focus({{ preventScroll: true }});
+        setActiveRow(next, true);
+      }} else if (fromRow && start < rows.length) {{
+        setActiveRow(rows[start], true);
       }}
     }}
 
-    function setDecision(filepath, decision) {{
+    function setDecision(filepath, decision, newLabel = "") {{
       if (!validDecisions.has(decision)) return;
       const candidate = candidates.find((item) => item.filepath === filepath);
       if (!candidate) return;
-      const record = decisionRecord(candidate, decision);
+      const record = decisionRecord(candidate, decision, newLabel);
       decisions.set(filepath, record);
       persistLocal();
       persistServer(record);
@@ -740,20 +990,130 @@ def generate_review_html_report(
     }}
 
     document.getElementById("reviewRows").addEventListener("click", (event) => {{
-      const button = event.target.closest("button[data-decision]");
-      if (!button) return;
-      const row = button.closest("tr[data-filepath]");
-      setDecision(row.dataset.filepath, button.dataset.decision);
+      const row = event.target.closest("tr[data-filepath]");
+      if (row && row !== getActiveRow()) {{
+        setActiveRow(row, false);
+      }}
+
+      const button = event.target.closest("button");
+      if (!button || !row) return;
+      const filepath = row.dataset.filepath;
+
+      if (button.dataset.decision) {{
+        setDecision(filepath, button.dataset.decision);
+        return;
+      }}
+
+      if (button.dataset.action === "set-other") {{
+        setDecision(filepath, "other", "other");
+        return;
+      }}
+
+      if (button.dataset.action === "quick-relabel") {{
+        const targetLabel = button.dataset.target;
+        const input = row.querySelector(".relabel-input");
+        if (input) input.value = targetLabel;
+        setDecision(filepath, "relabel", targetLabel);
+        return;
+      }}
+
+      if (button.dataset.action === "relabel") {{
+        const input = row.querySelector(".relabel-input");
+        const val = input ? input.value.trim() : "";
+        if (!val) {{
+          alert("変更先の音素名（例: a, ka, shi等）を入力してください");
+          if (input) input.focus();
+          return;
+        }}
+        setDecision(filepath, "relabel", val);
+        return;
+      }}
+    }});
+
+    document.getElementById("reviewRows").addEventListener("keydown", (event) => {{
+      if (event.key === "Enter" && event.target.classList.contains("relabel-input")) {{
+        event.preventDefault();
+        const row = event.target.closest("tr[data-filepath]");
+        if (!row) return;
+        const val = event.target.value.trim();
+        if (!val) {{
+          alert("変更先の音素名を入力してください");
+          return;
+        }}
+        event.target.blur();
+        setDecision(row.dataset.filepath, "relabel", val);
+      }} else if (event.key === "Escape" && event.target.classList.contains("relabel-input")) {{
+        event.target.blur();
+      }}
     }});
 
     document.addEventListener("keydown", (event) => {{
-      if (event.target.matches("input, textarea, select, button")) return;
+      const isInput = event.target.matches("input, textarea, select");
+      if (isInput) return;
+
       const key = event.key.toLowerCase();
-      const decision = key === "k" ? "keep" : key === "d" ? "delete_candidate" : key === "m" ? "maybe" : "";
-      if (!decision) return;
-      const row = Array.from(document.querySelectorAll("tr[data-filepath]"))
-        .find((item) => !decisions.has(item.dataset.filepath));
-      if (row) setDecision(row.dataset.filepath, decision);
+      const activeRow = getActiveRow() || getVisibleRows()[0];
+      if (!activeRow) return;
+      const filepath = activeRow.dataset.filepath;
+
+      // Navigation: J/K or ArrowDown/ArrowUp
+      if (event.key === "ArrowDown" || key === "j") {{
+        event.preventDefault();
+        moveActiveRow(1);
+        return;
+      }}
+      if (event.key === "ArrowUp" || key === "k") {{
+        event.preventDefault();
+        moveActiveRow(-1);
+        return;
+      }}
+
+      // Audio replay: Space
+      if (event.code === "Space" || event.key === " ") {{
+        event.preventDefault();
+        playRowAudio(activeRow);
+        return;
+      }}
+
+      // Manual input focus: E
+      if (key === "e") {{
+        event.preventDefault();
+        const input = activeRow.querySelector(".relabel-input");
+        if (input) {{
+          input.focus();
+          input.select();
+        }}
+        return;
+      }}
+
+      // Jump to next pending: N
+      if (key === "n") {{
+        event.preventDefault();
+        focusNextPending(activeRow);
+        return;
+      }}
+
+      // Fast Decision keys:
+      // 1 or A: Keep
+      // 2 or S: Quick Relabel (predict)
+      // 3 or D: Other (noise)
+      // 4 or F: Maybe (pending)
+      if (key === "1" || key === "a") {{
+        event.preventDefault();
+        setDecision(filepath, "keep");
+      }} else if (key === "2" || key === "s") {{
+        event.preventDefault();
+        const quickBtn = activeRow.querySelector("button[data-action='quick-relabel']");
+        if (quickBtn && quickBtn.dataset.target) {{
+          setDecision(filepath, "relabel", quickBtn.dataset.target);
+        }}
+      }} else if (key === "3" || key === "d" || key === "o") {{
+        event.preventDefault();
+        setDecision(filepath, "other", "other");
+      }} else if (key === "4" || key === "f" || key === "m") {{
+        event.preventDefault();
+        setDecision(filepath, "maybe");
+      }}
     }});
 
     document.getElementById("filterMode").addEventListener("change", render);

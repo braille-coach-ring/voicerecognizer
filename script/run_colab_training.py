@@ -105,7 +105,7 @@ def main():
             "subprocess.run(['apt-get', 'install', '-y', 'libportaudio2', 'ffmpeg'], check=True)\n"
             "os.chdir('/content')\n"
             "subprocess.run(['rm', '-rf', 'voicerecognizer'], check=False)\n"
-            "subprocess.run(['git', 'clone', '-b', 'train/record-with-speakerphone', 'https://github.com/braille-coach-ring/voicerecognizer.git'], check=True)\n"
+            "subprocess.run(['git', 'clone', '-b', 'train/speaker-independent-female', 'https://github.com/braille-coach-ring/voicerecognizer.git'], check=True)\n"
             "os.chdir('/content/voicerecognizer')\n"
             "subprocess.run(['pip', 'install', 'uv'], check=True)\n"
             "subprocess.run(['uv', 'pip', 'install', '--system', '-e', '.', 'soundfile', 'librosa', 'onnx', 'onnxruntime', 'tqdm', 'transformers', 'accelerate', 'huggingface_hub', 'scikit-learn'], check=True)\n"
@@ -130,7 +130,7 @@ def main():
             f"import os, subprocess, sys\n"
             f"os.chdir('/content/voicerecognizer')\n"
             f"{hf_env_str}"
-            f"p = subprocess.Popen(['python', '-u', 'script/colab_train_pipeline.py', '{args.epochs}', '{args.batch_size}', '{args.lr}', '{args.freeze_layers}'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)\n"
+            f"p = subprocess.Popen(['python', '-u', 'script/colab_train_pipeline.py', '{args.epochs}', '{args.batch_size}', '{args.lr}', '{args.freeze_layers}', 'True'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)\n"
             f"for line in p.stdout:\n"
             f"    print(line, end='', flush=True)\n"
             f"p.wait()\n"
@@ -143,11 +143,11 @@ def main():
         print("\n[Step 4] Downloading evaluation results to local...", flush=True)
         local_results_dir = PROJECT_ROOT / "evaluation_results"
         local_results_dir.mkdir(exist_ok=True)
-        local_json_dest = "/mnt/c/Users/yamadarikuto/Mycode/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.json"
-        local_html_dest = "/mnt/c/Users/yamadarikuto/Mycode/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.html"
-        run_wsl_stream([*colab_bin, "download", "-s", SESSION_NAME, "/content/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.json", local_json_dest])
+        local_json_dest = f"{PROJECT_ROOT.as_posix()}/evaluation_results/speaker_independent_test_after_colab.json"
+        local_html_dest = f"{PROJECT_ROOT.as_posix()}/evaluation_results/speaker_independent_test_after_colab.html"
+        run_wsl_stream([*colab_bin, "download", "-s", SESSION_NAME, "/content/voicerecognizer/evaluation_results/speaker_independent_test_after_colab.json", local_json_dest])
         try:
-            run_wsl_stream([*colab_bin, "download", "-s", SESSION_NAME, "/content/voicerecognizer/evaluation_results/speakerphone_test_wav2vec2_colab_after.html", local_html_dest])
+            run_wsl_stream([*colab_bin, "download", "-s", SESSION_NAME, "/content/voicerecognizer/evaluation_results/speaker_independent_test_after_colab.html", local_html_dest])
         except Exception as e:
             print(f"HTML download skipped: {e}")
 
