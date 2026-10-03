@@ -189,6 +189,8 @@ def main():
                 train_script = f"script/train_{args.strategy.replace('wav2vec2_', '')}.py"
                 extra_flags = ""
 
+            kd_flags = f"    '--alpha-kd', '{args.alpha_kd}',\n" if "kd" in args.strategy else ""
+
             run_script = (
                 f"import os, subprocess, sys\n"
                 f"os.chdir('/content/voicerecognizer')\n"
@@ -200,7 +202,7 @@ def main():
                 f"    '--batch-size', '{args.batch_size}',\n"
                 f"    '--lr', '{args.lr}',\n"
                 f"    '--freeze-layers', '{args.freeze_layers}',\n"
-                f"    '--alpha-kd', '{args.alpha_kd}',\n"
+                f"{kd_flags}"
                 f"{extra_flags}"
                 f"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)\n"
                 f"for line in p.stdout:\n"
