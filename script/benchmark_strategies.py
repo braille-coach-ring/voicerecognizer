@@ -194,10 +194,24 @@ def benchmark_strategy(strategy_name: str) -> StrategyBenchmarkResult:
     return res
 
 
+def split_hashes() -> dict[str, str]:
+    from script.evaluate_speaker_independent import hash_file
+    from voicerecognizer.config import DEFAULT_SPEAKER_SPLIT_DIR
+
+    return {
+        name: hash_file(DEFAULT_SPEAKER_SPLIT_DIR / f"{name}.csv")
+        for name in ("train", "val", "test")
+        if (DEFAULT_SPEAKER_SPLIT_DIR / f"{name}.csv").exists()
+    }
+
+
 def load_leaderboard() -> dict[str, Any]:
     if LEADERBOARD_JSON.exists():
         try:
-            return json.loads(LEADERBOARD_JSON.read_text(encoding="utf-8"))
+            data = json.loads(LEADERBOARD_JSON.read_text(encoding="utf-8"))
+            if data.get("split_hashes") != split_hashes():
+                return {"strategies": {}}
+            return data
         except Exception:
             pass
     return {"strategies": {}}
