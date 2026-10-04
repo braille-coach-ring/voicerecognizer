@@ -32,12 +32,15 @@ class AudioPreprocessor:
         top_db: float = DEFAULT_PREPROCESS_CONFIG.top_db,
         target_rms: float = DEFAULT_PREPROCESS_CONFIG.target_rms,
         enable_trimming: bool = False,
+        onset_pre_roll_seconds: float | None = DEFAULT_PREPROCESS_CONFIG.onset_pre_roll_seconds,
     ):
         self.sample_rate = sample_rate
         self.target_length_seconds = target_length_seconds
         self.top_db = top_db
         self.target_rms = target_rms
         self.enable_trimming = enable_trimming
+        # None で発話開始位置への揃えを無効化
+        self.onset_pre_roll_seconds = onset_pre_roll_seconds
         logger.info(
             "AudioPreprocessorの初期化完了 (トリミング=%s, RMSダイナミックレンジ補正適用)",
             self.enable_trimming,
@@ -83,6 +86,15 @@ class AudioPreprocessor:
                 start_idx = max(0, start_idx - start_margin)
                 end_idx = min(len(waveform), end_idx + end_margin)
                 waveform = waveform[start_idx:end_idx]
+        elif self.onset_pre_roll_seconds is not None:
+            # マイク推論時の波形は 1 秒窓の後半 (中央値 440ms) に発話があり、先頭 0.6s 固定長
+            # 切り出しで子音の位置が学習データ (発話開始 30〜70ms) とずれる / 発話自体が欠落する。
+            # 発話開始の直前から切り出し、学習時と同じ位置に子音が来るようにする。
+            speech_start = self.find_speech_onset(waveform)
+            onset_ms = float(speech_start / self.sample_rate * 1000.0)
+            speech_duration_ms = offset_ms - onset_ms
+            start_idx = max(0, speech_start - int(self.sample_rate * self.onset_pre_roll_seconds))
+            waveform = waveform[start_idx:]
 
         # ※ 子音のアタックエネルギー（5〜15ms）を保持するため、先頭フェードインは適用しない
         # 末尾の急激な切断ノイズのみ最小限(5ms)ケア
@@ -109,6 +121,28 @@ class AudioPreprocessor:
         }
 
         return result_waveform
+
+    def find_speech_onset(self, waveform: np.ndarray) -> int:
+        """10ms フレームの RMS から発話開始のサンプル位置を推定する (見つからなければ 0)。
+
+        しきい値は「暗騒音 (下位 10% フレーム) の 3 倍」と「ピークの -26dB」の大きい方。
+        母音ピーク基準だけでは弱い摩擦音 (s/sh/h) の立ち上がりを取りこぼすため、
+        呼び出し側で onset_pre_roll_seconds 分の余白を付ける。
+        """
+        frame = int(self.sample_rate * 0.01)
+        n_frames = len(waveform) // frame
+        if n_frames < 2:
+            return 0
+        energy = np.sqrt(
+            np.mean(waveform[: n_frames * frame].reshape(n_frames, frame) ** 2, axis=1)
+        )
+        if float(energy.max()) < 1e-4:
+            return 0
+        threshold = max(float(np.percentile(energy, 10)) * 3.0, float(energy.max()) * 0.05)
+        active = energy >= threshold
+        # 単発のクリック音で誤検出しないよう 2 フレーム連続を要求
+        starts = np.flatnonzero(active[:-1] & active[1:])
+        return int(starts[0] * frame) if starts.size else 0
 
     def _normalize_volume(self, waveform: np.ndarray) -> np.ndarray:
         """

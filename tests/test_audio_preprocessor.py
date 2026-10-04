@@ -70,6 +70,37 @@ class TestAudioPreprocessor(unittest.TestCase):
         # Should guarantee minimum 0.2s (3200 samples)
         self.assertEqual(len(processed), 3200)
 
+    def test_late_onset_is_aligned_to_head(self):
+        # マイク推論時の 1 秒窓のように、発話が 0.5s 地点から始まるケース
+        sr = 16000
+        rng = np.random.default_rng(0)
+        audio = (rng.standard_normal(sr) * 0.001).astype(np.float32)
+        onset = int(sr * 0.5)
+        t = np.arange(sr - onset) / sr
+        audio[onset:] += (0.3 * np.sin(2 * np.pi * 200 * t)).astype(np.float32)
+
+        processed = self.preprocessor.preprocess_waveform(audio)
+
+        self.assertEqual(len(processed), 9600)
+        # 発話は先頭 0.6s 内に収まり、開始位置は pre-roll (0.1s) 付近になる
+        active = np.flatnonzero(np.abs(processed) > 0.1)
+        self.assertGreater(len(active), 0)
+        self.assertAlmostEqual(active[0] / sr, 0.1, delta=0.02)
+        self.assertAlmostEqual(self.preprocessor.last_stats["onset_ms"], 500.0, delta=20.0)
+
+    def test_early_onset_is_unchanged(self):
+        # 学習データのように発話開始が pre-roll より手前なら切り出し位置は変わらない
+        sr = 16000
+        audio = np.zeros(int(sr * 0.5), dtype=np.float32)
+        onset = int(sr * 0.05)
+        t = np.arange(len(audio) - onset) / sr
+        audio[onset:] = (0.3 * np.sin(2 * np.pi * 200 * t)).astype(np.float32)
+
+        aligned = self.preprocessor.preprocess_waveform(audio)
+        unaligned = AudioPreprocessor(onset_pre_roll_seconds=None).preprocess_waveform(audio)
+
+        np.testing.assert_allclose(aligned, unaligned)
+
 
 if __name__ == "__main__":
     unittest.main()
