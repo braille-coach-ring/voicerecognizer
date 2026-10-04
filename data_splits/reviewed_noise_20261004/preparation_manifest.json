@@ -1,0 +1,1008 @@
+{
+  "source_head": "8a2296d30766e03b00a35f57ee75ca1e431d411c",
+  "decision_counts": {
+    "keep": 957,
+    "relabel": 28,
+    "other": 13
+  },
+  "review_sha256": "329c2cf5f1562cd6c3f6a3e0e0c3e3cf47e84d3ef277b6e639f10caae3c53f33",
+  "accept_unreviewed": false,
+  "new_csv_labels": {
+    "a": 1,
+    "other": 64,
+    "ya": 1,
+    "ha": 1,
+    "pa": 1,
+    "u": 1
+  },
+  "splits": {
+    "train": {
+      "files": 7262,
+      "speakers": {
+        "haruyamike": 990,
+        "r1": 197,
+        "r10": 298,
+        "r6": 200,
+        "r7": 198,
+        "r8": 298,
+        "r9": 295,
+        "rikuto": 50,
+        "rikutomike": 1022,
+        "rinry": 3616,
+        "ryu": 49,
+        "pc_0c3b2b1f": 5,
+        "environment:1791099481_950204": 1,
+        "environment:1791099488_050416": 1,
+        "environment:1791099499_897918": 1,
+        "environment:1791099513_091321": 1,
+        "environment:1791099521_309075": 1,
+        "environment:1791099563_918721": 1,
+        "environment:1791099574_242353": 1,
+        "environment:1791099638_06716": 1,
+        "environment:1791099701_143477": 1,
+        "environment:1791099705_987157": 1,
+        "environment:1791099709_445164": 1,
+        "environment:1791099712_878231": 1,
+        "environment:1791099729_578858": 1,
+        "environment:1791099733_770222": 1,
+        "environment:1791099743_816624": 1,
+        "environment:1791099808_550802": 1,
+        "environment:1791099901_810911": 1,
+        "environment:1791099911_643674": 1,
+        "environment:1791099965_523289": 1,
+        "environment:1791099983_275106": 1,
+        "environment:1791100016_583178": 1,
+        "environment:1791100042_558035": 1,
+        "environment:1791100080_230978": 1,
+        "environment:1791100138_141078": 1,
+        "environment:1791100142_814477": 1,
+        "environment:1791100155_643857": 1,
+        "environment:1791100174_354772": 1,
+        "environment:1791100178_03187": 1,
+        "environment:1791100210_137435": 1,
+        "environment:1791100217_936613": 1,
+        "environment:1791100226_555475": 1,
+        "environment:1791100237_578691": 1,
+        "environment:1791100253_1979": 1,
+        "environment:1791100258_141332": 1,
+        "environment:1791100261_779535": 1,
+        "environment:1791100299_088831": 1,
+        "environment:1791100305_833144": 1,
+        "environment:1791100309_637848": 1,
+        "environment:1791100336_67647": 1,
+        "environment:1791100365_286607": 1,
+        "environment:1791100406_775083": 1,
+        "environment:1791100411_827262": 1,
+        "environment:1791100423_433305": 1,
+        "environment:1791100435_987309": 1
+      },
+      "labels": {
+        "a": 92,
+        "ba": 69,
+        "be": 66,
+        "bi": 67,
+        "bo": 69,
+        "bu": 66,
+        "bya": 70,
+        "byo": 69,
+        "byu": 68,
+        "cha": 70,
+        "chi": 63,
+        "cho": 68,
+        "chu": 69,
+        "da": 70,
+        "de": 67,
+        "di": 67,
+        "do": 62,
+        "du": 69,
+        "e": 91,
+        "fu": 69,
+        "ga": 69,
+        "ge": 69,
+        "gi": 67,
+        "go": 63,
+        "gu": 68,
+        "gya": 69,
+        "gyo": 70,
+        "gyu": 69,
+        "ha": 71,
+        "he": 70,
+        "hi": 67,
+        "ho": 68,
+        "hya": 68,
+        "hyo": 69,
+        "hyu": 70,
+        "i": 87,
+        "ja": 70,
+        "ji": 68,
+        "jo": 68,
+        "ju": 70,
+        "ka": 68,
+        "ke": 68,
+        "ki": 67,
+        "ko": 69,
+        "ku": 69,
+        "kya": 66,
+        "kyo": 70,
+        "kyu": 68,
+        "ma": 67,
+        "me": 67,
+        "mi": 67,
+        "mo": 70,
+        "mu": 69,
+        "mya": 69,
+        "myo": 69,
+        "myu": 69,
+        "n": 66,
+        "na": 70,
+        "ne": 68,
+        "ni": 69,
+        "no": 62,
+        "nu": 68,
+        "nya": 71,
+        "nyo": 70,
+        "nyu": 69,
+        "o": 90,
+        "pa": 62,
+        "pe": 66,
+        "pi": 66,
+        "po": 67,
+        "pu": 67,
+        "pya": 67,
+        "pyo": 67,
+        "pyu": 68,
+        "ra": 68,
+        "re": 66,
+        "ri": 70,
+        "ro": 69,
+        "ru": 68,
+        "rya": 69,
+        "ryo": 71,
+        "ryu": 69,
+        "sa": 67,
+        "se": 66,
+        "sha": 70,
+        "shi": 70,
+        "sho": 70,
+        "shu": 69,
+        "so": 70,
+        "su": 68,
+        "ta": 72,
+        "te": 69,
+        "to": 67,
+        "tsu": 69,
+        "u": 90,
+        "wa": 70,
+        "wo": 70,
+        "ya": 70,
+        "yo": 69,
+        "yu": 70,
+        "za": 67,
+        "ze": 72,
+        "zo": 71,
+        "zu": 64,
+        "other": 56
+      }
+    },
+    "val": {
+      "files": 406,
+      "speakers": {
+        "r2": 201,
+        "r4": 195,
+        "environment:1791099632_128289": 1,
+        "environment:1791099673_728452": 1,
+        "environment:1791099757_57822": 1,
+        "environment:1791099792_566601": 1,
+        "environment:1791099804_088461": 1,
+        "environment:1791099814_443565": 1,
+        "environment:1791100033_540619": 1,
+        "environment:1791100188_588303": 1,
+        "environment:1791100202_960804": 1,
+        "environment:1791100375_268159": 1
+      },
+      "labels": {
+        "a": 4,
+        "ba": 4,
+        "be": 4,
+        "bi": 4,
+        "bo": 4,
+        "bu": 4,
+        "bya": 4,
+        "byo": 4,
+        "byu": 4,
+        "cha": 4,
+        "chi": 4,
+        "cho": 4,
+        "chu": 4,
+        "da": 4,
+        "de": 4,
+        "di": 4,
+        "do": 4,
+        "du": 3,
+        "e": 4,
+        "fu": 4,
+        "ga": 4,
+        "ge": 4,
+        "gi": 4,
+        "go": 4,
+        "gu": 4,
+        "gya": 4,
+        "gyo": 4,
+        "gyu": 4,
+        "ha": 4,
+        "he": 3,
+        "hi": 3,
+        "ho": 3,
+        "hya": 4,
+        "hyo": 3,
+        "hyu": 4,
+        "i": 4,
+        "ja": 3,
+        "ji": 2,
+        "jo": 4,
+        "ju": 4,
+        "ka": 4,
+        "ke": 4,
+        "ki": 3,
+        "ko": 3,
+        "ku": 3,
+        "kya": 4,
+        "kyo": 4,
+        "kyu": 4,
+        "ma": 4,
+        "me": 3,
+        "mi": 4,
+        "mo": 4,
+        "mu": 4,
+        "mya": 4,
+        "myo": 4,
+        "myu": 4,
+        "n": 4,
+        "na": 4,
+        "ne": 4,
+        "ni": 4,
+        "no": 4,
+        "nu": 4,
+        "nya": 3,
+        "nyo": 4,
+        "nyu": 4,
+        "o": 4,
+        "pa": 4,
+        "pe": 3,
+        "pi": 4,
+        "po": 4,
+        "pu": 2,
+        "pya": 4,
+        "pyo": 4,
+        "pyu": 4,
+        "ra": 4,
+        "re": 4,
+        "ri": 4,
+        "ro": 4,
+        "ru": 3,
+        "rya": 4,
+        "ryo": 4,
+        "ryu": 3,
+        "sa": 3,
+        "se": 4,
+        "sha": 4,
+        "shi": 4,
+        "sho": 4,
+        "shu": 4,
+        "so": 4,
+        "su": 3,
+        "ta": 4,
+        "te": 4,
+        "to": 3,
+        "tsu": 4,
+        "u": 4,
+        "wa": 4,
+        "wo": 4,
+        "ya": 4,
+        "yo": 4,
+        "yu": 4,
+        "za": 4,
+        "ze": 4,
+        "zo": 4,
+        "zu": 4,
+        "other": 11
+      }
+    },
+    "test": {
+      "files": 396,
+      "speakers": {
+        "r3": 192,
+        "r5": 194,
+        "environment:1791099738_60113": 1,
+        "environment:1791099747_391424": 1,
+        "environment:1791099764_881895": 1,
+        "environment:1791099768_233329": 1,
+        "environment:1791099978_167919": 1,
+        "environment:1791099994_140081": 1,
+        "environment:1791100082_577015": 1,
+        "environment:1791100160_701558": 1,
+        "environment:1791100166_995758": 1,
+        "environment:1791100171_036958": 1
+      },
+      "labels": {
+        "a": 5,
+        "ba": 3,
+        "be": 4,
+        "bi": 4,
+        "bo": 4,
+        "bu": 5,
+        "bya": 4,
+        "byo": 4,
+        "byu": 4,
+        "cha": 4,
+        "chi": 4,
+        "cho": 4,
+        "chu": 6,
+        "da": 3,
+        "de": 4,
+        "di": 4,
+        "do": 4,
+        "du": 3,
+        "e": 3,
+        "fu": 3,
+        "ga": 4,
+        "ge": 3,
+        "gi": 4,
+        "go": 5,
+        "gu": 4,
+        "gya": 4,
+        "gyo": 4,
+        "gyu": 4,
+        "ha": 3,
+        "he": 4,
+        "hi": 4,
+        "ho": 4,
+        "hya": 4,
+        "hyo": 4,
+        "hyu": 4,
+        "i": 3,
+        "ja": 3,
+        "ji": 4,
+        "jo": 3,
+        "ju": 4,
+        "ka": 4,
+        "ke": 4,
+        "ki": 4,
+        "ko": 3,
+        "ku": 3,
+        "kya": 4,
+        "kyo": 4,
+        "kyu": 3,
+        "ma": 4,
+        "me": 4,
+        "mo": 4,
+        "mu": 4,
+        "mya": 3,
+        "myo": 4,
+        "myu": 4,
+        "na": 4,
+        "ne": 4,
+        "ni": 4,
+        "no": 2,
+        "nu": 3,
+        "nya": 3,
+        "nyo": 2,
+        "nyu": 4,
+        "o": 4,
+        "pa": 3,
+        "pe": 4,
+        "pi": 5,
+        "po": 4,
+        "pu": 2,
+        "pya": 4,
+        "pyo": 3,
+        "pyu": 4,
+        "ra": 4,
+        "re": 3,
+        "ri": 4,
+        "ro": 4,
+        "ru": 4,
+        "rya": 4,
+        "ryo": 4,
+        "ryu": 4,
+        "sa": 4,
+        "se": 3,
+        "sha": 4,
+        "shi": 4,
+        "sho": 4,
+        "shu": 3,
+        "so": 4,
+        "su": 4,
+        "ta": 3,
+        "te": 3,
+        "to": 4,
+        "tsu": 3,
+        "u": 4,
+        "wa": 4,
+        "wo": 4,
+        "ya": 4,
+        "yo": 4,
+        "yu": 4,
+        "za": 4,
+        "ze": 4,
+        "zo": 3,
+        "zu": 4,
+        "mi": 1,
+        "n": 2,
+        "other": 10
+      }
+    }
+  },
+  "excluded": [
+    {
+      "filepath": "dataset/r1/byu/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r1/chi/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r1/gi/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r1/kyu/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r1/mya/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r1/n/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r1/nyu/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r1/pa/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r1/pi/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r1/sa/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r1/u/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r10/a/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r10/byo/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r10/chi/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r10/hyo/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r10/jo/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r10/ke/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r10/me/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r10/myo/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r10/n/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r10/pe/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r10/pyu/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r10/re/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r10/sho/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r10/su/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r2/du/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r2/ho/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r2/ji/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r2/pe/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r2/pu/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r2/ryu/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r2/su/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/ba/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/du/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/ge/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/i/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/ja/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/ku/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/mi/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/mi/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/n/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/n/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/no/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/nyo/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/pa/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/pyo/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/re/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r3/tsu/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r4/he/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r4/hi/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r4/hyo/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r4/ja/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r4/ji/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r4/ki/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r4/ku/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r4/me/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r4/nya/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r4/pu/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r4/ru/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r4/sa/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r4/to/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r5/da/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r5/e/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r5/fu/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r5/jo/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r5/kyu/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r5/mi/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r5/mya/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r5/no/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r5/nu/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r5/nya/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r5/nyo/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r5/ta/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r5/te/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r5/zo/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r6/bi/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r6/ho/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r6/jo/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r6/ki/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r6/ne/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r6/ni/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r6/pi/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r6/ru/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r7/chi/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r7/go/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r7/hi/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r7/ji/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r7/kya/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r7/kyu/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r7/pu/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r7/pya/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r7/pyu/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r7/rya/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r8/bu/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r8/di/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r8/di/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r8/hi/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r8/ko/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r8/pyo/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r8/ru/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r8/se/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r8/te/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r9/bu/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r9/chi/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r9/kya/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r9/mu/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r9/myu/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r9/n/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r9/po/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r9/po/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r9/pu/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r9/pya/003.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r9/ri/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r9/ro/002.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r9/tsu/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/r9/zu/001.wav",
+      "reason": "missing_review_decision"
+    },
+    {
+      "filepath": "dataset/rinry/be/031.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/bi/036.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/byu/035.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/e/036.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/gi/033.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/gya/033.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/gyo/036.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/hi/032.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/i/031.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/i/036.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/me/034.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/ne/036.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/o/031.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/o/034.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/other/031.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/other/033.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/other/034.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/other/035.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/pe/031.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/pi/034.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/pi/036.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/re/034.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/re/036.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/te/036.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/yu/036.wav",
+      "reason": "legacy_conflicting_labels"
+    },
+    {
+      "filepath": "dataset/rinry/za/033.wav",
+      "reason": "legacy_conflicting_labels"
+    }
+  ],
+  "environment_holdout": "10 validation and 10 test recordings from the same collected session; not an unseen acoustic environment benchmark",
+  "legacy_policy": "Existing training speakers only; previous validation/test, TTS and unidentified older PC recordings reserved"
+}

@@ -1,0 +1,248 @@
+{
+  "backend": "pytorch",
+  "sources": {
+    "legacy_test": {
+      "path": "data_splits\\speaker_independent\\test.csv",
+      "sha256": "e521bbd77260661e121706e044616956a9b9e8eb8df467692c01af7625154436"
+    },
+    "general_validation": {
+      "path": "data_splits\\combined_val.csv",
+      "sha256": "c30fa7b75bd06965db3ac67af3d99fb94c6417ac2ab279454718f9173a415aa9"
+    },
+    "speakerphone": {
+      "path": "data_splits\\speakerphone_test.csv",
+      "sha256": "152e6d62883dc2d6316b322821bb5e445f38fc869e9bc9fd01c18e537920d605"
+    },
+    "synthetic_female": {
+      "path": "data_splits\\female_test.csv",
+      "sha256": "3ae110191ed0ad69f0c370678a4eb355c3de7dbf1475d9ea96e882bc0ac8bab4"
+    }
+  },
+  "models": {
+    "initial": {
+      "model_sha256": "55c6e116a8eeca355975071f8a3295b66eeb9116a5bef9d7200d01ee6dc7666d",
+      "results": {
+        "legacy_test": {
+          "raw": {
+            "accuracy": 0.49032258064516127,
+            "macro_f1": 0.3790291832010163,
+            "inventory_macro_f1": 0.3754193814562447,
+            "weighted_f1": 0.4631543853642896,
+            "total_samples": 620,
+            "correct_samples": 304
+          },
+          "normalized": {
+            "accuracy": 0.5,
+            "macro_f1": 0.39170346740282724,
+            "inventory_macro_f1": 0.3878632373302505,
+            "weighted_f1": 0.4754555903789671,
+            "total_samples": 620,
+            "correct_samples": 310
+          }
+        },
+        "general_validation": {
+          "raw": {
+            "accuracy": 0.8800298062593145,
+            "macro_f1": 0.8817620666670489,
+            "inventory_macro_f1": 0.8817620666670489,
+            "weighted_f1": 0.8810287391995479,
+            "total_samples": 1342,
+            "correct_samples": 1181
+          },
+          "normalized": {
+            "accuracy": 0.8852459016393442,
+            "macro_f1": 0.8862712304338213,
+            "inventory_macro_f1": 0.8862712304338213,
+            "weighted_f1": 0.8862552624450989,
+            "total_samples": 1342,
+            "correct_samples": 1188
+          }
+        },
+        "speakerphone": {
+          "raw": {
+            "accuracy": 0.6346153846153846,
+            "macro_f1": 0.598489010989011,
+            "inventory_macro_f1": 0.5927891156462585,
+            "weighted_f1": 0.5862332112332113,
+            "total_samples": 156,
+            "correct_samples": 99
+          },
+          "normalized": {
+            "accuracy": 0.6538461538461539,
+            "macro_f1": 0.623102310231023,
+            "inventory_macro_f1": 0.6169934640522875,
+            "weighted_f1": 0.6144078144078143,
+            "total_samples": 156,
+            "correct_samples": 102
+          }
+        },
+        "synthetic_female": {
+          "raw": {
+            "accuracy": 0.4807692307692308,
+            "macro_f1": 0.41346153846153844,
+            "inventory_macro_f1": 0.20476190476190476,
+            "weighted_f1": 0.41346153846153844,
+            "total_samples": 52,
+            "correct_samples": 25
+          },
+          "normalized": {
+            "accuracy": 0.5192307692307693,
+            "macro_f1": 0.45,
+            "inventory_macro_f1": 0.22058823529411764,
+            "weighted_f1": 0.4647435897435897,
+            "total_samples": 52,
+            "correct_samples": 27
+          }
+        },
+        "real_female_take": {
+          "raw": {
+            "accuracy": 0.4,
+            "macro_f1": 0.3613653191097225,
+            "inventory_macro_f1": 0.3579237446420109,
+            "weighted_f1": 0.36874061710034556,
+            "total_samples": 520,
+            "correct_samples": 208
+          },
+          "normalized": {
+            "accuracy": 0.4115384615384615,
+            "macro_f1": 0.37440796456061753,
+            "inventory_macro_f1": 0.3707372982413958,
+            "weighted_f1": 0.38317191230087155,
+            "total_samples": 520,
+            "correct_samples": 214
+          }
+        }
+      }
+    },
+    "trained": {
+      "model_sha256": "72931e7bed7ea701eec80bd98467d65d06fd8369819dd5da517179c08546d81e",
+      "results": {
+        "legacy_test": {
+          "raw": {
+            "accuracy": 0.6419354838709678,
+            "macro_f1": 0.5726712369580546,
+            "inventory_macro_f1": 0.5672172251775015,
+            "weighted_f1": 0.6272896690218891,
+            "total_samples": 620,
+            "correct_samples": 398
+          },
+          "normalized": {
+            "accuracy": 0.6516129032258065,
+            "macro_f1": 0.5825102567888049,
+            "inventory_macro_f1": 0.5767993719183265,
+            "weighted_f1": 0.6365349429936707,
+            "total_samples": 620,
+            "correct_samples": 404
+          }
+        },
+        "general_validation": {
+          "raw": {
+            "accuracy": 0.886736214605067,
+            "macro_f1": 0.8886602764302369,
+            "inventory_macro_f1": 0.8886602764302369,
+            "weighted_f1": 0.886700952982452,
+            "total_samples": 1342,
+            "correct_samples": 1190
+          },
+          "normalized": {
+            "accuracy": 0.8919523099850969,
+            "macro_f1": 0.8933713499921438,
+            "inventory_macro_f1": 0.8933713499921438,
+            "weighted_f1": 0.8920966951108613,
+            "total_samples": 1342,
+            "correct_samples": 1197
+          }
+        },
+        "speakerphone": {
+          "raw": {
+            "accuracy": 0.9615384615384616,
+            "macro_f1": 0.9624999999999999,
+            "inventory_macro_f1": 0.9533333333333333,
+            "weighted_f1": 0.9532051282051281,
+            "total_samples": 156,
+            "correct_samples": 150
+          },
+          "normalized": {
+            "accuracy": 0.9871794871794872,
+            "macro_f1": 0.9894389438943895,
+            "inventory_macro_f1": 0.9797385620915033,
+            "weighted_f1": 0.9863247863247864,
+            "total_samples": 156,
+            "correct_samples": 154
+          }
+        },
+        "synthetic_female": {
+          "raw": {
+            "accuracy": 0.5576923076923077,
+            "macro_f1": 0.516025641025641,
+            "inventory_macro_f1": 0.25555555555555554,
+            "weighted_f1": 0.516025641025641,
+            "total_samples": 52,
+            "correct_samples": 29
+          },
+          "normalized": {
+            "accuracy": 0.6153846153846154,
+            "macro_f1": 0.5626666666666666,
+            "inventory_macro_f1": 0.2758169934640523,
+            "weighted_f1": 0.5756410256410256,
+            "total_samples": 52,
+            "correct_samples": 32
+          }
+        },
+        "real_female_take": {
+          "raw": {
+            "accuracy": 0.6,
+            "macro_f1": 0.5679863663565139,
+            "inventory_macro_f1": 0.5625769723912138,
+            "weighted_f1": 0.5775694603879886,
+            "total_samples": 520,
+            "correct_samples": 312
+          },
+          "normalized": {
+            "accuracy": 0.6096153846153847,
+            "macro_f1": 0.5756122391439445,
+            "inventory_macro_f1": 0.5699689818974352,
+            "weighted_f1": 0.5890170107745311,
+            "total_samples": 520,
+            "correct_samples": 317
+          }
+        }
+      }
+    }
+  },
+  "groups": {
+    "legacy_test": {
+      "samples": 620,
+      "exact_train_path_overlap": 0,
+      "train_speaker_overlap": []
+    },
+    "general_validation": {
+      "samples": 1342,
+      "exact_train_path_overlap": 979,
+      "train_speaker_overlap": [
+        "haruyamike",
+        "rikuto",
+        "rikutomike",
+        "rinry",
+        "ryu"
+      ]
+    },
+    "speakerphone": {
+      "samples": 156,
+      "exact_train_path_overlap": 156,
+      "train_speaker_overlap": [
+        "rinry"
+      ]
+    },
+    "synthetic_female": {
+      "samples": 52,
+      "exact_train_path_overlap": 0,
+      "train_speaker_overlap": []
+    },
+    "real_female_take": {
+      "samples": 520,
+      "exact_train_path_overlap": 0,
+      "train_speaker_overlap": []
+    }
+  }
+}

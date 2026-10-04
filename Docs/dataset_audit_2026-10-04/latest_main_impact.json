@@ -1,0 +1,322 @@
+{
+  "checked_at_jst": "2026-10-04T16:52:18.541971+09:00",
+  "latest_main": "60e25076f29402cc8b7f2da32da1db10ade7e271",
+  "local_head": "753a1428d59e4e2a194aa6656ae629b8c5c9cb68",
+  "decision_snapshot": "review_decisions_snapshot_7e37e1c89154.json",
+  "decision_sha256": "7e37e1c89154f1ad01a01d4bff9194e2a45fe97cdfe5325cbcdb716688eacaee",
+  "decision_records": 420,
+  "unique_paths": 420,
+  "decision_counts": {
+    "keep": 390,
+    "relabel": 25,
+    "other": 5
+  },
+  "reviewed_mismatches": 418,
+  "mismatch_total": 1112,
+  "mismatch_without_any_decision": 694,
+  "missing_reviewed_audio": [],
+  "changed_reviewed_audio": [],
+  "invalid_relabel_targets": [],
+  "fixed_splits": {
+    "train": {
+      "files": 7905,
+      "labels": 105,
+      "speakers": {
+        "ai_female_nanami": 312,
+        "haruyamike": 990,
+        "r1": 208,
+        "r2": 208,
+        "r3": 208,
+        "r4": 208,
+        "r5": 208,
+        "r6": 208,
+        "r7": 208,
+        "rikuto": 50,
+        "rikutomike": 1022,
+        "rinry": 3642,
+        "ryu": 49,
+        "collected": 384
+      }
+    },
+    "val": {
+      "files": 1679,
+      "labels": 104,
+      "speakers": {
+        "mikeryu": 49,
+        "r10": 312,
+        "r9": 309,
+        "yumike": 1009
+      }
+    },
+    "test": {
+      "files": 948,
+      "labels": 105,
+      "speakers": {
+        "r8": 307,
+        "reon": 49,
+        "take": 541,
+        "yu-ota": 51
+      }
+    }
+  },
+  "saved_corrections_not_in_main_fixed_csv": 30,
+  "corrections_by_fixed_split": {
+    "test": 5,
+    "val": 8,
+    "train": 17
+  },
+  "decision_counts_by_speaker": {
+    "r1": {
+      "keep": 24,
+      "other": 3,
+      "relabel": 1
+    },
+    "r10": {
+      "relabel": 2,
+      "keep": 59
+    },
+    "r2": {
+      "keep": 31
+    },
+    "r3": {
+      "relabel": 3,
+      "keep": 29
+    },
+    "r4": {
+      "keep": 32
+    },
+    "r5": {
+      "keep": 41,
+      "relabel": 3
+    },
+    "r6": {
+      "relabel": 2,
+      "keep": 28,
+      "other": 2
+    },
+    "r7": {
+      "relabel": 3,
+      "keep": 35
+    },
+    "r8": {
+      "relabel": 5,
+      "keep": 47
+    },
+    "r9": {
+      "relabel": 6,
+      "keep": 64
+    }
+  },
+  "unapplied_corrections": [
+    {
+      "filepath": "dataset/r8/pa/001.wav",
+      "decision": "relabel",
+      "new_label": "a",
+      "fixed_split": "test",
+      "fixed_csv_label": "pa"
+    },
+    {
+      "filepath": "dataset/r9/bi/002.wav",
+      "decision": "relabel",
+      "new_label": "i",
+      "fixed_split": "val",
+      "fixed_csv_label": "bi"
+    },
+    {
+      "filepath": "dataset/r9/gi/002.wav",
+      "decision": "relabel",
+      "new_label": "i",
+      "fixed_split": "val",
+      "fixed_csv_label": "gi"
+    },
+    {
+      "filepath": "dataset/r7/n/001.wav",
+      "decision": "relabel",
+      "new_label": "u",
+      "fixed_split": "train",
+      "fixed_csv_label": "n"
+    },
+    {
+      "filepath": "dataset/r9/pi/002.wav",
+      "decision": "relabel",
+      "new_label": "ri",
+      "fixed_split": "val",
+      "fixed_csv_label": "pi"
+    },
+    {
+      "filepath": "dataset/r10/po/001.wav",
+      "decision": "relabel",
+      "new_label": "o",
+      "fixed_split": "val",
+      "fixed_csv_label": "po"
+    },
+    {
+      "filepath": "dataset/r6/do/002.wav",
+      "decision": "relabel",
+      "new_label": "zo",
+      "fixed_split": "train",
+      "fixed_csv_label": "do"
+    },
+    {
+      "filepath": "dataset/r6/pyo/002.wav",
+      "decision": "relabel",
+      "new_label": "ryo",
+      "fixed_split": "train",
+      "fixed_csv_label": "pyo"
+    },
+    {
+      "filepath": "dataset/r3/ko/002.wav",
+      "decision": "relabel",
+      "new_label": "go",
+      "fixed_split": "train",
+      "fixed_csv_label": "ko"
+    },
+    {
+      "filepath": "dataset/r10/pu/001.wav",
+      "decision": "relabel",
+      "new_label": "u",
+      "fixed_split": "val",
+      "fixed_csv_label": "pu"
+    },
+    {
+      "filepath": "dataset/r9/to/001.wav",
+      "decision": "relabel",
+      "new_label": "o",
+      "fixed_split": "val",
+      "fixed_csv_label": "to"
+    },
+    {
+      "filepath": "dataset/r9/sa/001.wav",
+      "decision": "relabel",
+      "new_label": "a",
+      "fixed_split": "val",
+      "fixed_csv_label": "sa"
+    },
+    {
+      "filepath": "dataset/r5/se/002.wav",
+      "decision": "relabel",
+      "new_label": "chu",
+      "fixed_split": "train",
+      "fixed_csv_label": "se"
+    },
+    {
+      "filepath": "dataset/r8/de/001.wav",
+      "decision": "relabel",
+      "new_label": "ze",
+      "fixed_split": "test",
+      "fixed_csv_label": "de"
+    },
+    {
+      "filepath": "dataset/r6/nu/001.wav",
+      "decision": "other",
+      "new_label": "other",
+      "fixed_split": "train",
+      "fixed_csv_label": "nu"
+    },
+    {
+      "filepath": "dataset/r8/de/002.wav",
+      "decision": "relabel",
+      "new_label": "ze",
+      "fixed_split": "test",
+      "fixed_csv_label": "de"
+    },
+    {
+      "filepath": "dataset/r3/pu/001.wav",
+      "decision": "relabel",
+      "new_label": "bu",
+      "fixed_split": "train",
+      "fixed_csv_label": "pu"
+    },
+    {
+      "filepath": "dataset/r8/sa/003.wav",
+      "decision": "relabel",
+      "new_label": "ta",
+      "fixed_split": "test",
+      "fixed_csv_label": "sa"
+    },
+    {
+      "filepath": "dataset/r1/u/001.wav",
+      "decision": "other",
+      "new_label": "other",
+      "fixed_split": "train",
+      "fixed_csv_label": "u"
+    },
+    {
+      "filepath": "dataset/r9/pe/002.wav",
+      "decision": "relabel",
+      "new_label": "e",
+      "fixed_split": "val",
+      "fixed_csv_label": "pe"
+    },
+    {
+      "filepath": "dataset/r7/go/001.wav",
+      "decision": "relabel",
+      "new_label": "o",
+      "fixed_split": "train",
+      "fixed_csv_label": "go"
+    },
+    {
+      "filepath": "dataset/r5/pu/002.wav",
+      "decision": "relabel",
+      "new_label": "pi",
+      "fixed_split": "train",
+      "fixed_csv_label": "pu"
+    },
+    {
+      "filepath": "dataset/r3/shu/001.wav",
+      "decision": "relabel",
+      "new_label": "chu",
+      "fixed_split": "train",
+      "fixed_csv_label": "shu"
+    },
+    {
+      "filepath": "dataset/r8/ka/002.wav",
+      "decision": "relabel",
+      "new_label": "ta",
+      "fixed_split": "test",
+      "fixed_csv_label": "ka"
+    },
+    {
+      "filepath": "dataset/r5/ha/002.wav",
+      "decision": "relabel",
+      "new_label": "a",
+      "fixed_split": "train",
+      "fixed_csv_label": "ha"
+    },
+    {
+      "filepath": "dataset/r7/pyo/002.wav",
+      "decision": "relabel",
+      "new_label": "sho",
+      "fixed_split": "train",
+      "fixed_csv_label": "pyo"
+    },
+    {
+      "filepath": "dataset/r1/i/002.wav",
+      "decision": "other",
+      "new_label": "other",
+      "fixed_split": "train",
+      "fixed_csv_label": "i"
+    },
+    {
+      "filepath": "dataset/r6/ku/001.wav",
+      "decision": "other",
+      "new_label": "other",
+      "fixed_split": "train",
+      "fixed_csv_label": "ku"
+    },
+    {
+      "filepath": "dataset/r1/to/001.wav",
+      "decision": "other",
+      "new_label": "other",
+      "fixed_split": "train",
+      "fixed_csv_label": "to"
+    },
+    {
+      "filepath": "dataset/r1/re/001.wav",
+      "decision": "relabel",
+      "new_label": "de",
+      "fixed_split": "train",
+      "fixed_csv_label": "re"
+    }
+  ]
+}

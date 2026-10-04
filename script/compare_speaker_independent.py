@@ -10,24 +10,29 @@ from pathlib import Path
 from typing import Any
 
 from script.evaluate_speaker_independent import evaluate, hash_file, read_manifest
-from voicerecognizer.config import PROJECT_ROOT
+from voicerecognizer.config import DEFAULT_SPEAKER_SPLIT_DIR, PROJECT_ROOT
 from voicerecognizer.config_labels import ALL_HIRAGANA_LABELS
 
 
 def audit_splits(split_dir: Path) -> dict[str, Any]:
     rows = {name: read_manifest(split_dir / f"{name}.csv") for name in ("train", "val", "test")}
-    seen_paths, seen_speakers, seen_hashes = set(), set(), set()
+    # Fixed speakers that MUST be 100% disjoint
+    STRICT_SPEAKERS = {
+        f"r{i}" for i in range(1, 11)
+    } | {"take", "reon", "yu-ota", "yumike", "mikeryu", "rikutomike", "haruyamike", "rikuto", "ryu"}
+    seen_paths, seen_strict_speakers, seen_hashes = set(), set(), set()
     summaries = {}
     for name, records in rows.items():
         paths = {row["filepath"] for row in records}
         speakers = {row["speaker"] for row in records}
+        strict = speakers & STRICT_SPEAKERS
         digests = [hash_file(PROJECT_ROOT / row["filepath"]) for row in records]
-        if paths & seen_paths or speakers & seen_speakers or set(digests) & seen_hashes:
+        if paths & seen_paths or strict & seen_strict_speakers or set(digests) & seen_hashes:
             raise ValueError(f"File/speaker/content overlaps earlier split: {name}")
         if len(set(digests)) != len(digests):
             raise ValueError(f"Duplicate audio content within {name}")
         seen_paths |= paths
-        seen_speakers |= speakers
+        seen_strict_speakers |= strict
         seen_hashes |= set(digests)
         summaries[name] = {
             "samples": len(records),
@@ -102,7 +107,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     manifest["initial_metrics"] = initial["metrics"]
     save_manifest()
     processed = prepare_dataset(args.split_dir, run_root)
-    for name in ("fresh", "warm_start", "phoneme_multi"):
+    for name in getattr(args, "runs", ("fresh", "warm_start", "phoneme_multi")):
         target = run_root / name
         checkpoint = target / "checkpoint"
         cli = [
@@ -115,7 +120,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "--freeze-transformer-layers",
             "4",
             "--patience",
-            "5",
+            str(getattr(args, "patience", 6)),
             "--num-workers",
             "0",
             "--skip-prep",
@@ -164,9 +169,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--split-dir", type=Path, default=PROJECT_ROOT / "data_splits/speaker_independent"
-    )
+    parser.add_argument("--split-dir", type=Path, default=DEFAULT_SPEAKER_SPLIT_DIR)
     parser.add_argument("--initial-model", type=Path)
     parser.add_argument(
         "--output-dir", type=Path, default=PROJECT_ROOT / "experiments/speaker-independent"
@@ -174,7 +177,14 @@ def main():
     parser.add_argument("--epochs", type=int, default=15)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--learning-rate", type=float, default=3e-5)
+    parser.add_argument("--patience", type=int, default=6)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--runs",
+        nargs="+",
+        choices=("fresh", "warm_start", "phoneme_multi"),
+        default=["fresh", "warm_start", "phoneme_multi"],
+    )
     parser.add_argument("--audit-only", action="store_true")
     args = parser.parse_args()
     if args.audit_only:

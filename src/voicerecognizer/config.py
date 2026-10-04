@@ -8,6 +8,7 @@ from voicerecognizer.config_labels import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+DEFAULT_SPEAKER_SPLIT_DIR = PROJECT_ROOT / "data_splits/speaker_mixed_balanced_20261004"
 
 
 def load_env(dotenv_path: str | Path | None = None) -> bool:

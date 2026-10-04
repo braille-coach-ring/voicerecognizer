@@ -1,0 +1,13 @@
+{
+  "source_old": "753a1428",
+  "source_new": "60e25076f29402cc8b7f2da32da1db10ade7e271",
+  "inspected_r_files": 2384,
+  "processed_waveform_changed": 0,
+  "unchanged": 2384,
+  "changed_by_speaker": {},
+  "changed_previously_mismatched": 0,
+  "changed_previously_matching": 0,
+  "changed_already_human_reviewed": 0,
+  "method": "Execute actual old/new AudioPreprocessor class AST with exact 16kHz mono PCM16 wave arrays; compare output arrays. Model inference not rerun.",
+  "changed_files": []
+}

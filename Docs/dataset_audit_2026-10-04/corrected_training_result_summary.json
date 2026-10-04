@@ -1,0 +1,270 @@
+{
+  "status": "complete",
+  "session": "vr-full-speaker-20261004",
+  "session_terminated": true,
+  "epochs_completed": 8,
+  "selected_epoch": 3,
+  "train": 8037,
+  "val": 1484,
+  "test": 1046,
+  "models": {
+    "initial": {
+      "sha256": "55c6e116a8eeca355975071f8a3295b66eeb9116a5bef9d7200d01ee6dc7666d",
+      "groups": {
+        "full": {
+          "raw": {
+            "accuracy": 0.5038240917782026,
+            "macro_f1": 0.45781420191874106,
+            "inventory_macro_f1": 0.45781420191874106,
+            "weighted_f1": 0.4892316589517474,
+            "total_samples": 1046,
+            "correct_samples": 527
+          },
+          "normalized": {
+            "accuracy": 0.51434034416826,
+            "macro_f1": 0.46871557661730795,
+            "inventory_macro_f1": 0.46871557661730795,
+            "weighted_f1": 0.5020250319267646,
+            "total_samples": 1046,
+            "correct_samples": 538
+          }
+        },
+        "legacy_test": {
+          "raw": {
+            "accuracy": 0.49032258064516127,
+            "macro_f1": 0.3790291832010163,
+            "inventory_macro_f1": 0.3754193814562447,
+            "weighted_f1": 0.4631543853642896,
+            "total_samples": 620,
+            "correct_samples": 304
+          },
+          "normalized": {
+            "accuracy": 0.5,
+            "macro_f1": 0.39170346740282724,
+            "inventory_macro_f1": 0.3878632373302505,
+            "weighted_f1": 0.4754555903789671,
+            "total_samples": 620,
+            "correct_samples": 310
+          }
+        },
+        "female_take": {
+          "raw": {
+            "accuracy": 0.4,
+            "macro_f1": 0.3613653191097225,
+            "inventory_macro_f1": 0.3579237446420109,
+            "weighted_f1": 0.36874061710034556,
+            "total_samples": 520,
+            "correct_samples": 208
+          },
+          "normalized": {
+            "accuracy": 0.4115384615384615,
+            "macro_f1": 0.37440796456061753,
+            "inventory_macro_f1": 0.3707372982413958,
+            "weighted_f1": 0.38317191230087155,
+            "total_samples": 520,
+            "correct_samples": 214
+          }
+        },
+        "legacy_male": {
+          "raw": {
+            "accuracy": 0.96,
+            "macro_f1": 0.979217273954116,
+            "inventory_macro_f1": 0.046629393997815044,
+            "weighted_f1": 0.9792172739541161,
+            "total_samples": 100,
+            "correct_samples": 96
+          },
+          "normalized": {
+            "accuracy": 0.96,
+            "macro_f1": 0.979217273954116,
+            "inventory_macro_f1": 0.04800084676245667,
+            "weighted_f1": 0.9792172739541161,
+            "total_samples": 100,
+            "correct_samples": 96
+          }
+        },
+        "r_male": {
+          "raw": {
+            "accuracy": 0.5336538461538461,
+            "macro_f1": 0.5017054793497101,
+            "inventory_macro_f1": 0.4969273319273319,
+            "weighted_f1": 0.5034176560618868,
+            "total_samples": 416,
+            "correct_samples": 222
+          },
+          "normalized": {
+            "accuracy": 0.5456730769230769,
+            "macro_f1": 0.5125883192714875,
+            "inventory_macro_f1": 0.5075629435923553,
+            "weighted_f1": 0.5185657558253711,
+            "total_samples": 416,
+            "correct_samples": 227
+          }
+        },
+        "environment": {
+          "raw": {
+            "accuracy": 0.1,
+            "macro_f1": 0.18181818181818182,
+            "inventory_macro_f1": 0.0017316017316017316,
+            "weighted_f1": 0.18181818181818182,
+            "total_samples": 10,
+            "correct_samples": 1
+          },
+          "normalized": {
+            "accuracy": 0.1,
+            "macro_f1": 0.18181818181818182,
+            "inventory_macro_f1": 0.0017825311942959003,
+            "weighted_f1": 0.18181818181818182,
+            "total_samples": 10,
+            "correct_samples": 1
+          }
+        }
+      }
+    },
+    "trained": {
+      "sha256": "8edcc3d34f1e0ecc9e357338eee07ca0653ff3679f68ead5c4bd7b0811fc8c32",
+      "groups": {
+        "full": {
+          "raw": {
+            "accuracy": 0.5774378585086042,
+            "macro_f1": 0.5571104672178709,
+            "inventory_macro_f1": 0.5571104672178709,
+            "weighted_f1": 0.5786090667160968,
+            "total_samples": 1046,
+            "correct_samples": 604
+          },
+          "normalized": {
+            "accuracy": 0.5879541108986616,
+            "macro_f1": 0.5671260317646196,
+            "inventory_macro_f1": 0.5671260317646196,
+            "weighted_f1": 0.5893021120846376,
+            "total_samples": 1046,
+            "correct_samples": 615
+          }
+        },
+        "legacy_test": {
+          "raw": {
+            "accuracy": 0.5370967741935484,
+            "macro_f1": 0.4796592306939297,
+            "inventory_macro_f1": 0.4750910475444637,
+            "weighted_f1": 0.5349762238138817,
+            "total_samples": 620,
+            "correct_samples": 333
+          },
+          "normalized": {
+            "accuracy": 0.5483870967741935,
+            "macro_f1": 0.4881049690352987,
+            "inventory_macro_f1": 0.48331962620161933,
+            "weighted_f1": 0.5444689162276897,
+            "total_samples": 620,
+            "correct_samples": 340
+          }
+        },
+        "female_take": {
+          "raw": {
+            "accuracy": 0.5,
+            "macro_f1": 0.48028549743641713,
+            "inventory_macro_f1": 0.4757113498417846,
+            "weighted_f1": 0.4858713835866846,
+            "total_samples": 520,
+            "correct_samples": 260
+          },
+          "normalized": {
+            "accuracy": 0.5115384615384615,
+            "macro_f1": 0.4878130249075193,
+            "inventory_macro_f1": 0.4830305442711711,
+            "weighted_f1": 0.49749061660684635,
+            "total_samples": 520,
+            "correct_samples": 266
+          }
+        },
+        "legacy_male": {
+          "raw": {
+            "accuracy": 0.73,
+            "macro_f1": 0.8365825437032866,
+            "inventory_macro_f1": 0.0398372639858708,
+            "weighted_f1": 0.8365825437032868,
+            "total_samples": 100,
+            "correct_samples": 73
+          },
+          "normalized": {
+            "accuracy": 0.74,
+            "macro_f1": 0.8437126684804703,
+            "inventory_macro_f1": 0.04135846414119952,
+            "weighted_f1": 0.8437126684804704,
+            "total_samples": 100,
+            "correct_samples": 74
+          }
+        },
+        "r_male": {
+          "raw": {
+            "accuracy": 0.6442307692307693,
+            "macro_f1": 0.6234077668184003,
+            "inventory_macro_f1": 0.6174705499915584,
+            "weighted_f1": 0.6260995328515124,
+            "total_samples": 416,
+            "correct_samples": 268
+          },
+          "normalized": {
+            "accuracy": 0.6538461538461539,
+            "macro_f1": 0.6355460045034884,
+            "inventory_macro_f1": 0.6293151613220817,
+            "weighted_f1": 0.6392974994148636,
+            "total_samples": 416,
+            "correct_samples": 272
+          }
+        },
+        "environment": {
+          "raw": {
+            "accuracy": 0.3,
+            "macro_f1": 0.46153846153846156,
+            "inventory_macro_f1": 0.004395604395604396,
+            "weighted_f1": 0.46153846153846156,
+            "total_samples": 10,
+            "correct_samples": 3
+          },
+          "normalized": {
+            "accuracy": 0.3,
+            "macro_f1": 0.46153846153846156,
+            "inventory_macro_f1": 0.004524886877828055,
+            "weighted_f1": 0.46153846153846156,
+            "total_samples": 10,
+            "correct_samples": 3
+          }
+        }
+      }
+    },
+    "validation": {
+      "sha256": "8edcc3d34f1e0ecc9e357338eee07ca0653ff3679f68ead5c4bd7b0811fc8c32",
+      "groups": {
+        "full": {
+          "raw": {
+            "accuracy": 0.7601078167115903,
+            "macro_f1": 0.7586298714997589,
+            "inventory_macro_f1": 0.7586298714997589,
+            "weighted_f1": 0.7539686837617512,
+            "total_samples": 1484,
+            "correct_samples": 1128
+          },
+          "normalized": {
+            "accuracy": 0.7769541778975741,
+            "macro_f1": 0.7772910469231007,
+            "inventory_macro_f1": 0.7772910469231007,
+            "weighted_f1": 0.7743126768110935,
+            "total_samples": 1484,
+            "correct_samples": 1153
+          }
+        }
+      }
+    }
+  },
+  "checks": [
+    "recovered checkpoint SHA256 equals test and validation model hashes",
+    "all recorded metrics recomputed from saved predictions",
+    "evaluation records and CSV hashes match fixed split",
+    "initial model unchanged",
+    "Colab session terminated",
+    "9 relevant tests passed"
+  ],
+  "model_path": "C:\\Users\\yamadarikuto\\Mycode\\voicerecognizer\\experiments\\vr-full-speaker-20261004\\results\\experiments\\comparison\\warm_start\\checkpoint"
+}
