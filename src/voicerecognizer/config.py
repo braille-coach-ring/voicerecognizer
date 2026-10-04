@@ -41,7 +41,8 @@ class AudioConfig:
     channels: int = 1
     callback_blocksize_seconds: float = 0.05
     warmup_sleep_ms: int = 500
-    speech_settle_seconds: float = 0.3
+    # VAD 検知後に待つ時間。0.3s では約 23% の録音で語尾が窓の末尾で切れていたため延長
+    speech_settle_seconds: float = 0.45
 
 
 @dataclass(frozen=True)
@@ -58,6 +59,8 @@ class PreprocessConfig:
     min_top_db: float = 5
     max_top_db: float = 18
     noise_update_rate: float = 0.005
+    # 発話開始の何秒前から切り出すか (学習データの発話開始位置 中央値 30〜70ms に合わせる)
+    onset_pre_roll_seconds: float = 0.1
 
 
 RecognizerType = Literal["cnn", "wav2vec2"]
