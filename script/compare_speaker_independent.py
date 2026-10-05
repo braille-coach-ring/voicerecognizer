@@ -17,7 +17,7 @@ from voicerecognizer.config_labels import ALL_HIRAGANA_LABELS
 def audit_splits(split_dir: Path) -> dict[str, Any]:
     rows = {name: read_manifest(split_dir / f"{name}.csv") for name in ("train", "val", "test")}
     # Fixed speakers that MUST be 100% disjoint
-    STRICT_SPEAKERS = {
+    strict_speakers = {
         f"r{i}" for i in range(1, 11)
     } | {"take", "reon", "yu-ota", "yumike", "mikeryu", "rikutomike", "haruyamike", "rikuto", "ryu"}
     seen_paths, seen_strict_speakers, seen_hashes = set(), set(), set()
@@ -25,7 +25,7 @@ def audit_splits(split_dir: Path) -> dict[str, Any]:
     for name, records in rows.items():
         paths = {row["filepath"] for row in records}
         speakers = {row["speaker"] for row in records}
-        strict = speakers & STRICT_SPEAKERS
+        strict = speakers & strict_speakers
         digests = [hash_file(PROJECT_ROOT / row["filepath"]) for row in records]
         if paths & seen_paths or strict & seen_strict_speakers or set(digests) & seen_hashes:
             raise ValueError(f"File/speaker/content overlaps earlier split: {name}")

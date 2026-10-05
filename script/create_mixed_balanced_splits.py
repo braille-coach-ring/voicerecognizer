@@ -1,10 +1,9 @@
 """Generate balanced speaker & mixed-pool splits (80/10/10 for rinry & collected)."""
 
 import csv
-import hashlib
 import json
 import random
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -38,11 +37,11 @@ def make_splits():
         for it in items:
             by_label[it["label"]].append(it)
         train, val, test = [], [], []
-        for lbl, group in sorted(by_label.items()):
+        for _lbl, group in sorted(by_label.items()):
             rng.shuffle(group)
             n = len(group)
-            n_val = max(1, int(round(n * val_r))) if n >= 10 else (1 if n >= 5 else 0)
-            n_test = max(1, int(round(n * test_r))) if n >= 10 else (1 if n >= 5 else 0)
+            n_val = max(1, round(n * val_r)) if n >= 10 else (1 if n >= 5 else 0)
+            n_test = max(1, round(n * test_r)) if n >= 10 else (1 if n >= 5 else 0)
             if n_val + n_test >= n:
                 n_val = 1 if n >= 2 else 0
                 n_test = 1 if n >= 3 else 0
