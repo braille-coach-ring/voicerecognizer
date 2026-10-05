@@ -197,6 +197,7 @@ print('Started comparison worker:', process.pid)
 """
         colab(args.session, ["exec", "--timeout", "900"], code=setup, timeout=1000)
         deadline = time.monotonic() + 14400
+        consecutive_errors = 0
         while True:
             snapshot = f"""
 import pathlib, tarfile, json
@@ -224,19 +225,37 @@ with tarfile.open('/content/progress.tar.gz', 'w:gz') as bundle:
             bundle.add(path, arcname=path.relative_to(project).as_posix())
 print('COMPARISON_STATUS=' + json.dumps(status))
 """
-            result = colab(args.session, ["exec", "--timeout", "60"], code=snapshot, timeout=120)
-            statuses = [
-                line for line in result.stdout.splitlines() if line.startswith("COMPARISON_STATUS=")
-            ]
-            if not statuses:
-                raise RuntimeError("Comparison status missing; session may have been lost")
-            status = json.loads(statuses[-1].split("=", 1)[1])
-            colab(
-                args.session,
-                ["download", "/content/progress.tar.gz", wsl_path(staging / "progress.tar.gz")],
-            )
-            with tarfile.open(staging / "progress.tar.gz") as bundle:
-                bundle.extractall(staging / "progress", filter="data")
+            try:
+                result = colab(
+                    args.session, ["exec", "--timeout", "120"], code=snapshot, timeout=300, check=False
+                )
+                statuses = [
+                    line for line in result.stdout.splitlines() if line.startswith("COMPARISON_STATUS=")
+                ]
+                if not statuses:
+                    raise RuntimeError("Comparison status missing")
+                status = json.loads(statuses[-1].split("=", 1)[1])
+                colab(
+                    args.session,
+                    ["download", "/content/progress.tar.gz", wsl_path(staging / "progress.tar.gz")],
+                    check=False,
+                )
+                progress_archive = staging / "progress.tar.gz"
+                if progress_archive.exists():
+                    try:
+                        with tarfile.open(progress_archive) as bundle:
+                            bundle.extractall(staging / "progress", filter="data")
+                    except Exception:
+                        pass
+                consecutive_errors = 0
+            except Exception as exc:
+                consecutive_errors += 1
+                print(f"[Warning] Polling snapshot failed ({consecutive_errors}/5): {exc}")
+                if consecutive_errors >= 5:
+                    raise
+                time.sleep(30)
+                continue
+
             if status["exit_code"] is not None:
                 if status["exit_code"]:
                     raise RuntimeError(

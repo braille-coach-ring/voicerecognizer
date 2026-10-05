@@ -140,12 +140,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "--last-model-path",
             str(checkpoint),
         ]
-        if name == "fresh":
+        if name in ("fresh", "phoneme_multi"):
             cli += ["--no-resume"]
         else:
             cli += ["--resume-from", str(args.initial_model)]
         if name == "phoneme_multi":
-            cli += ["--phoneme-multitask"]
+            cli += [
+                "--phoneme-multitask",
+                "--lambda-cons",
+                "0.5",
+                "--lambda-vowel",
+                "0.2",
+            ]
         parsed = build_parser().parse_args(cli)
         parsed.seed = args.seed
         parsed.target_acc = 1.1  # Use validation F1/patience rather than stopping on raw accuracy.
