@@ -162,8 +162,13 @@ def fixed_manifest_indices(
         return set(keys)
 
     train_sources, val_sources = source_set(train_csv), source_set(val_csv)
-    if speaker_groups[0] & speaker_groups[1]:
-        raise ValueError("Train and validation speaker IDs overlap")
+    strict_speakers = {
+        f"r{i}" for i in range(1, 11)
+    } | {"take", "reon", "yu-ota", "yumike", "mikeryu", "rikutomike", "haruyamike", "rikuto", "ryu"}
+    train_strict = speaker_groups[0] & strict_speakers
+    val_strict = speaker_groups[1] & strict_speakers
+    if train_strict & val_strict:
+        raise ValueError(f"Strict individual speaker overlap between train and val: {train_strict & val_strict}")
     if train_sources & val_sources:
         raise ValueError("Train and validation manifests overlap")
     index_path = Path(processed_index)

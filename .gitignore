@@ -237,3 +237,5 @@ plots/
 
 # Isolated experiment data and checkpoints
 experiments/
+
+.cursor/

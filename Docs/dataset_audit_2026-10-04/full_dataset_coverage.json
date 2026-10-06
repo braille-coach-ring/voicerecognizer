@@ -1,0 +1,186 @@
+{
+  "total_dataset_paths": 10601,
+  "unique_assigned_audio": 10567,
+  "already_deduplicated_baseline_aliases": [
+    {
+      "filepath": "dataset/rinry/be/031.wav",
+      "same_audio_as": "dataset/rinry/re/036.wav",
+      "source_label": "be"
+    },
+    {
+      "filepath": "dataset/rinry/byu/035.wav",
+      "same_audio_as": "dataset/rinry/yu/036.wav",
+      "source_label": "byu"
+    },
+    {
+      "filepath": "dataset/rinry/gi/033.wav",
+      "same_audio_as": "dataset/rinry/i/036.wav",
+      "source_label": "gi"
+    },
+    {
+      "filepath": "dataset/rinry/gya/033.wav",
+      "same_audio_as": "dataset/rinry/gyo/036.wav",
+      "source_label": "gya"
+    },
+    {
+      "filepath": "dataset/rinry/hi/032.wav",
+      "same_audio_as": "dataset/rinry/pi/036.wav",
+      "source_label": "hi"
+    },
+    {
+      "filepath": "dataset/rinry/i/031.wav",
+      "same_audio_as": "dataset/rinry/other/035.wav",
+      "source_label": "i"
+    },
+    {
+      "filepath": "dataset/rinry/me/034.wav",
+      "same_audio_as": "dataset/rinry/ne/036.wav",
+      "source_label": "me"
+    },
+    {
+      "filepath": "dataset/rinry/o/031.wav",
+      "same_audio_as": "dataset/rinry/other/031.wav",
+      "source_label": "o"
+    },
+    {
+      "filepath": "dataset/rinry/o/034.wav",
+      "same_audio_as": "dataset/rinry/other/034.wav",
+      "source_label": "o"
+    },
+    {
+      "filepath": "dataset/rinry/pe/031.wav",
+      "same_audio_as": "dataset/rinry/te/036.wav",
+      "source_label": "pe"
+    },
+    {
+      "filepath": "dataset/rinry/pi/034.wav",
+      "same_audio_as": "dataset/rinry/bi/036.wav",
+      "source_label": "pi"
+    },
+    {
+      "filepath": "dataset/rinry/re/034.wav",
+      "same_audio_as": "dataset/rinry/e/036.wav",
+      "source_label": "re"
+    },
+    {
+      "filepath": "dataset/rinry/za/033.wav",
+      "same_audio_as": "dataset/rinry/other/033.wav",
+      "source_label": "za"
+    },
+    {
+      "filepath": "dataset/take/bu/005.wav",
+      "same_audio_as": "dataset/take/other/005.wav",
+      "source_label": "bu"
+    },
+    {
+      "filepath": "dataset/take/chi/003.wav",
+      "same_audio_as": "dataset/take/other/003.wav",
+      "source_label": "chi"
+    },
+    {
+      "filepath": "dataset/take/de/001.wav",
+      "same_audio_as": "dataset/take/ze/008.wav",
+      "source_label": "de"
+    },
+    {
+      "filepath": "dataset/take/de/002.wav",
+      "same_audio_as": "dataset/take/ze/006.wav",
+      "source_label": "de"
+    },
+    {
+      "filepath": "dataset/take/de/003.wav",
+      "same_audio_as": "dataset/take/ze/007.wav",
+      "source_label": "de"
+    },
+    {
+      "filepath": "dataset/take/de/004.wav",
+      "same_audio_as": "dataset/take/ze/010.wav",
+      "source_label": "de"
+    },
+    {
+      "filepath": "dataset/take/de/005.wav",
+      "same_audio_as": "dataset/take/ze/009.wav",
+      "source_label": "de"
+    },
+    {
+      "filepath": "dataset/take/ge/001.wav",
+      "same_audio_as": "dataset/take/ke/006.wav",
+      "source_label": "ge"
+    },
+    {
+      "filepath": "dataset/take/go/001.wav",
+      "same_audio_as": "dataset/take/wo/006.wav",
+      "source_label": "go"
+    },
+    {
+      "filepath": "dataset/take/go/002.wav",
+      "same_audio_as": "dataset/take/wo/007.wav",
+      "source_label": "go"
+    },
+    {
+      "filepath": "dataset/take/i/003.wav",
+      "same_audio_as": "dataset/take/other/006.wav",
+      "source_label": "i"
+    },
+    {
+      "filepath": "dataset/take/i/005.wav",
+      "same_audio_as": "dataset/take/other/007.wav",
+      "source_label": "i"
+    },
+    {
+      "filepath": "dataset/take/o/003.wav",
+      "same_audio_as": "dataset/take/other/008.wav",
+      "source_label": "o"
+    },
+    {
+      "filepath": "dataset/take/ri/001.wav",
+      "same_audio_as": "dataset/take/other/001.wav",
+      "source_label": "ri"
+    },
+    {
+      "filepath": "dataset/take/shi/003.wav",
+      "same_audio_as": "dataset/take/other/010.wav",
+      "source_label": "shi"
+    },
+    {
+      "filepath": "dataset/take/su/001.wav",
+      "same_audio_as": "dataset/take/tsu/007.wav",
+      "source_label": "su"
+    },
+    {
+      "filepath": "dataset/take/su/004.wav",
+      "same_audio_as": "dataset/take/tsu/006.wav",
+      "source_label": "su"
+    },
+    {
+      "filepath": "dataset/take/su/005.wav",
+      "same_audio_as": "dataset/take/tsu/008.wav",
+      "source_label": "su"
+    },
+    {
+      "filepath": "dataset/take/yo/004.wav",
+      "same_audio_as": "dataset/take/other/004.wav",
+      "source_label": "yo"
+    },
+    {
+      "filepath": "dataset/take/za/002.wav",
+      "same_audio_as": "dataset/take/ra/006.wav",
+      "source_label": "za"
+    },
+    {
+      "filepath": "dataset/take/za/005.wav",
+      "same_audio_as": "dataset/take/other/009.wav",
+      "source_label": "za"
+    }
+  ],
+  "missing_audio_metadata_reference": [
+    "dataset/collected/pc_699ec508/1786019024_356911.wav"
+  ],
+  "validation": {
+    "baseline_rows_preserved": 7802,
+    "r_rows_assigned": 2384,
+    "tts_train": 312,
+    "new_csv_recordings": 69,
+    "legacy_test_in_combined_train_or_val": 0
+  }
+}

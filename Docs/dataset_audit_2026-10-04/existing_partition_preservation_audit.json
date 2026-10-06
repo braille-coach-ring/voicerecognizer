@@ -1,0 +1,1572 @@
+{
+  "sources": {
+    "train": {
+      "source": "data_splits/combined_train.csv",
+      "csv_sha256": "426571f5d4c964fbe6eb375500935fc00a873842d9fd09ac210ed70001cc43aa",
+      "rows": 5468,
+      "missing": [],
+      "repeated_paths": {},
+      "duplicate_audio_groups": []
+    },
+    "val": {
+      "source": "data_splits/combined_val.csv",
+      "csv_sha256": "c30fa7b75bd06965db3ac67af3d99fb94c6417ac2ab279454718f9173a415aa9",
+      "rows": 1342,
+      "missing": [],
+      "repeated_paths": {},
+      "duplicate_audio_groups": []
+    },
+    "speakerphone_test": {
+      "source": "data_splits/speakerphone_test.csv",
+      "csv_sha256": "152e6d62883dc2d6316b322821bb5e445f38fc869e9bc9fd01c18e537920d605",
+      "rows": 156,
+      "missing": [],
+      "repeated_paths": {},
+      "duplicate_audio_groups": []
+    },
+    "female_test": {
+      "source": "data_splits/female_test.csv",
+      "csv_sha256": "3ae110191ed0ad69f0c370678a4eb355c3de7dbf1475d9ea96e882bc0ac8bab4",
+      "rows": 52,
+      "missing": [],
+      "repeated_paths": {},
+      "duplicate_audio_groups": []
+    },
+    "legacy_test": {
+      "source": "data_splits/speaker_independent/test.csv",
+      "csv_sha256": "e521bbd77260661e121706e044616956a9b9e8eb8df467692c01af7625154436",
+      "rows": 620,
+      "missing": [],
+      "repeated_paths": {},
+      "duplicate_audio_groups": []
+    }
+  },
+  "cross_filepaths": {
+    "train / val": [],
+    "speakerphone_test / train": [],
+    "speakerphone_test / val": [],
+    "female_test / train": [],
+    "female_test / val": [],
+    "female_test / speakerphone_test": [],
+    "female_test / legacy_test": [],
+    "legacy_test / train": [
+      "dataset/reon/a/002.wav",
+      "dataset/reon/a/003.wav",
+      "dataset/reon/a/004.wav",
+      "dataset/reon/a/007.wav",
+      "dataset/reon/a/008.wav",
+      "dataset/reon/a/009.wav",
+      "dataset/reon/a/010.wav",
+      "dataset/reon/e/001.wav",
+      "dataset/reon/e/002.wav",
+      "dataset/reon/e/003.wav",
+      "dataset/reon/e/004.wav",
+      "dataset/reon/e/005.wav",
+      "dataset/reon/e/006.wav",
+      "dataset/reon/e/007.wav",
+      "dataset/reon/e/009.wav",
+      "dataset/reon/e/010.wav",
+      "dataset/reon/i/001.wav",
+      "dataset/reon/i/002.wav",
+      "dataset/reon/i/003.wav",
+      "dataset/reon/i/006.wav",
+      "dataset/reon/i/007.wav",
+      "dataset/reon/i/008.wav",
+      "dataset/reon/i/009.wav",
+      "dataset/reon/i/010.wav",
+      "dataset/reon/o/001.wav",
+      "dataset/reon/o/002.wav",
+      "dataset/reon/o/003.wav",
+      "dataset/reon/o/004.wav",
+      "dataset/reon/o/005.wav",
+      "dataset/reon/o/006.wav",
+      "dataset/reon/o/007.wav",
+      "dataset/reon/o/008.wav",
+      "dataset/reon/o/010.wav",
+      "dataset/reon/u/001.wav",
+      "dataset/reon/u/002.wav",
+      "dataset/reon/u/003.wav",
+      "dataset/reon/u/004.wav",
+      "dataset/reon/u/005.wav",
+      "dataset/reon/u/006.wav",
+      "dataset/reon/u/007.wav",
+      "dataset/reon/u/008.wav",
+      "dataset/reon/u/010.wav",
+      "dataset/yu-ota/a/001.wav",
+      "dataset/yu-ota/a/003.wav",
+      "dataset/yu-ota/a/004.wav",
+      "dataset/yu-ota/a/005.wav",
+      "dataset/yu-ota/a/006.wav",
+      "dataset/yu-ota/a/007.wav",
+      "dataset/yu-ota/a/008.wav",
+      "dataset/yu-ota/a/009.wav",
+      "dataset/yu-ota/a/010.wav",
+      "dataset/yu-ota/a/011.wav",
+      "dataset/yu-ota/a/012.wav",
+      "dataset/yu-ota/e/001.wav",
+      "dataset/yu-ota/e/002.wav",
+      "dataset/yu-ota/e/003.wav",
+      "dataset/yu-ota/e/004.wav",
+      "dataset/yu-ota/e/006.wav",
+      "dataset/yu-ota/e/008.wav",
+      "dataset/yu-ota/e/009.wav",
+      "dataset/yu-ota/e/010.wav",
+      "dataset/yu-ota/i/001.wav",
+      "dataset/yu-ota/i/002.wav",
+      "dataset/yu-ota/i/003.wav",
+      "dataset/yu-ota/i/004.wav",
+      "dataset/yu-ota/i/005.wav",
+      "dataset/yu-ota/i/006.wav",
+      "dataset/yu-ota/i/007.wav",
+      "dataset/yu-ota/i/008.wav",
+      "dataset/yu-ota/i/009.wav",
+      "dataset/yu-ota/i/010.wav",
+      "dataset/yu-ota/o/001.wav",
+      "dataset/yu-ota/o/004.wav",
+      "dataset/yu-ota/o/005.wav",
+      "dataset/yu-ota/o/006.wav",
+      "dataset/yu-ota/o/007.wav",
+      "dataset/yu-ota/o/008.wav",
+      "dataset/yu-ota/o/009.wav",
+      "dataset/yu-ota/u/001.wav",
+      "dataset/yu-ota/u/002.wav",
+      "dataset/yu-ota/u/003.wav",
+      "dataset/yu-ota/u/005.wav",
+      "dataset/yu-ota/u/006.wav",
+      "dataset/yu-ota/u/007.wav",
+      "dataset/yu-ota/u/009.wav",
+      "dataset/yu-ota/u/010.wav"
+    ],
+    "legacy_test / val": [
+      "dataset/reon/a/005.wav",
+      "dataset/reon/a/006.wav",
+      "dataset/reon/e/008.wav",
+      "dataset/reon/i/004.wav",
+      "dataset/reon/i/005.wav",
+      "dataset/reon/o/009.wav",
+      "dataset/reon/u/009.wav",
+      "dataset/yu-ota/e/005.wav",
+      "dataset/yu-ota/e/007.wav",
+      "dataset/yu-ota/o/002.wav",
+      "dataset/yu-ota/o/003.wav",
+      "dataset/yu-ota/o/010.wav",
+      "dataset/yu-ota/u/004.wav",
+      "dataset/yu-ota/u/008.wav"
+    ],
+    "legacy_test / speakerphone_test": []
+  },
+  "cross_audio_hashes": {
+    "train / val": [],
+    "speakerphone_test / train": [],
+    "speakerphone_test / val": [],
+    "female_test / train": [],
+    "female_test / val": [],
+    "female_test / speakerphone_test": [],
+    "female_test / legacy_test": [],
+    "legacy_test / train": [
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/e/001.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/e/001.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/i/003.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/i/003.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/o/005.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/o/005.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/u/003.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/u/003.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/a/008.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/a/008.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/a/010.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/a/010.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/a/007.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/a/007.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/o/004.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/o/004.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/a/010.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/a/010.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/e/008.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/e/008.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/o/010.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/o/010.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/i/009.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/i/009.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/o/006.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/o/006.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/a/008.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/a/008.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/u/006.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/u/006.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/u/001.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/u/001.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/a/004.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/a/004.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/i/010.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/i/010.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/u/006.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/u/006.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/o/002.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/o/002.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/e/004.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/e/004.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/u/001.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/u/001.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/a/001.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/a/001.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/u/008.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/u/008.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/a/002.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/a/002.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/i/001.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/i/001.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/a/003.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/a/003.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/u/009.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/u/009.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/i/007.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/i/007.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/u/004.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/u/004.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/o/006.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/o/006.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/e/002.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/e/002.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/u/007.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/u/007.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/e/007.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/e/007.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/i/009.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/i/009.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/e/004.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/e/004.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/o/003.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/o/003.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/o/004.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/o/004.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/o/008.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/o/008.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/i/003.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/i/003.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/e/010.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/e/010.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/u/010.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/u/010.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/e/003.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/e/003.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/e/005.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/e/005.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/o/007.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/o/007.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/u/002.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/u/002.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/u/007.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/u/007.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/i/002.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/i/002.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/u/005.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/u/005.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/o/001.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/o/001.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/e/002.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/e/002.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/i/008.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/i/008.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/u/002.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/u/002.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/a/012.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/a/012.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/e/006.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/e/006.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/a/004.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/a/004.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/i/005.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/i/005.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/u/005.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/u/005.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/i/008.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/i/008.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/i/006.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/i/006.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/o/005.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/o/005.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/u/010.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/u/010.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/i/004.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/i/004.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/o/007.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/o/007.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/a/009.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/a/009.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/a/006.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/a/006.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/e/009.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/e/009.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/o/008.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/o/008.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/a/009.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/a/009.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/e/006.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/e/006.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/e/009.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/e/009.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/i/001.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/i/001.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/o/001.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/o/001.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/i/010.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/i/010.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/u/003.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/u/003.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/i/002.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/i/002.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/a/007.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/a/007.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/i/007.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/i/007.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/o/009.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/o/009.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/e/003.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/e/003.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/a/011.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/a/011.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/i/006.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/i/006.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/e/001.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/e/001.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/a/003.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/a/003.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/a/005.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/a/005.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/e/010.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/e/010.wav",
+            "label": "e"
+          }
+        ]
+      }
+    ],
+    "legacy_test / val": [
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/u/009.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/u/009.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/e/005.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/e/005.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/e/007.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/e/007.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/i/004.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/i/004.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/e/008.wav",
+            "label": "e"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/e/008.wav",
+            "label": "e"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/i/005.wav",
+            "label": "i"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/i/005.wav",
+            "label": "i"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/o/002.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/o/002.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/a/005.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/a/005.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/u/004.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/u/004.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/u/008.wav",
+            "label": "u"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/u/008.wav",
+            "label": "u"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/a/006.wav",
+            "label": "a"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/a/006.wav",
+            "label": "a"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/reon/o/009.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/reon/o/009.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/o/010.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/o/010.wav",
+            "label": "o"
+          }
+        ]
+      },
+      {
+        "a": [
+          {
+            "filepath": "dataset/yu-ota/o/003.wav",
+            "label": "o"
+          }
+        ],
+        "b": [
+          {
+            "filepath": "dataset/yu-ota/o/003.wav",
+            "label": "o"
+          }
+        ]
+      }
+    ],
+    "legacy_test / speakerphone_test": []
+  }
+}

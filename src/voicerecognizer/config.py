@@ -8,6 +8,7 @@ from voicerecognizer.config_labels import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+DEFAULT_SPEAKER_SPLIT_DIR = PROJECT_ROOT / "data_splits/speaker_mixed_balanced_20261004"
 
 
 def load_env(dotenv_path: str | Path | None = None) -> bool:
@@ -105,8 +106,9 @@ class RecognitionConfig:
         "model_fp32.onnx",
         "model.onnx",
     )
-    # Hugging Face 同期対象のファイル一覧（HF容量節約のため ONNX は含めず model.safetensors と設定 JSON のみ）
+    # Hugging Face 同期対象のファイル一覧（高速推論用 ONNX と model.safetensors および設定 JSON）
     wav2vec2_essential_filenames: tuple[str, ...] = (
+        "model_mel_int8.onnx",
         "model.safetensors",
         "labels.json",
         "config.json",

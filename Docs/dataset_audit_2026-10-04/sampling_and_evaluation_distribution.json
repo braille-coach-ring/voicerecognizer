@@ -1,0 +1,91 @@
+{
+  "train_groups": {
+    "known_male": {
+      "files": 3663,
+      "file_share": 0.45576707726763716,
+      "expected_draw_share": 0.4563568019934919
+    },
+    "synthetic_nanami": {
+      "files": 312,
+      "file_share": 0.03882045539380366,
+      "expected_draw_share": 0.03908801863858688
+    },
+    "collected_person_unknown": {
+      "files": 389,
+      "file_share": 0.04840114470573597,
+      "expected_draw_share": 0.04568228778850289
+    },
+    "new_environment": {
+      "files": 44,
+      "file_share": 0.005474679606818465,
+      "expected_draw_share": 0.004360004562553565
+    },
+    "mixed_rinry": {
+      "files": 3629,
+      "file_share": 0.4515366430260047,
+      "expected_draw_share": 0.45451288701686476,
+      "composition": "User-confirmed one female person and multiple male people; per-recording mapping unknown"
+    }
+  },
+  "val_speakers": {
+    "environment": {
+      "samples": 10,
+      "share": 0.006738544474393531
+    },
+    "mikeryu": {
+      "samples": 49,
+      "share": 0.0330188679245283
+    },
+    "r2": {
+      "samples": 208,
+      "share": 0.14016172506738545
+    },
+    "r4": {
+      "samples": 208,
+      "share": 0.14016172506738545
+    },
+    "yumike": {
+      "samples": 1009,
+      "share": 0.6799191374663073
+    }
+  },
+  "test_speakers": {
+    "environment": {
+      "samples": 10,
+      "share": 0.009560229445506692
+    },
+    "r3": {
+      "samples": 208,
+      "share": 0.1988527724665392
+    },
+    "r5": {
+      "samples": 208,
+      "share": 0.1988527724665392
+    },
+    "reon": {
+      "samples": 49,
+      "share": 0.04684512428298279
+    },
+    "take": {
+      "samples": 520,
+      "share": 0.497131931166348
+    },
+    "yu-ota": {
+      "samples": 51,
+      "share": 0.04875717017208413
+    }
+  },
+  "test_speaker_equal_accuracy": {
+    "initial": 0.6848906485671191,
+    "trained": 0.660284729276326
+  },
+  "sampling": "class inverse-square-root weights, replacement=True, draws=8037 per epoch; no speaker balancing",
+  "sampling_counts_are": "expected shares; actual per-file draws were not logged",
+  "expected_unique_audio_seen": {
+    "1": 5076.482689992922,
+    "3": 7631.492067721487,
+    "8": 8033.95563857304
+  },
+  "gender_breakdown_status": "unresolved; previous classification of all Rinry as female withdrawn",
+  "test_speaker_equal_accuracy_interpretation": "Reference only: mixes five-vowel and broad-syllable tasks; not the new primary metric"
+}

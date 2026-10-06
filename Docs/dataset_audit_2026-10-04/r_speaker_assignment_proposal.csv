@@ -1,0 +1,11 @@
+﻿speaker_id,sex,proposed_split,files,labels
+r2,male,val,208,104
+r4,male,val,208,104
+r5,male,test,208,104
+r3,male,test,208,104
+r1,male,train,208,104
+r10,male,train,312,104
+r6,male,train,208,104
+r7,male,train,208,104
+r8,male,train,307,103
+r9,male,train,309,103

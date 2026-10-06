@@ -1,0 +1,61 @@
+{
+  "updated_at": "2026-10-04",
+  "rinry": {
+    "kind": "mixed_collection_group",
+    "female_people": 1,
+    "male_people": "multiple; exact count unknown",
+    "per_recording_person_mapping": "unresolved",
+    "gender_per_recording": "unresolved",
+    "source": "User directed 2026-10-04: Treat as multi-speaker general pool distributed across Train/Val/Test to evaluate overall accuracy and avoid 2-speaker overfitting in Val",
+    "partition_policy": "distributed (80/10/10 stratified)"
+  },
+  "r1_to_r10": {
+    "kind": "user_confirmed_distinct_person_ids",
+    "gender": "male",
+    "distinct_within_group": true,
+    "alias_relationship_to_legacy_people": "unverified",
+    "train": ["r1", "r6", "r7", "r8", "r9", "r10"],
+    "val": ["r2", "r4"],
+    "test": ["r3", "r5"],
+    "source": "User confirmed r IDs identify speakers, all male, and selected the 6/2/2 partition"
+  },
+  "legacy_partition_to_preserve": {
+    "train_collection_ids": ["rikutomike", "haruyamike", "rikuto", "ryu"],
+    "val_ids": ["yumike", "mikeryu"],
+    "test_ids": ["take", "reon", "yu-ota"],
+    "take": "Existing real female voice regression cohort; broad syllable coverage",
+    "reon_and_yu_ota": "Five-vowel regression cohorts; not broad-syllable task equivalents",
+    "legacy_alias_relationships": "not fully verified"
+  },
+  "collected": {
+    "kind": "collection_or_device_group",
+    "per_recording_person_mapping": "unresolved",
+    "gender_per_recording": "unresolved",
+    "source": "User directed 2026-10-04: Treat as multi-speaker/environment general pool distributed across Train/Val/Test to evaluate overall accuracy and avoid 2-speaker overfitting in Val",
+    "partition_policy": "distributed (80/10/10 stratified)"
+  },
+  "tts_nanami": {
+    "kind": "synthetic_voice",
+    "is_real_female_speaker_evaluation": false,
+    "current_partition": "train"
+  },
+  "environment": {
+    "kind": "recording_group_not_person",
+    "current_holdout": "Stratified across splits; other rejection and false refusal monitored separately"
+  },
+  "device_priority": {
+    "deployment_device": "speakerphone",
+    "priority": "Speakerphone generalization is more valuable; report other-device regressions separately",
+    "source": "User stated deployment device changed to speakerphone on 2026-10-04",
+    "user_confirmed_speakerphone_groups": ["take", "r speakers", "recent Rinry recordings"],
+    "device_source": "User: takeとrinryの最近のやつとr話者らへんがスピーカーフォン",
+    "speakerphone_val_candidates": ["r2", "r4"],
+    "speakerphone_test_candidates": ["take", "r3", "r5"],
+    "dual_evaluation_policy": "Val monitors both General Balanced Accuracy / Macro-F1 (preventing 2-speaker overfitting) and Unseen Speakerphone BA (r2/r4)",
+    "training_weight": "default device loss coefficient 1; increases remain experimental",
+    "current_execution_policy": "Fresh fine-tuning from facebook/wav2vec2-base on cleaned multi-speaker pool, dual-pillar validation (general + unseen), lower transformer layers frozen"
+  },
+  "active_split_dir": "data_splits/speaker_mixed_balanced_20261004",
+  "person_level_disjointness_verified": false,
+  "reason": "Rinry and collected are intentionally treated as multi-speaker general validation/test pools; fixed speaker groups (r1-r10, take, yumike, mikeryu, etc.) maintain 100% disjointness."
+}

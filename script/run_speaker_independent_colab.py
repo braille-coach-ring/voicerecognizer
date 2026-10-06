@@ -12,7 +12,7 @@ from pathlib import Path
 
 from script.compare_speaker_independent import audit_splits
 from script.evaluate_speaker_independent import hash_file
-from voicerecognizer.config import PROJECT_ROOT
+from voicerecognizer.config import DEFAULT_SPEAKER_SPLIT_DIR, PROJECT_ROOT
 
 
 def wsl_path(path: Path) -> str:
@@ -49,8 +49,8 @@ def colab(
     return result
 
 
-def package_inputs(initial_model: Path, staging: Path) -> Path:
-    splits = PROJECT_ROOT / "data_splits/speaker_independent"
+def package_inputs(initial_model: Path, staging: Path, splits: Path | None = None) -> Path:
+    splits = splits or DEFAULT_SPEAKER_SPLIT_DIR
     summary = audit_splits(splits)
     staging.mkdir(parents=True, exist_ok=True)
     archive = staging / "inputs.tar.gz"
@@ -74,7 +74,7 @@ def package_inputs(initial_model: Path, staging: Path) -> Path:
             ],
             text=True,
         ).strip(),
-        "model_source": "read-only snapshot of user cache; historical data provenance unverified",
+        "model_source": f"read-only snapshot of {initial_model}; historical data provenance unverified",
         "initial_model_sha256": hash_file(initial_model / "model.safetensors"),
     }
     capture = staging / "bundle_manifest.json"
@@ -93,7 +93,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--initial-model", type=Path, required=True)
     parser.add_argument("--session", default="vr-si-" + time.strftime("%Y%m%d-%H%M%S"))
-    parser.add_argument("--epochs", type=int, default=15)
+    parser.add_argument("--epochs", type=int, default=30)
+    parser.add_argument("--patience", type=int, default=6)
+    parser.add_argument("--learning-rate", type=float, default=4e-5)
+    parser.add_argument("--split-dir", type=Path, default=DEFAULT_SPEAKER_SPLIT_DIR)
+    parser.add_argument(
+        "--runs",
+        nargs="+",
+        choices=("fresh", "warm_start", "phoneme_multi"),
+        default=["fresh", "warm_start", "phoneme_multi"],
+    )
     parser.add_argument(
         "--download-models",
         action="store_true",
@@ -104,7 +113,9 @@ def main():
     staging.relative_to((PROJECT_ROOT / "experiments").resolve())
     if staging.exists():
         raise FileExistsError("Use a new session name; saved experiments are never overwritten")
-    archive = package_inputs(args.initial_model.resolve(), staging)
+    args.split_dir = args.split_dir.resolve()
+    args.split_dir.relative_to(PROJECT_ROOT.resolve())
+    archive = package_inputs(args.initial_model.resolve(), staging, args.split_dir)
     remote_root = "/content/voicerecognizer-review"
     dependencies = [
         f"{name}=={importlib.metadata.version(name)}"
@@ -123,7 +134,7 @@ def main():
     try:
         chunks: list[Path] = []
         with archive.open("rb") as stream:
-            while block := stream.read(2 * 1024 * 1024):
+            while block := stream.read(16 * 1024 * 1024):
                 path = staging / f"input-{len(chunks):04d}.part"
                 path.write_bytes(block)
                 chunks.append(path)
@@ -169,6 +180,10 @@ command = [
     '--initial-model', str(project / 'experiments/initial'),
     '--output-dir', str(project / 'experiments/comparison'),
     '--epochs', {str(args.epochs)!r},
+    '--learning-rate', {str(args.learning_rate)!r},
+    '--patience', {str(args.patience)!r},
+    '--split-dir', str(project / {args.split_dir.relative_to(PROJECT_ROOT).as_posix()!r}),
+    '--runs', *{args.runs!r},
 ]
 worker = (
     "import subprocess, pathlib; "
@@ -182,6 +197,7 @@ print('Started comparison worker:', process.pid)
 """
         colab(args.session, ["exec", "--timeout", "900"], code=setup, timeout=1000)
         deadline = time.monotonic() + 14400
+        consecutive_errors = 0
         while True:
             snapshot = f"""
 import pathlib, tarfile, json
@@ -209,19 +225,37 @@ with tarfile.open('/content/progress.tar.gz', 'w:gz') as bundle:
             bundle.add(path, arcname=path.relative_to(project).as_posix())
 print('COMPARISON_STATUS=' + json.dumps(status))
 """
-            result = colab(args.session, ["exec", "--timeout", "60"], code=snapshot, timeout=120)
-            statuses = [
-                line for line in result.stdout.splitlines() if line.startswith("COMPARISON_STATUS=")
-            ]
-            if not statuses:
-                raise RuntimeError("Comparison status missing; session may have been lost")
-            status = json.loads(statuses[-1].split("=", 1)[1])
-            colab(
-                args.session,
-                ["download", "/content/progress.tar.gz", wsl_path(staging / "progress.tar.gz")],
-            )
-            with tarfile.open(staging / "progress.tar.gz") as bundle:
-                bundle.extractall(staging / "progress", filter="data")
+            try:
+                result = colab(
+                    args.session, ["exec", "--timeout", "120"], code=snapshot, timeout=300, check=False
+                )
+                statuses = [
+                    line for line in result.stdout.splitlines() if line.startswith("COMPARISON_STATUS=")
+                ]
+                if not statuses:
+                    raise RuntimeError("Comparison status missing")
+                status = json.loads(statuses[-1].split("=", 1)[1])
+                colab(
+                    args.session,
+                    ["download", "/content/progress.tar.gz", wsl_path(staging / "progress.tar.gz")],
+                    check=False,
+                )
+                progress_archive = staging / "progress.tar.gz"
+                if progress_archive.exists():
+                    try:
+                        with tarfile.open(progress_archive) as bundle:
+                            bundle.extractall(staging / "progress", filter="data")
+                    except Exception:
+                        pass
+                consecutive_errors = 0
+            except Exception as exc:
+                consecutive_errors += 1
+                print(f"[Warning] Polling snapshot failed ({consecutive_errors}/5): {exc}")
+                if consecutive_errors >= 5:
+                    raise
+                time.sleep(30)
+                continue
+
             if status["exit_code"] is not None:
                 if status["exit_code"]:
                     raise RuntimeError(
@@ -230,7 +264,7 @@ print('COMPARISON_STATUS=' + json.dumps(status))
                 break
             if time.monotonic() >= deadline:
                 raise TimeoutError("Comparison exceeded four hours; partial results retained")
-            time.sleep(300)
+            time.sleep(60)
 
     finally:
         collect = f"""

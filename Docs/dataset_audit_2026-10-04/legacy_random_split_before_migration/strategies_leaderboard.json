@@ -1,0 +1,95 @@
+{
+  "strategies": {
+    "wav2vec2_baseline": {
+      "strategy_name": "wav2vec2_baseline",
+      "display_name": "Wav2Vec2 Baseline",
+      "category": "Baseline",
+      "status": "active",
+      "general_val_acc": 92.85,
+      "speakerphone_test_acc": 90.38,
+      "female_test_acc": 67.31,
+      "latency_ms": 70.1,
+      "model_size_mb": 116.6,
+      "evaluated_at": "2026-10-02 23:56:41",
+      "notes": "Standard facebook/wav2vec2-base fine-tuned on single morae without distillation."
+    },
+    "wav2vec2_ipa_kd": {
+      "strategy_name": "wav2vec2_ipa_kd",
+      "display_name": "Wav2Vec2 + XLS-R IPA Distillation",
+      "category": "Knowledge Distillation",
+      "status": "active",
+      "general_val_acc": 90.24,
+      "speakerphone_test_acc": 89.1,
+      "female_test_acc": 71.15,
+      "latency_ms": 44.57,
+      "model_size_mb": 116.6,
+      "evaluated_at": "2026-10-03 09:38:52",
+      "notes": "Knowledge distillation using facebook/wav2vec2-xlsr-53-espeak-cv-ft frame phoneme posteriors."
+    },
+    "wav2vec2_whisper_kd": {
+      "strategy_name": "wav2vec2_whisper_kd",
+      "display_name": "Wav2Vec2 + Whisper-large-v3 Feature KD",
+      "category": "Knowledge Distillation",
+      "status": "active",
+      "general_val_acc": 90.09,
+      "speakerphone_test_acc": 87.82,
+      "female_test_acc": 63.46,
+      "latency_ms": 40.8,
+      "model_size_mb": 116.6,
+      "evaluated_at": "2026-10-03 11:23:01",
+      "notes": "Intermediate hidden representation alignment from robust Whisper-large-v3 encoder."
+    },
+    "wav2vec2_phoneme_multi": {
+      "strategy_name": "wav2vec2_phoneme_multi",
+      "display_name": "Wav2Vec2 Consonant/Vowel Multi-Task",
+      "category": "Representation & Loss",
+      "status": "active",
+      "general_val_acc": 90.31,
+      "speakerphone_test_acc": 88.46,
+      "female_test_acc": 76.92,
+      "latency_ms": 41.29,
+      "model_size_mb": 116.6,
+      "evaluated_at": "2026-10-03 11:51:50",
+      "notes": "Joint multi-task prediction of Character (105) + Consonant (16) + Vowel (5)."
+    },
+    "wav2vec2_arcface": {
+      "strategy_name": "wav2vec2_arcface",
+      "display_name": "Wav2Vec2 + ArcFace Angular Margin",
+      "category": "Representation & Loss",
+      "status": "active",
+      "general_val_acc": 24.89,
+      "speakerphone_test_acc": 11.54,
+      "female_test_acc": 9.62,
+      "latency_ms": 50.43,
+      "model_size_mb": 116.5,
+      "evaluated_at": "2026-10-03 13:13:23",
+      "notes": "Additive Angular Margin Loss to strictly separate acoustically close phoneme pairs."
+    },
+    "wav2vec2_phoneme_ipa_hybrid": {
+      "strategy_name": "wav2vec2_phoneme_ipa_hybrid",
+      "display_name": "Wav2Vec2 Phoneme Multi-Task + IPA KD Hybrid",
+      "category": "Representation & Loss",
+      "status": "implemented",
+      "general_val_acc": 87.48,
+      "speakerphone_test_acc": 85.9,
+      "female_test_acc": 59.62,
+      "latency_ms": 71.44,
+      "model_size_mb": 116.6,
+      "evaluated_at": "2026-10-03 13:55:20",
+      "notes": "Joint multi-task consonant/vowel decomposition with XLS-R IPA soft-target distillation."
+    },
+    "wav2vec2_rir_simulation": {
+      "strategy_name": "wav2vec2_rir_simulation",
+      "display_name": "Wav2Vec2 + RIR & Mic Simulation",
+      "category": "Acoustic Augmentation",
+      "status": "active",
+      "general_val_acc": 89.2,
+      "speakerphone_test_acc": 85.26,
+      "female_test_acc": 69.23,
+      "latency_ms": 44.21,
+      "model_size_mb": 116.6,
+      "evaluated_at": "2026-10-03 14:21:40",
+      "notes": "Room impulse response convolution (RT60 0.1-0.6s) and dynamic microphone distortion simulation."
+    }
+  }
+}

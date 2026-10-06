@@ -1,0 +1,3786 @@
+{
+  "version": 1,
+  "updated_at": "2026-10-04T07:49:51.401742+00:00",
+  "decisions": [
+    {
+      "filepath": "dataset/r1/a/001.wav",
+      "label": "a",
+      "prediction": "",
+      "confidence": null,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T06:56:03.214Z"
+    },
+    {
+      "filepath": "dataset/r1/a/002.wav",
+      "label": "a",
+      "prediction": "",
+      "confidence": null,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T06:56:05.520Z"
+    },
+    {
+      "filepath": "dataset/r8/pa/001.wav",
+      "label": "pa",
+      "prediction": "a",
+      "confidence": 0.9981333613395691,
+      "decision": "relabel",
+      "new_label": "a",
+      "decided_at": "2026-10-04T07:02:40.742Z"
+    },
+    {
+      "filepath": "dataset/r9/bi/002.wav",
+      "label": "bi",
+      "prediction": "i",
+      "confidence": 0.9978078007698059,
+      "decision": "relabel",
+      "new_label": "i",
+      "decided_at": "2026-10-04T07:02:56.245Z"
+    },
+    {
+      "filepath": "dataset/r9/gi/002.wav",
+      "label": "gi",
+      "prediction": "i",
+      "confidence": 0.997211754322052,
+      "decision": "relabel",
+      "new_label": "i",
+      "decided_at": "2026-10-04T07:02:57.556Z"
+    },
+    {
+      "filepath": "dataset/r7/n/001.wav",
+      "label": "n",
+      "prediction": "u",
+      "confidence": 0.997090220451355,
+      "decision": "relabel",
+      "new_label": "u",
+      "decided_at": "2026-10-04T07:03:03.245Z"
+    },
+    {
+      "filepath": "dataset/r8/ki/003.wav",
+      "label": "ki",
+      "prediction": "i",
+      "confidence": 0.9966088533401489,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:03:15.633Z"
+    },
+    {
+      "filepath": "dataset/r9/ri/003.wav",
+      "label": "ri",
+      "prediction": "i",
+      "confidence": 0.9964019060134888,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:03:18.233Z"
+    },
+    {
+      "filepath": "dataset/r9/pi/002.wav",
+      "label": "pi",
+      "prediction": "i",
+      "confidence": 0.9963615536689758,
+      "decision": "relabel",
+      "new_label": "ri",
+      "decided_at": "2026-10-04T07:03:25.206Z"
+    },
+    {
+      "filepath": "dataset/r10/po/001.wav",
+      "label": "po",
+      "prediction": "o",
+      "confidence": 0.9959656000137329,
+      "decision": "relabel",
+      "new_label": "o",
+      "decided_at": "2026-10-04T07:03:31.743Z"
+    },
+    {
+      "filepath": "dataset/r6/do/002.wav",
+      "label": "do",
+      "prediction": "zo",
+      "confidence": 0.9958915710449219,
+      "decision": "relabel",
+      "new_label": "zo",
+      "decided_at": "2026-10-04T07:03:40.044Z"
+    },
+    {
+      "filepath": "dataset/r2/sa/001.wav",
+      "label": "sa",
+      "prediction": "so",
+      "confidence": 0.9956133365631104,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:03:46.110Z"
+    },
+    {
+      "filepath": "dataset/r5/za/002.wav",
+      "label": "za",
+      "prediction": "zo",
+      "confidence": 0.7375556826591492,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:05:38.015Z"
+    },
+    {
+      "filepath": "dataset/r6/pyo/002.wav",
+      "label": "pyo",
+      "prediction": "ryo",
+      "confidence": 0.7365928292274475,
+      "decision": "relabel",
+      "new_label": "ryo",
+      "decided_at": "2026-10-04T07:05:56.319Z"
+    },
+    {
+      "filepath": "dataset/r10/ho/003.wav",
+      "label": "ho",
+      "prediction": "o",
+      "confidence": 0.9936350584030151,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:06:30.613Z"
+    },
+    {
+      "filepath": "dataset/r2/ko/002.wav",
+      "label": "ko",
+      "prediction": "o",
+      "confidence": 0.993493378162384,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:06:32.226Z"
+    },
+    {
+      "filepath": "dataset/r8/po/003.wav",
+      "label": "po",
+      "prediction": "o",
+      "confidence": 0.993412435054779,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:06:37.709Z"
+    },
+    {
+      "filepath": "dataset/r3/ko/002.wav",
+      "label": "ko",
+      "prediction": "go",
+      "confidence": 0.9931504130363464,
+      "decision": "relabel",
+      "new_label": "go",
+      "decided_at": "2026-10-04T07:06:41.188Z"
+    },
+    {
+      "filepath": "dataset/r10/bo/001.wav",
+      "label": "bo",
+      "prediction": "o",
+      "confidence": 0.9930602312088013,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:06:44.387Z"
+    },
+    {
+      "filepath": "dataset/r10/pu/001.wav",
+      "label": "pu",
+      "prediction": "u",
+      "confidence": 0.992841362953186,
+      "decision": "relabel",
+      "new_label": "u",
+      "decided_at": "2026-10-04T07:06:54.159Z"
+    },
+    {
+      "filepath": "dataset/r7/bi/002.wav",
+      "label": "bi",
+      "prediction": "i",
+      "confidence": 0.9927248954772949,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:07:01.753Z"
+    },
+    {
+      "filepath": "dataset/r3/pe/002.wav",
+      "label": "pe",
+      "prediction": "be",
+      "confidence": 0.9926447868347168,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:07:03.100Z"
+    },
+    {
+      "filepath": "dataset/r6/ha/002.wav",
+      "label": "ha",
+      "prediction": "ka",
+      "confidence": 0.9924787282943726,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:07:08.316Z"
+    },
+    {
+      "filepath": "dataset/r10/ho/001.wav",
+      "label": "ho",
+      "prediction": "o",
+      "confidence": 0.991827130317688,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:07:10.327Z"
+    },
+    {
+      "filepath": "dataset/r5/bi/001.wav",
+      "label": "bi",
+      "prediction": "i",
+      "confidence": 0.9917513728141785,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:07:13.866Z"
+    },
+    {
+      "filepath": "dataset/r5/ho/001.wav",
+      "label": "ho",
+      "prediction": "o",
+      "confidence": 0.9915436506271362,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:07:16.080Z"
+    },
+    {
+      "filepath": "dataset/r9/ki/002.wav",
+      "label": "ki",
+      "prediction": "i",
+      "confidence": 0.9914299845695496,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:07:17.448Z"
+    },
+    {
+      "filepath": "dataset/r9/go/003.wav",
+      "label": "go",
+      "prediction": "o",
+      "confidence": 0.991375744342804,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:07:18.708Z"
+    },
+    {
+      "filepath": "dataset/r4/wo/001.wav",
+      "label": "wo",
+      "prediction": "o",
+      "confidence": 0.9909572601318359,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:07:20.814Z"
+    },
+    {
+      "filepath": "dataset/r2/sa/002.wav",
+      "label": "sa",
+      "prediction": "so",
+      "confidence": 0.9907757639884949,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:07:22.589Z"
+    },
+    {
+      "filepath": "dataset/r2/ra/001.wav",
+      "label": "ra",
+      "prediction": "na",
+      "confidence": 0.990616500377655,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:07:36.531Z"
+    },
+    {
+      "filepath": "dataset/r9/byu/002.wav",
+      "label": "byu",
+      "prediction": "yu",
+      "confidence": 0.9905809760093689,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:07:38.546Z"
+    },
+    {
+      "filepath": "dataset/r2/n/002.wav",
+      "label": "n",
+      "prediction": "u",
+      "confidence": 0.9903438091278076,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:07:44.305Z"
+    },
+    {
+      "filepath": "dataset/r9/to/001.wav",
+      "label": "to",
+      "prediction": "o",
+      "confidence": 0.9903469681739807,
+      "decision": "relabel",
+      "new_label": "o",
+      "decided_at": "2026-10-04T07:07:49.062Z"
+    },
+    {
+      "filepath": "dataset/r9/sa/001.wav",
+      "label": "sa",
+      "prediction": "ta",
+      "confidence": 0.9903083443641663,
+      "decision": "relabel",
+      "new_label": "a",
+      "decided_at": "2026-10-04T07:08:05.809Z"
+    },
+    {
+      "filepath": "dataset/r7/pi/002.wav",
+      "label": "pi",
+      "prediction": "hi",
+      "confidence": 0.9902588129043579,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:08.945Z"
+    },
+    {
+      "filepath": "dataset/r5/ge/001.wav",
+      "label": "ge",
+      "prediction": "gyu",
+      "confidence": 0.9901909828186035,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:13.059Z"
+    },
+    {
+      "filepath": "dataset/r5/ho/002.wav",
+      "label": "ho",
+      "prediction": "o",
+      "confidence": 0.9898841381072998,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:14.057Z"
+    },
+    {
+      "filepath": "dataset/r10/rya/002.wav",
+      "label": "rya",
+      "prediction": "gya",
+      "confidence": 0.9894423484802246,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:15.031Z"
+    },
+    {
+      "filepath": "dataset/r9/re/003.wav",
+      "label": "re",
+      "prediction": "e",
+      "confidence": 0.9892549514770508,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:16.001Z"
+    },
+    {
+      "filepath": "dataset/r5/se/002.wav",
+      "label": "se",
+      "prediction": "chu",
+      "confidence": 0.9887751340866089,
+      "decision": "relabel",
+      "new_label": "chu",
+      "decided_at": "2026-10-04T07:08:26.926Z"
+    },
+    {
+      "filepath": "dataset/r7/da/001.wav",
+      "label": "da",
+      "prediction": "na",
+      "confidence": 0.9886349439620972,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:30.587Z"
+    },
+    {
+      "filepath": "dataset/r5/n/001.wav",
+      "label": "n",
+      "prediction": "i",
+      "confidence": 0.9886214137077332,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:31.918Z"
+    },
+    {
+      "filepath": "dataset/r8/he/003.wav",
+      "label": "he",
+      "prediction": "e",
+      "confidence": 0.9883090257644653,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:32.872Z"
+    },
+    {
+      "filepath": "dataset/r5/n/002.wav",
+      "label": "n",
+      "prediction": "i",
+      "confidence": 0.9882136583328247,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:33.799Z"
+    },
+    {
+      "filepath": "dataset/r9/to/003.wav",
+      "label": "to",
+      "prediction": "o",
+      "confidence": 0.9878479242324829,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:35.005Z"
+    },
+    {
+      "filepath": "dataset/r9/bo/001.wav",
+      "label": "bo",
+      "prediction": "o",
+      "confidence": 0.9870833158493042,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:36.144Z"
+    },
+    {
+      "filepath": "dataset/r1/pi/001.wav",
+      "label": "pi",
+      "prediction": "i",
+      "confidence": 0.9870614409446716,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:36.923Z"
+    },
+    {
+      "filepath": "dataset/r3/pya/002.wav",
+      "label": "pya",
+      "prediction": "bya",
+      "confidence": 0.9866856336593628,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:37.812Z"
+    },
+    {
+      "filepath": "dataset/r3/ho/001.wav",
+      "label": "ho",
+      "prediction": "o",
+      "confidence": 0.9865334033966064,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:38.924Z"
+    },
+    {
+      "filepath": "dataset/r10/he/003.wav",
+      "label": "he",
+      "prediction": "e",
+      "confidence": 0.9864012598991394,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:40.064Z"
+    },
+    {
+      "filepath": "dataset/r5/myu/002.wav",
+      "label": "myu",
+      "prediction": "byu",
+      "confidence": 0.986384928226471,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:41.105Z"
+    },
+    {
+      "filepath": "dataset/r2/ra/002.wav",
+      "label": "ra",
+      "prediction": "na",
+      "confidence": 0.986323893070221,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:46.679Z"
+    },
+    {
+      "filepath": "dataset/r10/me/002.wav",
+      "label": "me",
+      "prediction": "ne",
+      "confidence": 0.9862999320030212,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:48.480Z"
+    },
+    {
+      "filepath": "dataset/r1/ho/002.wav",
+      "label": "ho",
+      "prediction": "o",
+      "confidence": 0.9861241579055786,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:49.314Z"
+    },
+    {
+      "filepath": "dataset/r10/chu/001.wav",
+      "label": "chu",
+      "prediction": "shu",
+      "confidence": 0.9859224557876587,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:52.501Z"
+    },
+    {
+      "filepath": "dataset/r2/po/002.wav",
+      "label": "po",
+      "prediction": "to",
+      "confidence": 0.9857783317565918,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:53.434Z"
+    },
+    {
+      "filepath": "dataset/r10/he/002.wav",
+      "label": "he",
+      "prediction": "e",
+      "confidence": 0.9853429794311523,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:54.221Z"
+    },
+    {
+      "filepath": "dataset/r7/de/002.wav",
+      "label": "de",
+      "prediction": "be",
+      "confidence": 0.9853371977806091,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:54.924Z"
+    },
+    {
+      "filepath": "dataset/r9/go/001.wav",
+      "label": "go",
+      "prediction": "o",
+      "confidence": 0.9852260947227478,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:55.648Z"
+    },
+    {
+      "filepath": "dataset/r10/he/001.wav",
+      "label": "he",
+      "prediction": "e",
+      "confidence": 0.9852107167243958,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:56.336Z"
+    },
+    {
+      "filepath": "dataset/r9/ta/001.wav",
+      "label": "ta",
+      "prediction": "a",
+      "confidence": 0.9850038290023804,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:57.126Z"
+    },
+    {
+      "filepath": "dataset/r7/pa/001.wav",
+      "label": "pa",
+      "prediction": "ha",
+      "confidence": 0.9848355054855347,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:58.830Z"
+    },
+    {
+      "filepath": "dataset/r8/ha/001.wav",
+      "label": "ha",
+      "prediction": "a",
+      "confidence": 0.9847255349159241,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:08:59.726Z"
+    },
+    {
+      "filepath": "dataset/r7/cha/001.wav",
+      "label": "cha",
+      "prediction": "sho",
+      "confidence": 0.9846226572990417,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:00.820Z"
+    },
+    {
+      "filepath": "dataset/r1/nu/002.wav",
+      "label": "nu",
+      "prediction": "u",
+      "confidence": 0.9846140146255493,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:03.804Z"
+    },
+    {
+      "filepath": "dataset/r8/de/001.wav",
+      "label": "de",
+      "prediction": "ze",
+      "confidence": 0.9841667413711548,
+      "decision": "relabel",
+      "new_label": "ze",
+      "decided_at": "2026-10-04T07:09:21.404Z"
+    },
+    {
+      "filepath": "dataset/r10/pe/002.wav",
+      "label": "pe",
+      "prediction": "e",
+      "confidence": 0.9839475154876709,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:22.571Z"
+    },
+    {
+      "filepath": "dataset/r9/bo/002.wav",
+      "label": "bo",
+      "prediction": "o",
+      "confidence": 0.983772337436676,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:23.731Z"
+    },
+    {
+      "filepath": "dataset/r3/sa/002.wav",
+      "label": "sa",
+      "prediction": "so",
+      "confidence": 0.9837468266487122,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:24.671Z"
+    },
+    {
+      "filepath": "dataset/r9/mu/001.wav",
+      "label": "mu",
+      "prediction": "nu",
+      "confidence": 0.9835611581802368,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:25.912Z"
+    },
+    {
+      "filepath": "dataset/r8/hyo/001.wav",
+      "label": "hyo",
+      "prediction": "sho",
+      "confidence": 0.9826792478561401,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:27.201Z"
+    },
+    {
+      "filepath": "dataset/r2/ji/001.wav",
+      "label": "ji",
+      "prediction": "gi",
+      "confidence": 0.9820035099983215,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:28.225Z"
+    },
+    {
+      "filepath": "dataset/r10/chi/001.wav",
+      "label": "chi",
+      "prediction": "shi",
+      "confidence": 0.9813758134841919,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:31.262Z"
+    },
+    {
+      "filepath": "dataset/r10/pya/002.wav",
+      "label": "pya",
+      "prediction": "hya",
+      "confidence": 0.9811198115348816,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:32.214Z"
+    },
+    {
+      "filepath": "dataset/r9/ko/001.wav",
+      "label": "ko",
+      "prediction": "o",
+      "confidence": 0.9801441431045532,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:33.105Z"
+    },
+    {
+      "filepath": "dataset/r4/kyo/001.wav",
+      "label": "kyo",
+      "prediction": "hyo",
+      "confidence": 0.9796735048294067,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:34.095Z"
+    },
+    {
+      "filepath": "dataset/r6/nu/001.wav",
+      "label": "nu",
+      "prediction": "mu",
+      "confidence": 0.9790984392166138,
+      "decision": "other",
+      "new_label": "other",
+      "decided_at": "2026-10-04T07:09:37.709Z"
+    },
+    {
+      "filepath": "dataset/r10/byo/001.wav",
+      "label": "byo",
+      "prediction": "yo",
+      "confidence": 0.9782775640487671,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:40.581Z"
+    },
+    {
+      "filepath": "dataset/r7/re/001.wav",
+      "label": "re",
+      "prediction": "e",
+      "confidence": 0.9781604409217834,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:41.506Z"
+    },
+    {
+      "filepath": "dataset/r4/gya/002.wav",
+      "label": "gya",
+      "prediction": "kya",
+      "confidence": 0.978150486946106,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:42.711Z"
+    },
+    {
+      "filepath": "dataset/r8/hyu/002.wav",
+      "label": "hyu",
+      "prediction": "shu",
+      "confidence": 0.9780638217926025,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:43.512Z"
+    },
+    {
+      "filepath": "dataset/r9/gu/003.wav",
+      "label": "gu",
+      "prediction": "u",
+      "confidence": 0.9773383140563965,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:44.374Z"
+    },
+    {
+      "filepath": "dataset/r8/bo/001.wav",
+      "label": "bo",
+      "prediction": "o",
+      "confidence": 0.9766573905944824,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:45.141Z"
+    },
+    {
+      "filepath": "dataset/r9/pi/003.wav",
+      "label": "pi",
+      "prediction": "bi",
+      "confidence": 0.9753039479255676,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:45.940Z"
+    },
+    {
+      "filepath": "dataset/r9/bo/003.wav",
+      "label": "bo",
+      "prediction": "o",
+      "confidence": 0.9750422239303589,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:46.737Z"
+    },
+    {
+      "filepath": "dataset/r9/kyo/001.wav",
+      "label": "kyo",
+      "prediction": "gyo",
+      "confidence": 0.974997341632843,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:48.214Z"
+    },
+    {
+      "filepath": "dataset/r10/ni/003.wav",
+      "label": "ni",
+      "prediction": "i",
+      "confidence": 0.9748607873916626,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:50.145Z"
+    },
+    {
+      "filepath": "dataset/r10/re/001.wav",
+      "label": "re",
+      "prediction": "be",
+      "confidence": 0.9748237729072571,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:09:51.005Z"
+    },
+    {
+      "filepath": "dataset/r8/de/002.wav",
+      "label": "de",
+      "prediction": "ze",
+      "confidence": 0.9745908975601196,
+      "decision": "relabel",
+      "new_label": "ze",
+      "decided_at": "2026-10-04T07:09:52.818Z"
+    },
+    {
+      "filepath": "dataset/r3/pu/001.wav",
+      "label": "pu",
+      "prediction": "u",
+      "confidence": 0.9741010069847107,
+      "decision": "relabel",
+      "new_label": "bu",
+      "decided_at": "2026-10-04T07:10:04.124Z"
+    },
+    {
+      "filepath": "dataset/r8/ha/002.wav",
+      "label": "ha",
+      "prediction": "a",
+      "confidence": 0.9737242460250854,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:06.392Z"
+    },
+    {
+      "filepath": "dataset/r8/wo/002.wav",
+      "label": "wo",
+      "prediction": "o",
+      "confidence": 0.9735702276229858,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:07.285Z"
+    },
+    {
+      "filepath": "dataset/r3/bya/002.wav",
+      "label": "bya",
+      "prediction": "byu",
+      "confidence": 0.9729252457618713,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:08.262Z"
+    },
+    {
+      "filepath": "dataset/r5/ko/002.wav",
+      "label": "ko",
+      "prediction": "o",
+      "confidence": 0.9728189706802368,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:08.995Z"
+    },
+    {
+      "filepath": "dataset/r5/yo/001.wav",
+      "label": "yo",
+      "prediction": "gyo",
+      "confidence": 0.9727182984352112,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:09.772Z"
+    },
+    {
+      "filepath": "dataset/r3/ri/002.wav",
+      "label": "ri",
+      "prediction": "bi",
+      "confidence": 0.9721450805664062,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:10.595Z"
+    },
+    {
+      "filepath": "dataset/r7/ba/001.wav",
+      "label": "ba",
+      "prediction": "ma",
+      "confidence": 0.9719743132591248,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:11.416Z"
+    },
+    {
+      "filepath": "dataset/r5/pya/002.wav",
+      "label": "pya",
+      "prediction": "pyo",
+      "confidence": 0.9717485904693604,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:12.281Z"
+    },
+    {
+      "filepath": "dataset/r3/myo/002.wav",
+      "label": "myo",
+      "prediction": "ryo",
+      "confidence": 0.9708611369132996,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:13.192Z"
+    },
+    {
+      "filepath": "dataset/r10/cho/001.wav",
+      "label": "cho",
+      "prediction": "jo",
+      "confidence": 0.9707618951797485,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:13.954Z"
+    },
+    {
+      "filepath": "dataset/r6/da/002.wav",
+      "label": "da",
+      "prediction": "za",
+      "confidence": 0.9700415730476379,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:20.322Z"
+    },
+    {
+      "filepath": "dataset/r6/to/002.wav",
+      "label": "to",
+      "prediction": "sa",
+      "confidence": 0.9693369269371033,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:21.819Z"
+    },
+    {
+      "filepath": "dataset/r2/hyu/002.wav",
+      "label": "hyu",
+      "prediction": "shu",
+      "confidence": 0.9690799713134766,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:23.671Z"
+    },
+    {
+      "filepath": "dataset/r10/ru/003.wav",
+      "label": "ru",
+      "prediction": "i",
+      "confidence": 0.9689323902130127,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:24.594Z"
+    },
+    {
+      "filepath": "dataset/r1/myu/001.wav",
+      "label": "myu",
+      "prediction": "byu",
+      "confidence": 0.9684813618659973,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:26.357Z"
+    },
+    {
+      "filepath": "dataset/r8/pe/001.wav",
+      "label": "pe",
+      "prediction": "e",
+      "confidence": 0.9682307839393616,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:28.199Z"
+    },
+    {
+      "filepath": "dataset/r9/pyu/002.wav",
+      "label": "pyu",
+      "prediction": "byu",
+      "confidence": 0.9682014584541321,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:29.055Z"
+    },
+    {
+      "filepath": "dataset/r9/n/001.wav",
+      "label": "n",
+      "prediction": "u",
+      "confidence": 0.9680667519569397,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:31.180Z"
+    },
+    {
+      "filepath": "dataset/r7/da/002.wav",
+      "label": "da",
+      "prediction": "ta",
+      "confidence": 0.9679290056228638,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:32.990Z"
+    },
+    {
+      "filepath": "dataset/r6/nyo/001.wav",
+      "label": "nyo",
+      "prediction": "nya",
+      "confidence": 0.9676535725593567,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:34.634Z"
+    },
+    {
+      "filepath": "dataset/r4/nyu/001.wav",
+      "label": "nyu",
+      "prediction": "yu",
+      "confidence": 0.9673684239387512,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:35.626Z"
+    },
+    {
+      "filepath": "dataset/r5/po/001.wav",
+      "label": "po",
+      "prediction": "o",
+      "confidence": 0.9673442244529724,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:36.532Z"
+    },
+    {
+      "filepath": "dataset/r3/hi/001.wav",
+      "label": "hi",
+      "prediction": "i",
+      "confidence": 0.9669062495231628,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:37.379Z"
+    },
+    {
+      "filepath": "dataset/r2/n/001.wav",
+      "label": "n",
+      "prediction": "u",
+      "confidence": 0.9665812849998474,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:42.198Z"
+    },
+    {
+      "filepath": "dataset/r8/nyu/001.wav",
+      "label": "nyu",
+      "prediction": "myu",
+      "confidence": 0.966359555721283,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:44.256Z"
+    },
+    {
+      "filepath": "dataset/r10/ho/002.wav",
+      "label": "ho",
+      "prediction": "o",
+      "confidence": 0.9654641151428223,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:45.202Z"
+    },
+    {
+      "filepath": "dataset/r9/be/001.wav",
+      "label": "be",
+      "prediction": "e",
+      "confidence": 0.9649294018745422,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:46.283Z"
+    },
+    {
+      "filepath": "dataset/r10/hi/002.wav",
+      "label": "hi",
+      "prediction": "gi",
+      "confidence": 0.9649252891540527,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:46.994Z"
+    },
+    {
+      "filepath": "dataset/r10/ba/003.wav",
+      "label": "ba",
+      "prediction": "ma",
+      "confidence": 0.9645481705665588,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:48.639Z"
+    },
+    {
+      "filepath": "dataset/r7/zu/002.wav",
+      "label": "zu",
+      "prediction": "du",
+      "confidence": 0.9643842577934265,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:50.487Z"
+    },
+    {
+      "filepath": "dataset/r7/pe/001.wav",
+      "label": "pe",
+      "prediction": "e",
+      "confidence": 0.9642296433448792,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:51.545Z"
+    },
+    {
+      "filepath": "dataset/r9/kyu/002.wav",
+      "label": "kyu",
+      "prediction": "yu",
+      "confidence": 0.9634186029434204,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:52.252Z"
+    },
+    {
+      "filepath": "dataset/r8/e/003.wav",
+      "label": "e",
+      "prediction": "i",
+      "confidence": 0.9629102945327759,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:55.803Z"
+    },
+    {
+      "filepath": "dataset/r6/pe/001.wav",
+      "label": "pe",
+      "prediction": "pyu",
+      "confidence": 0.9628467559814453,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:56.729Z"
+    },
+    {
+      "filepath": "dataset/r9/nyu/003.wav",
+      "label": "nyu",
+      "prediction": "myu",
+      "confidence": 0.9624775648117065,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:57.365Z"
+    },
+    {
+      "filepath": "dataset/r2/hyo/002.wav",
+      "label": "hyo",
+      "prediction": "sho",
+      "confidence": 0.9624007344245911,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:58.246Z"
+    },
+    {
+      "filepath": "dataset/r9/no/001.wav",
+      "label": "no",
+      "prediction": "o",
+      "confidence": 0.9616755247116089,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:10:59.514Z"
+    },
+    {
+      "filepath": "dataset/r2/he/001.wav",
+      "label": "he",
+      "prediction": "e",
+      "confidence": 0.9602512717247009,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:00.481Z"
+    },
+    {
+      "filepath": "dataset/r10/da/003.wav",
+      "label": "da",
+      "prediction": "ta",
+      "confidence": 0.9601926803588867,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:01.448Z"
+    },
+    {
+      "filepath": "dataset/r4/gyu/001.wav",
+      "label": "gyu",
+      "prediction": "ju",
+      "confidence": 0.9596806764602661,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:02.489Z"
+    },
+    {
+      "filepath": "dataset/r10/bo/002.wav",
+      "label": "bo",
+      "prediction": "o",
+      "confidence": 0.9594835042953491,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:04.163Z"
+    },
+    {
+      "filepath": "dataset/r9/to/002.wav",
+      "label": "to",
+      "prediction": "o",
+      "confidence": 0.9585223197937012,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:05.299Z"
+    },
+    {
+      "filepath": "dataset/r7/byu/002.wav",
+      "label": "byu",
+      "prediction": "du",
+      "confidence": 0.9575674533843994,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:06.266Z"
+    },
+    {
+      "filepath": "dataset/r10/ji/003.wav",
+      "label": "ji",
+      "prediction": "di",
+      "confidence": 0.9571670293807983,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:07.049Z"
+    },
+    {
+      "filepath": "dataset/r9/bi/001.wav",
+      "label": "bi",
+      "prediction": "i",
+      "confidence": 0.9569641351699829,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:07.897Z"
+    },
+    {
+      "filepath": "dataset/r9/pi/001.wav",
+      "label": "pi",
+      "prediction": "i",
+      "confidence": 0.9557892680168152,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:08.934Z"
+    },
+    {
+      "filepath": "dataset/r4/ku/002.wav",
+      "label": "ku",
+      "prediction": "gu",
+      "confidence": 0.9556171298027039,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:10.195Z"
+    },
+    {
+      "filepath": "dataset/r8/kyo/001.wav",
+      "label": "kyo",
+      "prediction": "gyo",
+      "confidence": 0.9546224474906921,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:11.143Z"
+    },
+    {
+      "filepath": "dataset/r8/byo/001.wav",
+      "label": "byo",
+      "prediction": "ryo",
+      "confidence": 0.9544715285301208,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:11.991Z"
+    },
+    {
+      "filepath": "dataset/r3/da/001.wav",
+      "label": "da",
+      "prediction": "ta",
+      "confidence": 0.9539220333099365,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:12.701Z"
+    },
+    {
+      "filepath": "dataset/r3/cho/002.wav",
+      "label": "cho",
+      "prediction": "sho",
+      "confidence": 0.953001081943512,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:13.661Z"
+    },
+    {
+      "filepath": "dataset/r7/n/002.wav",
+      "label": "n",
+      "prediction": "u",
+      "confidence": 0.9528449773788452,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:14.521Z"
+    },
+    {
+      "filepath": "dataset/r4/bu/001.wav",
+      "label": "bu",
+      "prediction": "u",
+      "confidence": 0.9520344734191895,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:15.331Z"
+    },
+    {
+      "filepath": "dataset/r6/pyo/001.wav",
+      "label": "pyo",
+      "prediction": "byo",
+      "confidence": 0.9517730474472046,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:15.953Z"
+    },
+    {
+      "filepath": "dataset/r9/zo/003.wav",
+      "label": "zo",
+      "prediction": "so",
+      "confidence": 0.9515806436538696,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:16.802Z"
+    },
+    {
+      "filepath": "dataset/r10/byu/002.wav",
+      "label": "byu",
+      "prediction": "yu",
+      "confidence": 0.9507080912590027,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:17.453Z"
+    },
+    {
+      "filepath": "dataset/r9/so/002.wav",
+      "label": "so",
+      "prediction": "o",
+      "confidence": 0.9503533840179443,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:18.430Z"
+    },
+    {
+      "filepath": "dataset/r8/byu/002.wav",
+      "label": "byu",
+      "prediction": "ryu",
+      "confidence": 0.9499222040176392,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:11:19.742Z"
+    },
+    {
+      "filepath": "dataset/r8/pi/003.wav",
+      "label": "pi",
+      "prediction": "bi",
+      "confidence": 0.9494832158088684,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:22.407Z"
+    },
+    {
+      "filepath": "dataset/r8/de/003.wav",
+      "label": "de",
+      "prediction": "ze",
+      "confidence": 0.9492684006690979,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:26.684Z"
+    },
+    {
+      "filepath": "dataset/r10/pu/002.wav",
+      "label": "pu",
+      "prediction": "ki",
+      "confidence": 0.9490867853164673,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:28.567Z"
+    },
+    {
+      "filepath": "dataset/r8/chi/002.wav",
+      "label": "chi",
+      "prediction": "i",
+      "confidence": 0.9490160346031189,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:29.774Z"
+    },
+    {
+      "filepath": "dataset/r9/ba/001.wav",
+      "label": "ba",
+      "prediction": "ma",
+      "confidence": 0.9490097165107727,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:30.729Z"
+    },
+    {
+      "filepath": "dataset/r5/to/002.wav",
+      "label": "to",
+      "prediction": "kyo",
+      "confidence": 0.9489350914955139,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:32.541Z"
+    },
+    {
+      "filepath": "dataset/r3/ze/001.wav",
+      "label": "ze",
+      "prediction": "chu",
+      "confidence": 0.9485514760017395,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:33.699Z"
+    },
+    {
+      "filepath": "dataset/r10/n/001.wav",
+      "label": "n",
+      "prediction": "yu",
+      "confidence": 0.9481631517410278,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:38.455Z"
+    },
+    {
+      "filepath": "dataset/r1/mi/001.wav",
+      "label": "mi",
+      "prediction": "bi",
+      "confidence": 0.9479615092277527,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:39.873Z"
+    },
+    {
+      "filepath": "dataset/r9/gi/001.wav",
+      "label": "gi",
+      "prediction": "i",
+      "confidence": 0.947151780128479,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:40.871Z"
+    },
+    {
+      "filepath": "dataset/r7/kyu/001.wav",
+      "label": "kyu",
+      "prediction": "chu",
+      "confidence": 0.9457921385765076,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:41.740Z"
+    },
+    {
+      "filepath": "dataset/r10/n/002.wav",
+      "label": "n",
+      "prediction": "i",
+      "confidence": 0.9453743100166321,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:47.692Z"
+    },
+    {
+      "filepath": "dataset/r2/po/001.wav",
+      "label": "po",
+      "prediction": "ko",
+      "confidence": 0.9452151656150818,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:49.509Z"
+    },
+    {
+      "filepath": "dataset/r8/e/001.wav",
+      "label": "e",
+      "prediction": "i",
+      "confidence": 0.9450783729553223,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:50.873Z"
+    },
+    {
+      "filepath": "dataset/r9/ke/001.wav",
+      "label": "ke",
+      "prediction": "ge",
+      "confidence": 0.9448901414871216,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:15:57.476Z"
+    },
+    {
+      "filepath": "dataset/r9/he/002.wav",
+      "label": "he",
+      "prediction": "e",
+      "confidence": 0.9445512890815735,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:18:36.578Z"
+    },
+    {
+      "filepath": "dataset/r9/he/001.wav",
+      "label": "he",
+      "prediction": "e",
+      "confidence": 0.9440136551856995,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:18:37.874Z"
+    },
+    {
+      "filepath": "dataset/r8/sa/003.wav",
+      "label": "sa",
+      "prediction": "ta",
+      "confidence": 0.9438503980636597,
+      "decision": "relabel",
+      "new_label": "ta",
+      "decided_at": "2026-10-04T07:18:45.828Z"
+    },
+    {
+      "filepath": "dataset/r1/u/001.wav",
+      "label": "u",
+      "prediction": "other",
+      "confidence": 0.9432400465011597,
+      "decision": "other",
+      "new_label": "other",
+      "decided_at": "2026-10-04T07:18:50.303Z"
+    },
+    {
+      "filepath": "dataset/r10/gya/002.wav",
+      "label": "gya",
+      "prediction": "ge",
+      "confidence": 0.9426798224449158,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:18:53.853Z"
+    },
+    {
+      "filepath": "dataset/r8/da/002.wav",
+      "label": "da",
+      "prediction": "ga",
+      "confidence": 0.9411904215812683,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:18:54.928Z"
+    },
+    {
+      "filepath": "dataset/r3/ka/001.wav",
+      "label": "ka",
+      "prediction": "ga",
+      "confidence": 0.940637469291687,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:18:55.871Z"
+    },
+    {
+      "filepath": "dataset/r10/byu/001.wav",
+      "label": "byu",
+      "prediction": "gyu",
+      "confidence": 0.9406156539916992,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:18:57.033Z"
+    },
+    {
+      "filepath": "dataset/r6/kyu/001.wav",
+      "label": "kyu",
+      "prediction": "shu",
+      "confidence": 0.9405127167701721,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:18:58.332Z"
+    },
+    {
+      "filepath": "dataset/r5/bi/002.wav",
+      "label": "bi",
+      "prediction": "i",
+      "confidence": 0.9404955506324768,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:18:59.239Z"
+    },
+    {
+      "filepath": "dataset/r4/ni/002.wav",
+      "label": "ni",
+      "prediction": "gi",
+      "confidence": 0.9404087662696838,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:00.146Z"
+    },
+    {
+      "filepath": "dataset/r3/ni/001.wav",
+      "label": "ni",
+      "prediction": "gi",
+      "confidence": 0.9400960803031921,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:00.901Z"
+    },
+    {
+      "filepath": "dataset/r2/kyo/002.wav",
+      "label": "kyo",
+      "prediction": "hyo",
+      "confidence": 0.9385477900505066,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:04.056Z"
+    },
+    {
+      "filepath": "dataset/r6/rya/002.wav",
+      "label": "rya",
+      "prediction": "ya",
+      "confidence": 0.93853759765625,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:10.427Z"
+    },
+    {
+      "filepath": "dataset/r4/ja/002.wav",
+      "label": "ja",
+      "prediction": "cha",
+      "confidence": 0.9384958148002625,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:11.485Z"
+    },
+    {
+      "filepath": "dataset/r10/do/003.wav",
+      "label": "do",
+      "prediction": "zo",
+      "confidence": 0.9384382963180542,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:12.641Z"
+    },
+    {
+      "filepath": "dataset/r6/byo/002.wav",
+      "label": "byo",
+      "prediction": "ryo",
+      "confidence": 0.9384214878082275,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:13.787Z"
+    },
+    {
+      "filepath": "dataset/r4/ke/001.wav",
+      "label": "ke",
+      "prediction": "chu",
+      "confidence": 0.9383693337440491,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:14.615Z"
+    },
+    {
+      "filepath": "dataset/r9/ki/003.wav",
+      "label": "ki",
+      "prediction": "i",
+      "confidence": 0.9383574724197388,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:15.512Z"
+    },
+    {
+      "filepath": "dataset/r9/pe/002.wav",
+      "label": "pe",
+      "prediction": "e",
+      "confidence": 0.9368016123771667,
+      "decision": "relabel",
+      "new_label": "e",
+      "decided_at": "2026-10-04T07:19:26.154Z"
+    },
+    {
+      "filepath": "dataset/r8/hyu/003.wav",
+      "label": "hyu",
+      "prediction": "shu",
+      "confidence": 0.9365909695625305,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:27.873Z"
+    },
+    {
+      "filepath": "dataset/r1/hyu/002.wav",
+      "label": "hyu",
+      "prediction": "shu",
+      "confidence": 0.9362761378288269,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:28.831Z"
+    },
+    {
+      "filepath": "dataset/r9/se/002.wav",
+      "label": "se",
+      "prediction": "e",
+      "confidence": 0.9351039528846741,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:29.847Z"
+    },
+    {
+      "filepath": "dataset/r9/ta/003.wav",
+      "label": "ta",
+      "prediction": "a",
+      "confidence": 0.9350544214248657,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:31.688Z"
+    },
+    {
+      "filepath": "dataset/r10/ryo/001.wav",
+      "label": "ryo",
+      "prediction": "gyo",
+      "confidence": 0.9346895813941956,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:32.531Z"
+    },
+    {
+      "filepath": "dataset/r5/ze/002.wav",
+      "label": "ze",
+      "prediction": "chu",
+      "confidence": 0.9346568584442139,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:34.129Z"
+    },
+    {
+      "filepath": "dataset/r6/fu/002.wav",
+      "label": "fu",
+      "prediction": "su",
+      "confidence": 0.9343410134315491,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:35.466Z"
+    },
+    {
+      "filepath": "dataset/r1/zu/002.wav",
+      "label": "zu",
+      "prediction": "du",
+      "confidence": 0.9343149065971375,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:36.505Z"
+    },
+    {
+      "filepath": "dataset/r7/chi/001.wav",
+      "label": "chi",
+      "prediction": "shi",
+      "confidence": 0.9341607093811035,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:19:37.765Z"
+    },
+    {
+      "filepath": "dataset/r10/hyo/002.wav",
+      "label": "hyo",
+      "prediction": "gyo",
+      "confidence": 0.9333492517471313,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:20:13.779Z"
+    },
+    {
+      "filepath": "dataset/r3/tsu/001.wav",
+      "label": "tsu",
+      "prediction": "su",
+      "confidence": 0.9323962926864624,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:20:14.886Z"
+    },
+    {
+      "filepath": "dataset/r3/a/002.wav",
+      "label": "a",
+      "prediction": "pa",
+      "confidence": 0.9323763847351074,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:20:15.695Z"
+    },
+    {
+      "filepath": "dataset/r1/pyu/002.wav",
+      "label": "pyu",
+      "prediction": "byu",
+      "confidence": 0.9323654770851135,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:20:18.682Z"
+    },
+    {
+      "filepath": "dataset/r7/go/001.wav",
+      "label": "go",
+      "prediction": "o",
+      "confidence": 0.932055652141571,
+      "decision": "relabel",
+      "new_label": "o",
+      "decided_at": "2026-10-04T07:20:26.657Z"
+    },
+    {
+      "filepath": "dataset/r4/ka/001.wav",
+      "label": "ka",
+      "prediction": "ko",
+      "confidence": 0.9320036768913269,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:20:28.271Z"
+    },
+    {
+      "filepath": "dataset/r7/hyu/002.wav",
+      "label": "hyu",
+      "prediction": "shu",
+      "confidence": 0.9315682053565979,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:20:29.353Z"
+    },
+    {
+      "filepath": "dataset/r5/pu/002.wav",
+      "label": "pu",
+      "prediction": "i",
+      "confidence": 0.9314756393432617,
+      "decision": "relabel",
+      "new_label": "pi",
+      "decided_at": "2026-10-04T07:20:39.986Z"
+    },
+    {
+      "filepath": "dataset/r10/ju/001.wav",
+      "label": "ju",
+      "prediction": "gyu",
+      "confidence": 0.9314003586769104,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:20:45.796Z"
+    },
+    {
+      "filepath": "dataset/r4/tsu/001.wav",
+      "label": "tsu",
+      "prediction": "chu",
+      "confidence": 0.9312723278999329,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:20:47.362Z"
+    },
+    {
+      "filepath": "dataset/r6/go/001.wav",
+      "label": "go",
+      "prediction": "gyo",
+      "confidence": 0.9312568306922913,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:20:48.574Z"
+    },
+    {
+      "filepath": "dataset/r1/byu/001.wav",
+      "label": "byu",
+      "prediction": "yu",
+      "confidence": 0.9311143755912781,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:20:49.525Z"
+    },
+    {
+      "filepath": "dataset/r10/ne/002.wav",
+      "label": "ne",
+      "prediction": "e",
+      "confidence": 0.9310290217399597,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:20:51.140Z"
+    },
+    {
+      "filepath": "dataset/r3/shu/001.wav",
+      "label": "shu",
+      "prediction": "chu",
+      "confidence": 0.9303052425384521,
+      "decision": "relabel",
+      "new_label": "chu",
+      "decided_at": "2026-10-04T07:20:57.155Z"
+    },
+    {
+      "filepath": "dataset/r5/ze/001.wav",
+      "label": "ze",
+      "prediction": "chu",
+      "confidence": 0.9299557209014893,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:20:58.513Z"
+    },
+    {
+      "filepath": "dataset/r6/ja/001.wav",
+      "label": "ja",
+      "prediction": "gya",
+      "confidence": 0.9281250834465027,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:00.028Z"
+    },
+    {
+      "filepath": "dataset/r8/byo/003.wav",
+      "label": "byo",
+      "prediction": "ryo",
+      "confidence": 0.9278598427772522,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:00.893Z"
+    },
+    {
+      "filepath": "dataset/r4/ge/002.wav",
+      "label": "ge",
+      "prediction": "gyu",
+      "confidence": 0.927830159664154,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:01.711Z"
+    },
+    {
+      "filepath": "dataset/r7/pyu/002.wav",
+      "label": "pyu",
+      "prediction": "hyu",
+      "confidence": 0.927259624004364,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:02.796Z"
+    },
+    {
+      "filepath": "dataset/r8/hyo/002.wav",
+      "label": "hyo",
+      "prediction": "sho",
+      "confidence": 0.9270872473716736,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:03.839Z"
+    },
+    {
+      "filepath": "dataset/r8/byo/002.wav",
+      "label": "byo",
+      "prediction": "ryo",
+      "confidence": 0.9267276525497437,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:05.024Z"
+    },
+    {
+      "filepath": "dataset/r9/zu/002.wav",
+      "label": "zu",
+      "prediction": "du",
+      "confidence": 0.926113486289978,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:06.081Z"
+    },
+    {
+      "filepath": "dataset/r5/pi/001.wav",
+      "label": "pi",
+      "prediction": "i",
+      "confidence": 0.9254931807518005,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:07.885Z"
+    },
+    {
+      "filepath": "dataset/r10/to/003.wav",
+      "label": "to",
+      "prediction": "o",
+      "confidence": 0.9253692030906677,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:08.797Z"
+    },
+    {
+      "filepath": "dataset/r8/ka/002.wav",
+      "label": "ka",
+      "prediction": "ta",
+      "confidence": 0.9250180721282959,
+      "decision": "relabel",
+      "new_label": "ta",
+      "decided_at": "2026-10-04T07:21:15.494Z"
+    },
+    {
+      "filepath": "dataset/r3/myo/001.wav",
+      "label": "myo",
+      "prediction": "ryo",
+      "confidence": 0.9245891571044922,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:17.289Z"
+    },
+    {
+      "filepath": "dataset/r8/ku/002.wav",
+      "label": "ku",
+      "prediction": "u",
+      "confidence": 0.924353837966919,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:18.578Z"
+    },
+    {
+      "filepath": "dataset/r9/ha/002.wav",
+      "label": "ha",
+      "prediction": "a",
+      "confidence": 0.9212536811828613,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:21.035Z"
+    },
+    {
+      "filepath": "dataset/r3/po/002.wav",
+      "label": "po",
+      "prediction": "ko",
+      "confidence": 0.9209715723991394,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:21.957Z"
+    },
+    {
+      "filepath": "dataset/r9/te/002.wav",
+      "label": "te",
+      "prediction": "e",
+      "confidence": 0.920921266078949,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:23.218Z"
+    },
+    {
+      "filepath": "dataset/r10/go/001.wav",
+      "label": "go",
+      "prediction": "o",
+      "confidence": 0.9207308292388916,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:25.017Z"
+    },
+    {
+      "filepath": "dataset/r4/pi/002.wav",
+      "label": "pi",
+      "prediction": "bi",
+      "confidence": 0.9201744198799133,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:27.536Z"
+    },
+    {
+      "filepath": "dataset/r10/ri/003.wav",
+      "label": "ri",
+      "prediction": "i",
+      "confidence": 0.9200803637504578,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:29.438Z"
+    },
+    {
+      "filepath": "dataset/r7/ze/002.wav",
+      "label": "ze",
+      "prediction": "du",
+      "confidence": 0.9194777607917786,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:21:31.421Z"
+    },
+    {
+      "filepath": "dataset/r7/po/001.wav",
+      "label": "po",
+      "prediction": "to",
+      "confidence": 0.9187577366828918,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:11.211Z"
+    },
+    {
+      "filepath": "dataset/r8/to/002.wav",
+      "label": "to",
+      "prediction": "o",
+      "confidence": 0.9181609749794006,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:12.872Z"
+    },
+    {
+      "filepath": "dataset/r7/ryu/001.wav",
+      "label": "ryu",
+      "prediction": "yu",
+      "confidence": 0.9167856574058533,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:16.003Z"
+    },
+    {
+      "filepath": "dataset/r4/ra/002.wav",
+      "label": "ra",
+      "prediction": "ro",
+      "confidence": 0.9160218834877014,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:18.256Z"
+    },
+    {
+      "filepath": "dataset/r9/ka/001.wav",
+      "label": "ka",
+      "prediction": "a",
+      "confidence": 0.9156618714332581,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:20.082Z"
+    },
+    {
+      "filepath": "dataset/r4/ba/001.wav",
+      "label": "ba",
+      "prediction": "ma",
+      "confidence": 0.9150004386901855,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:21.429Z"
+    },
+    {
+      "filepath": "dataset/r4/zu/001.wav",
+      "label": "zu",
+      "prediction": "ju",
+      "confidence": 0.9146971702575684,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:27.176Z"
+    },
+    {
+      "filepath": "dataset/r7/to/001.wav",
+      "label": "to",
+      "prediction": "hyo",
+      "confidence": 0.913809061050415,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:28.069Z"
+    },
+    {
+      "filepath": "dataset/r9/nyu/001.wav",
+      "label": "nyu",
+      "prediction": "myu",
+      "confidence": 0.9125226140022278,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:29.230Z"
+    },
+    {
+      "filepath": "dataset/r10/ro/003.wav",
+      "label": "ro",
+      "prediction": "o",
+      "confidence": 0.9123231768608093,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:34.694Z"
+    },
+    {
+      "filepath": "dataset/r8/du/003.wav",
+      "label": "du",
+      "prediction": "tsu",
+      "confidence": 0.9123131632804871,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:35.781Z"
+    },
+    {
+      "filepath": "dataset/r4/wo/002.wav",
+      "label": "wo",
+      "prediction": "o",
+      "confidence": 0.9115937948226929,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:36.650Z"
+    },
+    {
+      "filepath": "dataset/r10/pa/002.wav",
+      "label": "pa",
+      "prediction": "ta",
+      "confidence": 0.9113853573799133,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:37.769Z"
+    },
+    {
+      "filepath": "dataset/r2/hyo/001.wav",
+      "label": "hyo",
+      "prediction": "sho",
+      "confidence": 0.9110982418060303,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:38.663Z"
+    },
+    {
+      "filepath": "dataset/r3/he/001.wav",
+      "label": "he",
+      "prediction": "pe",
+      "confidence": 0.9110714197158813,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:39.360Z"
+    },
+    {
+      "filepath": "dataset/r7/chu/002.wav",
+      "label": "chu",
+      "prediction": "tsu",
+      "confidence": 0.910851001739502,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:51.971Z"
+    },
+    {
+      "filepath": "dataset/r10/kya/002.wav",
+      "label": "kya",
+      "prediction": "hya",
+      "confidence": 0.9101929068565369,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:53.073Z"
+    },
+    {
+      "filepath": "dataset/r10/ryu/002.wav",
+      "label": "ryu",
+      "prediction": "yu",
+      "confidence": 0.9101741313934326,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:54.414Z"
+    },
+    {
+      "filepath": "dataset/r10/ki/003.wav",
+      "label": "ki",
+      "prediction": "gi",
+      "confidence": 0.908303439617157,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:23:55.969Z"
+    },
+    {
+      "filepath": "dataset/r10/fu/001.wav",
+      "label": "fu",
+      "prediction": "u",
+      "confidence": 0.9080561995506287,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:04.633Z"
+    },
+    {
+      "filepath": "dataset/r1/cha/001.wav",
+      "label": "cha",
+      "prediction": "cho",
+      "confidence": 0.9076169729232788,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:05.921Z"
+    },
+    {
+      "filepath": "dataset/r10/kyo/002.wav",
+      "label": "kyo",
+      "prediction": "gyo",
+      "confidence": 0.9074452519416809,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:09.693Z"
+    },
+    {
+      "filepath": "dataset/r2/kya/001.wav",
+      "label": "kya",
+      "prediction": "ga",
+      "confidence": 0.9064040184020996,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:18.843Z"
+    },
+    {
+      "filepath": "dataset/r9/hyu/002.wav",
+      "label": "hyu",
+      "prediction": "shu",
+      "confidence": 0.9062556624412537,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:20.326Z"
+    },
+    {
+      "filepath": "dataset/r5/mya/002.wav",
+      "label": "mya",
+      "prediction": "byo",
+      "confidence": 0.9053850769996643,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:22.643Z"
+    },
+    {
+      "filepath": "dataset/r1/pu/002.wav",
+      "label": "pu",
+      "prediction": "bu",
+      "confidence": 0.9048095345497131,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:24.026Z"
+    },
+    {
+      "filepath": "dataset/r10/ka/003.wav",
+      "label": "ka",
+      "prediction": "pa",
+      "confidence": 0.9045841097831726,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:24.838Z"
+    },
+    {
+      "filepath": "dataset/r9/ho/002.wav",
+      "label": "ho",
+      "prediction": "ko",
+      "confidence": 0.9037829637527466,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:25.772Z"
+    },
+    {
+      "filepath": "dataset/r6/po/001.wav",
+      "label": "po",
+      "prediction": "to",
+      "confidence": 0.9037355184555054,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:26.806Z"
+    },
+    {
+      "filepath": "dataset/r10/pu/003.wav",
+      "label": "pu",
+      "prediction": "bu",
+      "confidence": 0.9032403230667114,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:27.890Z"
+    },
+    {
+      "filepath": "dataset/r7/gi/001.wav",
+      "label": "gi",
+      "prediction": "i",
+      "confidence": 0.9022255539894104,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:28.653Z"
+    },
+    {
+      "filepath": "dataset/r10/nyu/002.wav",
+      "label": "nyu",
+      "prediction": "myu",
+      "confidence": 0.9012933969497681,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:29.779Z"
+    },
+    {
+      "filepath": "dataset/r10/na/002.wav",
+      "label": "na",
+      "prediction": "ma",
+      "confidence": 0.9012880921363831,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:31.862Z"
+    },
+    {
+      "filepath": "dataset/r1/du/002.wav",
+      "label": "du",
+      "prediction": "zu",
+      "confidence": 0.8990797400474548,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:32.898Z"
+    },
+    {
+      "filepath": "dataset/r3/ji/002.wav",
+      "label": "ji",
+      "prediction": "ju",
+      "confidence": 0.8982179164886475,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:33.456Z"
+    },
+    {
+      "filepath": "dataset/r1/hya/001.wav",
+      "label": "hya",
+      "prediction": "kyo",
+      "confidence": 0.8982119560241699,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:35.321Z"
+    },
+    {
+      "filepath": "dataset/r8/ku/001.wav",
+      "label": "ku",
+      "prediction": "gu",
+      "confidence": 0.898205041885376,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:36.500Z"
+    },
+    {
+      "filepath": "dataset/r9/zu/003.wav",
+      "label": "zu",
+      "prediction": "du",
+      "confidence": 0.8974948525428772,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:37.540Z"
+    },
+    {
+      "filepath": "dataset/r5/ri/002.wav",
+      "label": "ri",
+      "prediction": "bi",
+      "confidence": 0.8952426314353943,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:40.548Z"
+    },
+    {
+      "filepath": "dataset/r2/nyu/002.wav",
+      "label": "nyu",
+      "prediction": "myu",
+      "confidence": 0.8939974904060364,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:43.021Z"
+    },
+    {
+      "filepath": "dataset/r5/po/002.wav",
+      "label": "po",
+      "prediction": "o",
+      "confidence": 0.8936724066734314,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:44.279Z"
+    },
+    {
+      "filepath": "dataset/r5/ha/002.wav",
+      "label": "ha",
+      "prediction": "a",
+      "confidence": 0.893531322479248,
+      "decision": "relabel",
+      "new_label": "a",
+      "decided_at": "2026-10-04T07:24:50.567Z"
+    },
+    {
+      "filepath": "dataset/r9/ma/002.wav",
+      "label": "ma",
+      "prediction": "mo",
+      "confidence": 0.892897367477417,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:52.070Z"
+    },
+    {
+      "filepath": "dataset/r7/ge/002.wav",
+      "label": "ge",
+      "prediction": "ju",
+      "confidence": 0.8927083611488342,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:56.007Z"
+    },
+    {
+      "filepath": "dataset/r8/po/002.wav",
+      "label": "po",
+      "prediction": "o",
+      "confidence": 0.8926819562911987,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:57.185Z"
+    },
+    {
+      "filepath": "dataset/r3/di/002.wav",
+      "label": "di",
+      "prediction": "chi",
+      "confidence": 0.892608106136322,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:24:58.900Z"
+    },
+    {
+      "filepath": "dataset/r10/ja/001.wav",
+      "label": "ja",
+      "prediction": "sho",
+      "confidence": 0.8912836313247681,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:25:00.731Z"
+    },
+    {
+      "filepath": "dataset/r10/ja/002.wav",
+      "label": "ja",
+      "prediction": "jo",
+      "confidence": 0.890972912311554,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:25:02.670Z"
+    },
+    {
+      "filepath": "dataset/r7/pyo/002.wav",
+      "label": "pyo",
+      "prediction": "sho",
+      "confidence": 0.8909355401992798,
+      "decision": "relabel",
+      "new_label": "sho",
+      "decided_at": "2026-10-04T07:29:02.995Z"
+    },
+    {
+      "filepath": "dataset/r3/po/001.wav",
+      "label": "po",
+      "prediction": "mo",
+      "confidence": 0.8905774354934692,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:29:06.920Z"
+    },
+    {
+      "filepath": "dataset/r9/n/002.wav",
+      "label": "n",
+      "prediction": "u",
+      "confidence": 0.8893609642982483,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:29:08.757Z"
+    },
+    {
+      "filepath": "dataset/r2/mi/002.wav",
+      "label": "mi",
+      "prediction": "ni",
+      "confidence": 0.8892485499382019,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:29:11.014Z"
+    },
+    {
+      "filepath": "dataset/r4/pyu/002.wav",
+      "label": "pyu",
+      "prediction": "byu",
+      "confidence": 0.8891087770462036,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:29:14.427Z"
+    },
+    {
+      "filepath": "dataset/r4/ya/002.wav",
+      "label": "ya",
+      "prediction": "gya",
+      "confidence": 0.8890073895454407,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:29.645Z"
+    },
+    {
+      "filepath": "dataset/r6/ryu/001.wav",
+      "label": "ryu",
+      "prediction": "gyu",
+      "confidence": 0.8883614540100098,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:30.737Z"
+    },
+    {
+      "filepath": "dataset/r3/zu/001.wav",
+      "label": "zu",
+      "prediction": "du",
+      "confidence": 0.8877610564231873,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:31.892Z"
+    },
+    {
+      "filepath": "dataset/r8/ki/001.wav",
+      "label": "ki",
+      "prediction": "i",
+      "confidence": 0.8876018524169922,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:32.727Z"
+    },
+    {
+      "filepath": "dataset/r10/ro/002.wav",
+      "label": "ro",
+      "prediction": "bo",
+      "confidence": 0.8870627880096436,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:33.662Z"
+    },
+    {
+      "filepath": "dataset/r8/byu/003.wav",
+      "label": "byu",
+      "prediction": "ryu",
+      "confidence": 0.8862637877464294,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:34.595Z"
+    },
+    {
+      "filepath": "dataset/r5/pya/001.wav",
+      "label": "pya",
+      "prediction": "pyo",
+      "confidence": 0.8861343860626221,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:35.298Z"
+    },
+    {
+      "filepath": "dataset/r5/rya/002.wav",
+      "label": "rya",
+      "prediction": "bya",
+      "confidence": 0.8846392631530762,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:36.196Z"
+    },
+    {
+      "filepath": "dataset/r6/nya/002.wav",
+      "label": "nya",
+      "prediction": "mya",
+      "confidence": 0.8837593197822571,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:36.857Z"
+    },
+    {
+      "filepath": "dataset/r1/i/002.wav",
+      "label": "i",
+      "prediction": "shu",
+      "confidence": 0.8831759095191956,
+      "decision": "other",
+      "new_label": "other",
+      "decided_at": "2026-10-04T07:44:41.218Z"
+    },
+    {
+      "filepath": "dataset/r6/zo/002.wav",
+      "label": "zo",
+      "prediction": "so",
+      "confidence": 0.8829475045204163,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:42.983Z"
+    },
+    {
+      "filepath": "dataset/r9/chi/002.wav",
+      "label": "chi",
+      "prediction": "ji",
+      "confidence": 0.878229022026062,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:44.100Z"
+    },
+    {
+      "filepath": "dataset/r9/ru/001.wav",
+      "label": "ru",
+      "prediction": "u",
+      "confidence": 0.8778366446495056,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:45.032Z"
+    },
+    {
+      "filepath": "dataset/r2/do/001.wav",
+      "label": "do",
+      "prediction": "zo",
+      "confidence": 0.8765546679496765,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:46.509Z"
+    },
+    {
+      "filepath": "dataset/r3/ge/001.wav",
+      "label": "ge",
+      "prediction": "gyu",
+      "confidence": 0.875931441783905,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:47.445Z"
+    },
+    {
+      "filepath": "dataset/r1/ku/002.wav",
+      "label": "ku",
+      "prediction": "gu",
+      "confidence": 0.874178946018219,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:48.192Z"
+    },
+    {
+      "filepath": "dataset/r4/ze/002.wav",
+      "label": "ze",
+      "prediction": "ju",
+      "confidence": 0.8709906935691833,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:49.114Z"
+    },
+    {
+      "filepath": "dataset/r2/da/002.wav",
+      "label": "da",
+      "prediction": "ga",
+      "confidence": 0.8708952069282532,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:51.120Z"
+    },
+    {
+      "filepath": "dataset/r3/hyu/001.wav",
+      "label": "hyu",
+      "prediction": "shu",
+      "confidence": 0.869755208492279,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:52.014Z"
+    },
+    {
+      "filepath": "dataset/r2/tsu/002.wav",
+      "label": "tsu",
+      "prediction": "chu",
+      "confidence": 0.8688870072364807,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:52.748Z"
+    },
+    {
+      "filepath": "dataset/r2/pa/001.wav",
+      "label": "pa",
+      "prediction": "ta",
+      "confidence": 0.8683306574821472,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:53.456Z"
+    },
+    {
+      "filepath": "dataset/r6/ji/001.wav",
+      "label": "ji",
+      "prediction": "di",
+      "confidence": 0.8675864934921265,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:54.133Z"
+    },
+    {
+      "filepath": "dataset/r8/mu/003.wav",
+      "label": "mu",
+      "prediction": "nu",
+      "confidence": 0.8673374652862549,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:55.024Z"
+    },
+    {
+      "filepath": "dataset/r3/to/002.wav",
+      "label": "to",
+      "prediction": "do",
+      "confidence": 0.8672134876251221,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:55.828Z"
+    },
+    {
+      "filepath": "dataset/r7/rya/001.wav",
+      "label": "rya",
+      "prediction": "mya",
+      "confidence": 0.8670359253883362,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:56.493Z"
+    },
+    {
+      "filepath": "dataset/r5/za/001.wav",
+      "label": "za",
+      "prediction": "jo",
+      "confidence": 0.8669156432151794,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:57.586Z"
+    },
+    {
+      "filepath": "dataset/r4/ryu/001.wav",
+      "label": "ryu",
+      "prediction": "gyu",
+      "confidence": 0.8667768239974976,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:58.565Z"
+    },
+    {
+      "filepath": "dataset/r10/a/002.wav",
+      "label": "a",
+      "prediction": "o",
+      "confidence": 0.8666231632232666,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:44:59.312Z"
+    },
+    {
+      "filepath": "dataset/r10/da/002.wav",
+      "label": "da",
+      "prediction": "ta",
+      "confidence": 0.8642817735671997,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:00.173Z"
+    },
+    {
+      "filepath": "dataset/r4/o/002.wav",
+      "label": "o",
+      "prediction": "bo",
+      "confidence": 0.8629973530769348,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:01.129Z"
+    },
+    {
+      "filepath": "dataset/r5/ji/002.wav",
+      "label": "ji",
+      "prediction": "di",
+      "confidence": 0.8628487586975098,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:01.989Z"
+    },
+    {
+      "filepath": "dataset/r8/bo/003.wav",
+      "label": "bo",
+      "prediction": "o",
+      "confidence": 0.8623747229576111,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:02.455Z"
+    },
+    {
+      "filepath": "dataset/r1/sa/002.wav",
+      "label": "sa",
+      "prediction": "so",
+      "confidence": 0.8619497418403625,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:03.459Z"
+    },
+    {
+      "filepath": "dataset/r4/hi/001.wav",
+      "label": "hi",
+      "prediction": "ki",
+      "confidence": 0.8619353175163269,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:04.256Z"
+    },
+    {
+      "filepath": "dataset/r5/shu/001.wav",
+      "label": "shu",
+      "prediction": "chu",
+      "confidence": 0.8613956570625305,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:05.090Z"
+    },
+    {
+      "filepath": "dataset/r5/mo/002.wav",
+      "label": "mo",
+      "prediction": "o",
+      "confidence": 0.8607310056686401,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:05.904Z"
+    },
+    {
+      "filepath": "dataset/r8/ru/003.wav",
+      "label": "ru",
+      "prediction": "bu",
+      "confidence": 0.8607085347175598,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:06.848Z"
+    },
+    {
+      "filepath": "dataset/r8/ba/003.wav",
+      "label": "ba",
+      "prediction": "a",
+      "confidence": 0.8601954579353333,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:08.149Z"
+    },
+    {
+      "filepath": "dataset/r5/hya/001.wav",
+      "label": "hya",
+      "prediction": "hyo",
+      "confidence": 0.8600286841392517,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:09.885Z"
+    },
+    {
+      "filepath": "dataset/r1/zu/001.wav",
+      "label": "zu",
+      "prediction": "ju",
+      "confidence": 0.8599764704704285,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:10.792Z"
+    },
+    {
+      "filepath": "dataset/r10/bu/003.wav",
+      "label": "bu",
+      "prediction": "i",
+      "confidence": 0.8599602580070496,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:11.180Z"
+    },
+    {
+      "filepath": "dataset/r6/kya/002.wav",
+      "label": "kya",
+      "prediction": "gya",
+      "confidence": 0.8584383726119995,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:12.229Z"
+    },
+    {
+      "filepath": "dataset/r7/ja/002.wav",
+      "label": "ja",
+      "prediction": "sha",
+      "confidence": 0.8584040999412537,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:13.233Z"
+    },
+    {
+      "filepath": "dataset/r5/nyo/001.wav",
+      "label": "nyo",
+      "prediction": "ryo",
+      "confidence": 0.8579044938087463,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:14.419Z"
+    },
+    {
+      "filepath": "dataset/r7/ha/002.wav",
+      "label": "ha",
+      "prediction": "ma",
+      "confidence": 0.8570888638496399,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:15.208Z"
+    },
+    {
+      "filepath": "dataset/r2/mi/001.wav",
+      "label": "mi",
+      "prediction": "ni",
+      "confidence": 0.8539276719093323,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:16.027Z"
+    },
+    {
+      "filepath": "dataset/r6/ra/001.wav",
+      "label": "ra",
+      "prediction": "ya",
+      "confidence": 0.8538615107536316,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:17.235Z"
+    },
+    {
+      "filepath": "dataset/r4/pi/001.wav",
+      "label": "pi",
+      "prediction": "i",
+      "confidence": 0.853818953037262,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:18.157Z"
+    },
+    {
+      "filepath": "dataset/r9/gyo/003.wav",
+      "label": "gyo",
+      "prediction": "jo",
+      "confidence": 0.8534864783287048,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:19.049Z"
+    },
+    {
+      "filepath": "dataset/r8/so/001.wav",
+      "label": "so",
+      "prediction": "other",
+      "confidence": 0.8518707156181335,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:30.366Z"
+    },
+    {
+      "filepath": "dataset/r3/me/001.wav",
+      "label": "me",
+      "prediction": "re",
+      "confidence": 0.8513975143432617,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:31.291Z"
+    },
+    {
+      "filepath": "dataset/r5/ya/001.wav",
+      "label": "ya",
+      "prediction": "gya",
+      "confidence": 0.8506191372871399,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:32.145Z"
+    },
+    {
+      "filepath": "dataset/r6/hyo/002.wav",
+      "label": "hyo",
+      "prediction": "jo",
+      "confidence": 0.8500362038612366,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:32.761Z"
+    },
+    {
+      "filepath": "dataset/r8/hyu/001.wav",
+      "label": "hyu",
+      "prediction": "shu",
+      "confidence": 0.8500077128410339,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:33.469Z"
+    },
+    {
+      "filepath": "dataset/r9/u/002.wav",
+      "label": "u",
+      "prediction": "n",
+      "confidence": 0.10744336247444153,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:34.007Z"
+    },
+    {
+      "filepath": "dataset/r9/su/002.wav",
+      "label": "su",
+      "prediction": "byu",
+      "confidence": 0.10838309675455093,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:35.122Z"
+    },
+    {
+      "filepath": "dataset/r4/ra/001.wav",
+      "label": "ra",
+      "prediction": "a",
+      "confidence": 0.13893260061740875,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:37.269Z"
+    },
+    {
+      "filepath": "dataset/r9/e/003.wav",
+      "label": "e",
+      "prediction": "ke",
+      "confidence": 0.14080305397510529,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:38.998Z"
+    },
+    {
+      "filepath": "dataset/r7/ru/002.wav",
+      "label": "ru",
+      "prediction": "gu",
+      "confidence": 0.16297045350074768,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:45.200Z"
+    },
+    {
+      "filepath": "dataset/r5/me/002.wav",
+      "label": "me",
+      "prediction": "chu",
+      "confidence": 0.1645338535308838,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:46.292Z"
+    },
+    {
+      "filepath": "dataset/r6/ku/001.wav",
+      "label": "ku",
+      "prediction": "chu",
+      "confidence": 0.17889690399169922,
+      "decision": "other",
+      "new_label": "other",
+      "decided_at": "2026-10-04T07:45:48.865Z"
+    },
+    {
+      "filepath": "dataset/r10/shu/001.wav",
+      "label": "shu",
+      "prediction": "ryu",
+      "confidence": 0.1898363083600998,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:56.637Z"
+    },
+    {
+      "filepath": "dataset/r2/ha/002.wav",
+      "label": "ha",
+      "prediction": "nu",
+      "confidence": 0.19930510222911835,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:45:58.560Z"
+    },
+    {
+      "filepath": "dataset/r6/sho/001.wav",
+      "label": "sho",
+      "prediction": "i",
+      "confidence": 0.20229075849056244,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:00.812Z"
+    },
+    {
+      "filepath": "dataset/r8/kya/003.wav",
+      "label": "kya",
+      "prediction": "na",
+      "confidence": 0.20788446068763733,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:01.860Z"
+    },
+    {
+      "filepath": "dataset/r2/da/001.wav",
+      "label": "da",
+      "prediction": "na",
+      "confidence": 0.21689781546592712,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:02.730Z"
+    },
+    {
+      "filepath": "dataset/r10/su/001.wav",
+      "label": "su",
+      "prediction": "di",
+      "confidence": 0.2338036596775055,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:04.218Z"
+    },
+    {
+      "filepath": "dataset/r5/ka/002.wav",
+      "label": "ka",
+      "prediction": "ke",
+      "confidence": 0.23396506905555725,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:04.985Z"
+    },
+    {
+      "filepath": "dataset/r9/ku/003.wav",
+      "label": "ku",
+      "prediction": "tsu",
+      "confidence": 0.23599252104759216,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:06.449Z"
+    },
+    {
+      "filepath": "dataset/r3/ra/002.wav",
+      "label": "ra",
+      "prediction": "pu",
+      "confidence": 0.23808789253234863,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:07.390Z"
+    },
+    {
+      "filepath": "dataset/r8/ta/002.wav",
+      "label": "ta",
+      "prediction": "to",
+      "confidence": 0.23960323631763458,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:08.430Z"
+    },
+    {
+      "filepath": "dataset/r9/de/002.wav",
+      "label": "de",
+      "prediction": "re",
+      "confidence": 0.23986728489398956,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:09.195Z"
+    },
+    {
+      "filepath": "dataset/r4/re/001.wav",
+      "label": "re",
+      "prediction": "be",
+      "confidence": 0.24510635435581207,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:09.863Z"
+    },
+    {
+      "filepath": "dataset/r6/su/002.wav",
+      "label": "su",
+      "prediction": "se",
+      "confidence": 0.2500761151313782,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:10.592Z"
+    },
+    {
+      "filepath": "dataset/r2/no/002.wav",
+      "label": "no",
+      "prediction": "do",
+      "confidence": 0.2546883225440979,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:11.466Z"
+    },
+    {
+      "filepath": "dataset/r2/kyu/002.wav",
+      "label": "kyu",
+      "prediction": "gyu",
+      "confidence": 0.2553439736366272,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:13.068Z"
+    },
+    {
+      "filepath": "dataset/r2/ta/001.wav",
+      "label": "ta",
+      "prediction": "kyo",
+      "confidence": 0.2599653899669647,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:13.840Z"
+    },
+    {
+      "filepath": "dataset/r1/to/001.wav",
+      "label": "to",
+      "prediction": "chi",
+      "confidence": 0.2613579034805298,
+      "decision": "other",
+      "new_label": "other",
+      "decided_at": "2026-10-04T07:46:20.450Z"
+    },
+    {
+      "filepath": "dataset/r1/re/001.wav",
+      "label": "re",
+      "prediction": "de",
+      "confidence": 0.2620164752006531,
+      "decision": "relabel",
+      "new_label": "de",
+      "decided_at": "2026-10-04T07:46:27.903Z"
+    },
+    {
+      "filepath": "dataset/r3/ta/001.wav",
+      "label": "ta",
+      "prediction": "mu",
+      "confidence": 0.26230788230895996,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:36.144Z"
+    },
+    {
+      "filepath": "dataset/r9/nu/003.wav",
+      "label": "nu",
+      "prediction": "zu",
+      "confidence": 0.2631058990955353,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:37.227Z"
+    },
+    {
+      "filepath": "dataset/r5/chi/002.wav",
+      "label": "chi",
+      "prediction": "i",
+      "confidence": 0.263121634721756,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:38.175Z"
+    },
+    {
+      "filepath": "dataset/r1/cha/002.wav",
+      "label": "cha",
+      "prediction": "cho",
+      "confidence": 0.26588505506515503,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:39.077Z"
+    },
+    {
+      "filepath": "dataset/r6/pu/002.wav",
+      "label": "pu",
+      "prediction": "fu",
+      "confidence": 0.2715338468551636,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:39.915Z"
+    },
+    {
+      "filepath": "dataset/r8/ge/003.wav",
+      "label": "ge",
+      "prediction": "ki",
+      "confidence": 0.27609509229660034,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:40.692Z"
+    },
+    {
+      "filepath": "dataset/r10/pyu/002.wav",
+      "label": "pyu",
+      "prediction": "yu",
+      "confidence": 0.282102108001709,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:41.530Z"
+    },
+    {
+      "filepath": "dataset/r2/te/002.wav",
+      "label": "te",
+      "prediction": "ke",
+      "confidence": 0.28290286660194397,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:42.302Z"
+    },
+    {
+      "filepath": "dataset/r9/kyu/001.wav",
+      "label": "kyu",
+      "prediction": "du",
+      "confidence": 0.28330543637275696,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:43.032Z"
+    },
+    {
+      "filepath": "dataset/r8/shi/001.wav",
+      "label": "shi",
+      "prediction": "chi",
+      "confidence": 0.2834349274635315,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:44.385Z"
+    },
+    {
+      "filepath": "dataset/r8/chi/001.wav",
+      "label": "chi",
+      "prediction": "ri",
+      "confidence": 0.28408271074295044,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:46.274Z"
+    },
+    {
+      "filepath": "dataset/r9/ne/002.wav",
+      "label": "ne",
+      "prediction": "re",
+      "confidence": 0.28455695509910583,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:47.096Z"
+    },
+    {
+      "filepath": "dataset/r3/nyu/002.wav",
+      "label": "nyu",
+      "prediction": "nu",
+      "confidence": 0.28985944390296936,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:47.792Z"
+    },
+    {
+      "filepath": "dataset/r5/tsu/001.wav",
+      "label": "tsu",
+      "prediction": "u",
+      "confidence": 0.2906097173690796,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:48.632Z"
+    },
+    {
+      "filepath": "dataset/r8/ge/001.wav",
+      "label": "ge",
+      "prediction": "gi",
+      "confidence": 0.2934531271457672,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:49.456Z"
+    },
+    {
+      "filepath": "dataset/r5/e/001.wav",
+      "label": "e",
+      "prediction": "de",
+      "confidence": 0.2951417565345764,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:50.235Z"
+    },
+    {
+      "filepath": "dataset/r2/mo/001.wav",
+      "label": "mo",
+      "prediction": "mu",
+      "confidence": 0.29610395431518555,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:50.835Z"
+    },
+    {
+      "filepath": "dataset/r5/de/002.wav",
+      "label": "de",
+      "prediction": "gyu",
+      "confidence": 0.29625001549720764,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:51.610Z"
+    },
+    {
+      "filepath": "dataset/r5/nya/002.wav",
+      "label": "nya",
+      "prediction": "byo",
+      "confidence": 0.2965216040611267,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:52.373Z"
+    },
+    {
+      "filepath": "dataset/r4/fu/001.wav",
+      "label": "fu",
+      "prediction": "bu",
+      "confidence": 0.298673152923584,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:52.905Z"
+    },
+    {
+      "filepath": "dataset/r4/n/002.wav",
+      "label": "n",
+      "prediction": "gu",
+      "confidence": 0.3000866770744324,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:53.697Z"
+    },
+    {
+      "filepath": "dataset/r7/wa/002.wav",
+      "label": "wa",
+      "prediction": "jo",
+      "confidence": 0.30309349298477173,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:54.506Z"
+    },
+    {
+      "filepath": "dataset/r8/chi/003.wav",
+      "label": "chi",
+      "prediction": "ji",
+      "confidence": 0.3045954406261444,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:55.306Z"
+    },
+    {
+      "filepath": "dataset/r5/gu/001.wav",
+      "label": "gu",
+      "prediction": "zu",
+      "confidence": 0.30623888969421387,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:56.012Z"
+    },
+    {
+      "filepath": "dataset/r8/no/002.wav",
+      "label": "no",
+      "prediction": "ro",
+      "confidence": 0.30633145570755005,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:56.738Z"
+    },
+    {
+      "filepath": "dataset/r6/de/002.wav",
+      "label": "de",
+      "prediction": "byo",
+      "confidence": 0.3089476227760315,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:57.432Z"
+    },
+    {
+      "filepath": "dataset/r7/ta/002.wav",
+      "label": "ta",
+      "prediction": "ka",
+      "confidence": 0.31046774983406067,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:58.163Z"
+    },
+    {
+      "filepath": "dataset/r1/na/001.wav",
+      "label": "na",
+      "prediction": "ra",
+      "confidence": 0.31295347213745117,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:46:59.158Z"
+    },
+    {
+      "filepath": "dataset/r6/te/001.wav",
+      "label": "te",
+      "prediction": "re",
+      "confidence": 0.31335318088531494,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:47:00.020Z"
+    },
+    {
+      "filepath": "dataset/r2/so/001.wav",
+      "label": "so",
+      "prediction": "other",
+      "confidence": 0.31526488065719604,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:47:00.660Z"
+    },
+    {
+      "filepath": "dataset/r6/ro/002.wav",
+      "label": "ro",
+      "prediction": "jo",
+      "confidence": 0.3154224157333374,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:47:01.575Z"
+    },
+    {
+      "filepath": "dataset/r10/pyo/003.wav",
+      "label": "pyo",
+      "prediction": "kyo",
+      "confidence": 0.3214244246482849,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:47:02.291Z"
+    },
+    {
+      "filepath": "dataset/r8/go/002.wav",
+      "label": "go",
+      "prediction": "ko",
+      "confidence": 0.32149314880371094,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:17.682Z"
+    },
+    {
+      "filepath": "dataset/r6/hyo/001.wav",
+      "label": "hyo",
+      "prediction": "pyo",
+      "confidence": 0.32330960035324097,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:18.664Z"
+    },
+    {
+      "filepath": "dataset/r1/ba/001.wav",
+      "label": "ba",
+      "prediction": "ga",
+      "confidence": 0.3244743347167969,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:25.184Z"
+    },
+    {
+      "filepath": "dataset/r9/pya/002.wav",
+      "label": "pya",
+      "prediction": "kya",
+      "confidence": 0.32614973187446594,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:26.656Z"
+    },
+    {
+      "filepath": "dataset/r9/bu/002.wav",
+      "label": "bu",
+      "prediction": "i",
+      "confidence": 0.32670751214027405,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:27.486Z"
+    },
+    {
+      "filepath": "dataset/r7/za/002.wav",
+      "label": "za",
+      "prediction": "ma",
+      "confidence": 0.3267933428287506,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:28.264Z"
+    },
+    {
+      "filepath": "dataset/r1/su/001.wav",
+      "label": "su",
+      "prediction": "tsu",
+      "confidence": 0.3268417418003082,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:29.044Z"
+    },
+    {
+      "filepath": "dataset/r9/wo/001.wav",
+      "label": "wo",
+      "prediction": "wa",
+      "confidence": 0.3290660083293915,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:30.070Z"
+    },
+    {
+      "filepath": "dataset/r8/se/001.wav",
+      "label": "se",
+      "prediction": "shi",
+      "confidence": 0.3312852084636688,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:32.291Z"
+    },
+    {
+      "filepath": "dataset/r7/shi/002.wav",
+      "label": "shi",
+      "prediction": "di",
+      "confidence": 0.33174261450767517,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:34.784Z"
+    },
+    {
+      "filepath": "dataset/r1/da/001.wav",
+      "label": "da",
+      "prediction": "ga",
+      "confidence": 0.3324843943119049,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:35.518Z"
+    },
+    {
+      "filepath": "dataset/r5/kya/001.wav",
+      "label": "kya",
+      "prediction": "sha",
+      "confidence": 0.3352893590927124,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:36.356Z"
+    },
+    {
+      "filepath": "dataset/r7/ba/002.wav",
+      "label": "ba",
+      "prediction": "ga",
+      "confidence": 0.33547839522361755,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:37.161Z"
+    },
+    {
+      "filepath": "dataset/r4/wa/002.wav",
+      "label": "wa",
+      "prediction": "wo",
+      "confidence": 0.33755913376808167,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:37.953Z"
+    },
+    {
+      "filepath": "dataset/r9/nu/002.wav",
+      "label": "nu",
+      "prediction": "ji",
+      "confidence": 0.33841317892074585,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:38.728Z"
+    },
+    {
+      "filepath": "dataset/r9/ru/003.wav",
+      "label": "ru",
+      "prediction": "gu",
+      "confidence": 0.34063616394996643,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:39.755Z"
+    },
+    {
+      "filepath": "dataset/r5/du/001.wav",
+      "label": "du",
+      "prediction": "zu",
+      "confidence": 0.34078335762023926,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:40.640Z"
+    },
+    {
+      "filepath": "dataset/r9/ra/001.wav",
+      "label": "ra",
+      "prediction": "ma",
+      "confidence": 0.34132620692253113,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:41.581Z"
+    },
+    {
+      "filepath": "dataset/r7/byu/001.wav",
+      "label": "byu",
+      "prediction": "hyu",
+      "confidence": 0.34152570366859436,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:42.138Z"
+    },
+    {
+      "filepath": "dataset/r9/ku/002.wav",
+      "label": "ku",
+      "prediction": "du",
+      "confidence": 0.3429644703865051,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:42.905Z"
+    },
+    {
+      "filepath": "dataset/r4/mo/001.wav",
+      "label": "mo",
+      "prediction": "yu",
+      "confidence": 0.3442012667655945,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:43.421Z"
+    },
+    {
+      "filepath": "dataset/r4/zu/002.wav",
+      "label": "zu",
+      "prediction": "du",
+      "confidence": 0.3447437286376953,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:44.243Z"
+    },
+    {
+      "filepath": "dataset/r6/ta/001.wav",
+      "label": "ta",
+      "prediction": "na",
+      "confidence": 0.34746044874191284,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:45.034Z"
+    },
+    {
+      "filepath": "dataset/r7/ryu/002.wav",
+      "label": "ryu",
+      "prediction": "yu",
+      "confidence": 0.347785085439682,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:45.771Z"
+    },
+    {
+      "filepath": "dataset/r5/ha/001.wav",
+      "label": "ha",
+      "prediction": "ma",
+      "confidence": 0.3478601574897766,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:46.549Z"
+    },
+    {
+      "filepath": "dataset/r5/a/002.wav",
+      "label": "a",
+      "prediction": "ba",
+      "confidence": 0.3497692346572876,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:47.284Z"
+    },
+    {
+      "filepath": "dataset/r9/tsu/003.wav",
+      "label": "tsu",
+      "prediction": "chi",
+      "confidence": 0.3504945635795593,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:49.841Z"
+    },
+    {
+      "filepath": "dataset/r1/mo/002.wav",
+      "label": "mo",
+      "prediction": "bo",
+      "confidence": 0.35259220004081726,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:50.612Z"
+    },
+    {
+      "filepath": "dataset/r10/ru/001.wav",
+      "label": "ru",
+      "prediction": "i",
+      "confidence": 0.35348623991012573,
+      "decision": "keep",
+      "new_label": "",
+      "decided_at": "2026-10-04T07:49:51.374Z"
+    }
+  ]
+}

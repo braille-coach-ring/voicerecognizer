@@ -120,16 +120,20 @@ class Wav2Vec2ForPhonemeMultiTaskClassification(Wav2Vec2ForSequenceClassificatio
         # Time pooling
         if attention_mask is None:
             pooled_output = hidden_states.mean(dim=1)
+            frame_cons_logits = self.consonant_classifier(hidden_states)
+            cons_logits = frame_cons_logits.max(dim=1)[0]
         else:
             padding_mask = self._get_feature_vector_attention_mask(
                 hidden_states.shape[1], cast(torch.LongTensor, attention_mask)
             )
             hidden_states[~padding_mask] = 0.0
             pooled_output = hidden_states.sum(dim=1) / padding_mask.sum(dim=1).view(-1, 1)
+            frame_cons_logits = self.consonant_classifier(hidden_states)
+            masked_cons_logits = frame_cons_logits.masked_fill(~padding_mask.unsqueeze(-1), -1e9)
+            cons_logits = masked_cons_logits.max(dim=1)[0]
 
         # Task heads
         char_logits = self.classifier(pooled_output)
-        cons_logits = self.consonant_classifier(pooled_output)
         vowel_logits = self.vowel_classifier(pooled_output)
 
         loss: torch.Tensor | None = None

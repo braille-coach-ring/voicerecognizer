@@ -218,7 +218,7 @@ def resolve_training_settings(args: argparse.Namespace) -> Wav2Vec2TrainingSetti
         else DEFAULT_WAV2VEC2_FREEZE_TRANSFORMER_LAYERS
     )
     patience = patience_arg if patience_arg is not None else DEFAULT_WAV2VEC2_PATIENCE
-    head_lr_multiplier = 1.0
+    head_lr_multiplier = float(getattr(args, "head_lr_multiplier", 1.0) or 1.0)
     early_stopping_scope = "global_best"
 
     if from_scratch_auto_tuned:
@@ -273,7 +273,10 @@ def resolve_training_settings(args: argparse.Namespace) -> Wav2Vec2TrainingSetti
 
 
 def is_wav2vec2_classification_head_parameter(name: str) -> bool:
-    return any(part in {"projector", "classifier"} for part in name.split("."))
+    return any(
+        part in {"projector", "classifier", "consonant_classifier", "vowel_classifier"}
+        for part in name.split(".")
+    )
 
 
 def build_wav2vec2_optimizer(
@@ -563,10 +566,12 @@ def training_loss(
 ) -> torch.Tensor:
     loss = loss_fct(outputs.logits, labels) if loss_fct is not None else outputs.loss
     if hasattr(model, "c_table"):
-        loss = loss + 0.5 * torch.nn.functional.cross_entropy(
+        l_cons = float(getattr(model, "lambda_cons", 0.8))
+        l_vow = float(getattr(model, "lambda_vowel", 0.2))
+        loss = loss + l_cons * torch.nn.functional.cross_entropy(
             outputs.cons_logits, model.c_table[labels]
         )
-        loss = loss + 0.5 * torch.nn.functional.cross_entropy(
+        loss = loss + l_vow * torch.nn.functional.cross_entropy(
             outputs.vowel_logits, model.v_table[labels]
         )
     return loss
@@ -685,7 +690,11 @@ def save_pretrained_model(
 ) -> None:
     try:
         output_dir.mkdir(parents=True, exist_ok=True)
-        model.save_pretrained(output_dir)
+        if hasattr(model, "extract_inference_model"):
+            clean_model = model.extract_inference_model()
+            clean_model.save_pretrained(output_dir)
+        else:
+            model.save_pretrained(output_dir)
         feature_extractor.save_pretrained(output_dir)
         (output_dir / "labels.json").write_text(
             json.dumps(list(labels), ensure_ascii=False, indent=2),
@@ -1346,6 +1355,8 @@ def train(args: argparse.Namespace) -> None:
         model.register_buffer(
             "v_table", torch.tensor(v_indices, dtype=torch.long), persistent=False
         )
+        model.lambda_cons = float(getattr(args, "lambda_cons", 0.8))
+        model.lambda_vowel = float(getattr(args, "lambda_vowel", 0.2))
     freeze_wav2vec2_layers(
         model,
         freeze_feature_encoder=freeze_feature_encoder,
@@ -1649,6 +1660,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Number of bottom Transformer layers to freeze (default: 10 out of 12)",
     )
     parser.add_argument(
+        "--head-lr-multiplier",
+        type=float,
+        default=1.0,
+        help="Multiplier applied to learning rate for classification heads (default: 1.0)",
+    )
+    parser.add_argument(
         "--from-scratch",
         "--no-resume",
         action="store_false",
@@ -1795,6 +1812,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--normalize-homophones", action="store_true")
     parser.add_argument("--phoneme-multitask", action="store_true")
+    parser.add_argument(
+        "--lambda-cons",
+        type=float,
+        default=0.8,
+        help="Loss weight coefficient for auxiliary consonant classification",
+    )
+    parser.add_argument(
+        "--lambda-vowel",
+        type=float,
+        default=0.2,
+        help="Loss weight coefficient for auxiliary vowel classification",
+    )
     return parser
 
 
