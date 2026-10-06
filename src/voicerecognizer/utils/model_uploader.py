@@ -309,12 +309,17 @@ def upload_weights_to_hf(
                 )
                 return True
 
-            # HF容量節約のため、ONNX はアップロードせず、オリジナルの model.safetensors と設定 JSON のみをアップロード
+            # HF同期対象: model.safetensors, 推論用 ONNX, 各種設定ファイル
             essential_filenames = [
                 "model.safetensors",
+                "model_mel_int8.onnx",
+                "model_int8.onnx",
+                "model_mel_fp32.onnx",
+                "model_fp32.onnx",
                 "labels.json",
                 "config.json",
                 "preprocessor_config.json",
+                "strategy_metrics.json",
                 "vocab.json",
                 "tokenizer_config.json",
             ]
