@@ -35,6 +35,8 @@ test = "script.check_quality_gate:test_cli"
 sync-baseline = "script.check_quality_gate:sync_baseline_cli"
 stats = "script.check_quality_gate:report_cli"
 errors = "script.check_quality_gate:errors_cli"
+calibrate-audio = "voicerecognizer.runtime.calibration:main"
+voicerecognizer-calibrate = "voicerecognizer.runtime.calibration:main"
 
 [dependency-groups]
 dev = [

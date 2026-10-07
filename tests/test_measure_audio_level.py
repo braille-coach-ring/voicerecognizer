@@ -15,6 +15,7 @@ from script.measure_audio_level import (
     calculate_window_levels,
     simulate_vad,
     update_config_file,
+    update_env_file,
 )
 from voicerecognizer.config import PreprocessConfig
 from voicerecognizer.runtime.vad import VoiceActivityDetector
@@ -166,6 +167,32 @@ class PreprocessConfig:
         self.assertIn("vad_rms_threshold: float = 0.001234", updated)
         self.assertIn("min_top_db: float = 23.2", updated)
         self.assertIn("max_top_db: float = 39.2", updated)
+
+    def test_update_env_file(self):
+        evaluation = VadEvaluation(detected=8, voiced=8, false_triggers=0)
+        result = CalibrationResult(
+            top_db=31.2,
+            min_top_db=23.2,
+            max_top_db=39.2,
+            vad_silence_threshold=0.087654,
+            vad_rms_threshold=0.023456,
+            snr_db=22.0,
+            nominal=evaluation,
+            robust=evaluation,
+            reliable=True,
+            warnings=(),
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            env_path.write_text("SOME_VAR=123\nVOICE_VAD_SILENCE_THRESHOLD=0.01\n", encoding="utf-8")
+
+            update_env_file(env_path, result)
+            updated = env_path.read_text(encoding="utf-8")
+
+        self.assertIn("SOME_VAR=123", updated)
+        self.assertIn("VOICE_VAD_SILENCE_THRESHOLD=0.087654", updated)
+        self.assertIn("VOICE_VAD_RMS_THRESHOLD=0.023456", updated)
 
 
 if __name__ == "__main__":

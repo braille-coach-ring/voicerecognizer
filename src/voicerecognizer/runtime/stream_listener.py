@@ -39,6 +39,7 @@ class RecognitionResult:
     confidence: float
     top3_candidates: list[tuple[str, float]] = field(default_factory=list)
     timing_stats: dict[str, Any] = field(default_factory=dict)
+    audio: Any = None
 
     @property
     def hiragana(self) -> str:
@@ -66,6 +67,9 @@ class AudioStreamListener:
         poll_interval_seconds: float = 0.08,
         audio_config: AudioConfig | None = None,
         preprocess_config: PreprocessConfig | None = None,
+        silence_threshold: float | None = None,
+        rms_threshold: float | None = None,
+        speech_settle_seconds: float | None = None,
     ):
         from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
 
@@ -77,13 +81,37 @@ class AudioStreamListener:
         except Exception as exc:
             raise DeviceNotFoundError(f"マイクデバイスの初期化に失敗しました: {exc}") from exc
 
-        self.vad = VoiceActivityDetector(config=preprocess_config or DEFAULT_PREPROCESS_CONFIG)
-        self.speech_settle_seconds = float(
-            getattr(audio_config or DEFAULT_AUDIO_CONFIG, "speech_settle_seconds", 0.3)
+        self.vad = VoiceActivityDetector(
+            config=preprocess_config or DEFAULT_PREPROCESS_CONFIG,
+            silence_threshold=silence_threshold,
+            rms_threshold=rms_threshold,
         )
+        if speech_settle_seconds is not None:
+            self.speech_settle_seconds = float(speech_settle_seconds)
+        else:
+            self.speech_settle_seconds = float(
+                getattr(audio_config or DEFAULT_AUDIO_CONFIG, "speech_settle_seconds", 0.3)
+            )
         self._is_listening = False
         self._is_paused = False
         self._last_emitted_text: str | None = None
+
+    def set_thresholds(
+        self,
+        min_confidence: float | None = None,
+        silence_threshold: float | None = None,
+        rms_threshold: float | None = None,
+        speech_settle_seconds: float | None = None,
+    ) -> None:
+        """リアルタイム聴取中に閾値を動的更新する。"""
+        if min_confidence is not None:
+            self.min_confidence = min_confidence
+        if silence_threshold is not None:
+            self.vad.silence_threshold = silence_threshold
+        if rms_threshold is not None:
+            self.vad.rms_threshold = rms_threshold
+        if speech_settle_seconds is not None:
+            self.speech_settle_seconds = float(speech_settle_seconds)
 
     def warmup(self) -> None:
         """認識モデルの事前ロードとウォームアップを実行する。"""
@@ -221,6 +249,7 @@ class AudioStreamListener:
                         confidence=float(confidence) if confidence is not None else 0.0,
                         top3_candidates=candidates,
                         timing_stats=timing_stats,
+                        audio=waveform,
                     )
         finally:
             pass

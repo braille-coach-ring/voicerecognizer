@@ -30,6 +30,8 @@ class TestPackageAPI(unittest.TestCase):
         self.assertIs(vr.AudioStreamListener, AudioStreamListener)
         self.assertIs(vr.RecognitionResult, RecognitionResult)
         self.assertIs(vr.RecognitionStrategy, RecognitionStrategy)
+        self.assertTrue(callable(vr.calibrate_audio))
+        self.assertIsNotNone(vr.CalibrationResult)
 
         # Exceptions
         self.assertIs(vr.AudioPreprocessingError, AudioPreprocessingError)
