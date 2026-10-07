@@ -39,6 +39,7 @@ from voicerecognizer.core.exceptions import (
 from voicerecognizer.core.interfaces import RecognitionStrategy
 from voicerecognizer.recognizers.cnn_recognizer import CNNRecognizer
 from voicerecognizer.recognizers.wav2vec2_recognizer import Wav2Vec2Recognizer
+from voicerecognizer.runtime.calibration import CalibrationResult, calibrate_audio
 from voicerecognizer.runtime.stream_listener import AudioStreamListener, RecognitionResult
 
 __version__ = "0.1.0"
@@ -49,6 +50,7 @@ __all__ = [
     "AudioPreprocessingError",
     "AudioStreamListener",
     "CNNRecognizer",
+    "CalibrationResult",
     "DeviceNotFoundError",
     "LabelFormat",
     "ModelNotFoundError",
@@ -56,6 +58,7 @@ __all__ = [
     "RecognitionStrategy",
     "VoiceRecognizerError",
     "Wav2Vec2Recognizer",
+    "calibrate_audio",
     "format_label",
     "to_hiragana",
     "to_katakana",
