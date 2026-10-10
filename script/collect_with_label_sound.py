@@ -10,9 +10,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import ctypes
 import logging
 import math
 import subprocess
+import sys
 import time
 from collections import deque
 from pathlib import Path
@@ -42,6 +44,8 @@ RECORD_SECONDS = DEFAULT_AUDIO_CONFIG.window_seconds
 DEFAULT_REPEAT = 10
 ROOT = DEFAULT_RECOGNITION_CONFIG.raw_dataset_dir
 GUIDE_WAV_ROOT = ROOT / "rinry"
+KEY_POLL_SECONDS = 0.02
+VK_SPACE = 0x20
 
 
 # Optional overrides for labels whose prompt WAV filename/path differs.
@@ -87,11 +91,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--mode",
-        choices=("vad", "fixed"),
-        default="vad",
+        choices=("hold", "vad", "fixed"),
+        default="hold",
         help=(
-            "vad saves each spoken utterance automatically. fixed records fixed "
-            "length takes with a short interval."
+            "hold records only while Space is held. vad saves each spoken utterance "
+            "automatically. fixed records fixed length takes with a short interval."
         ),
     )
     parser.add_argument(
@@ -361,6 +365,98 @@ def print_saved(
     )
 
 
+def is_space_pressed() -> bool:
+    if sys.platform != "win32":
+        raise RuntimeError("Hold-to-record mode currently supports Windows only.")
+    windll = getattr(ctypes, "windll", None)
+    if windll is None:
+        raise RuntimeError("Windows keyboard state API is unavailable.")
+    return bool(windll.user32.GetAsyncKeyState(VK_SPACE) & 0x8000)
+
+
+def wait_for_space_press() -> None:
+    while not is_space_pressed():
+        time.sleep(KEY_POLL_SECONDS)
+
+
+def wait_for_space_release() -> None:
+    while is_space_pressed():
+        time.sleep(KEY_POLL_SECONDS)
+
+
+def collect_hold(
+    label: str,
+    folder: Path,
+    needed: int,
+    start_number: int,
+    args: argparse.Namespace,
+) -> int:
+    number = start_number
+    saved = 0
+    chunk_samples = max(1, int(args.chunk_seconds * SAMPLE_RATE))
+    min_samples = int(args.min_utterance_seconds * SAMPLE_RATE)
+    max_samples = max(1, int(args.max_utterance_seconds * SAMPLE_RATE))
+
+    print(
+        f"  Hold Space while speaking {needed} take(s). "
+        "Release Space to finish each take."
+    )
+
+    while saved < needed:
+        wait_for_space_release()
+        print(f"  {format_label(label)} {saved + 1}/{needed}: hold Space and speak")
+        wait_for_space_press()
+
+        chunks: list[np.ndarray] = []
+        total_samples = 0
+        max_reached = False
+        with sd.InputStream(
+            samplerate=SAMPLE_RATE,
+            channels=CHANNELS,
+            dtype=np.float32,
+            blocksize=chunk_samples,
+        ) as stream:
+            while is_space_pressed():
+                chunk, overflowed = stream.read(chunk_samples)
+                if overflowed:
+                    logger.warning("Input overflow was detected while recording.")
+
+                waveform = to_mono(chunk.copy())
+                chunks.append(waveform)
+                total_samples += waveform.size
+                if total_samples >= max_samples:
+                    max_reached = True
+                    break
+
+        if max_reached:
+            print(
+                f"  reached max length ({args.max_utterance_seconds:.2f}s); "
+                "release Space to continue"
+            )
+        wait_for_space_release()
+
+        audio = np.concatenate(chunks)[:max_samples] if chunks else np.empty(0, dtype=np.float32)
+        peak, rms = audio_stats(audio)
+        valid_length = audio.size >= min_samples
+        valid_volume = peak >= args.silence_threshold and rms >= args.rms_threshold
+
+        if valid_length and valid_volume:
+            filename = save_audio(folder, number, audio)
+            saved += 1
+            print_saved(filename, saved, needed, audio)
+            number += 1
+        else:
+            print(
+                "  ignored short/silent input "
+                f"({audio.size / SAMPLE_RATE:.2f}s, peak={peak:.4f}, rms={rms:.4f}); "
+                "retrying"
+            )
+
+        time.sleep(args.interval)
+
+    return number
+
+
 def collect_fixed(
     label: str,
     folder: Path,
@@ -599,7 +695,9 @@ def run_collection(argv: list[str] | None = None) -> None:
             play_guide_wav(label)
 
             start_number = next_file_number(folder)
-            if args.mode == "vad":
+            if args.mode == "hold":
+                collect_hold(label, folder, needed, start_number, args)
+            elif args.mode == "vad":
                 collect_vad(label, folder, needed, start_number, args)
             else:
                 collect_fixed(label, folder, needed, start_number, args)

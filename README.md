@@ -122,6 +122,7 @@ speech_duration_ms,processed_duration_ms,preprocess_latency_ms
 ## データ収集
 
 対話式の収集スクリプトを使います。保存先は `dataset\<speaker_id>\<label>\*.wav` です。
+デフォルトでは Space キーを押している間だけ録音し、離すと1テイクとして保存します。
 
 ```powershell
 uv run python script\collect_with_label_sound.py rinry --repeat 10 --no-upload
