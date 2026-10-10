@@ -18,6 +18,7 @@ import sys
 import time
 from collections import deque
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import sounddevice as sd
@@ -371,7 +372,8 @@ def is_space_pressed() -> bool:
     windll = getattr(ctypes, "windll", None)
     if windll is None:
         raise RuntimeError("Windows keyboard state API is unavailable.")
-    return bool(windll.user32.GetAsyncKeyState(VK_SPACE) & 0x8000)
+    user32 = cast(Any, windll).user32
+    return bool(user32.GetAsyncKeyState(VK_SPACE) & 0x8000)
 
 
 def wait_for_space_press() -> None:
